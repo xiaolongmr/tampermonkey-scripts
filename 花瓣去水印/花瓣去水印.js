@@ -10,6 +10,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
+// @grant        GM_download
 // @downloadURL https://update.greasyfork.org/scripts/554301/%E8%8A%B1%E7%93%A3%E7%9C%9F%E5%81%87PNG.user.js
 // @updateURL https://update.greasyfork.org/scripts/554301/%E8%8A%B1%E7%93%A3%E7%9C%9F%E5%81%87PNG.meta.js
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
@@ -26,7 +27,11 @@
     // 用户上传：粉蓝色
     enableCustom: true,
     // 启用自定义背景色
-    enableRemoveWatermark: true
+    enableRemoveWatermark: true,
+    enableDragDownload: true,
+    // 启用拖拽下载功能
+    enableRightClickDownload: true
+    // 启用右键下载功能
   };
 
   // 获取配置
@@ -35,7 +40,9 @@
       materialColor: GM_getValue('materialColor', DEFAULT_CONFIG.materialColor),
       userColor: GM_getValue('userColor', DEFAULT_CONFIG.userColor),
       enableCustom: GM_getValue('enableCustom', DEFAULT_CONFIG.enableCustom),
-      enableRemoveWatermark: GM_getValue('enableRemoveWatermark', DEFAULT_CONFIG.enableRemoveWatermark)
+      enableRemoveWatermark: GM_getValue('enableRemoveWatermark', DEFAULT_CONFIG.enableRemoveWatermark),
+      enableDragDownload: GM_getValue('enableDragDownload', DEFAULT_CONFIG.enableDragDownload),
+      enableRightClickDownload: GM_getValue('enableRightClickDownload', DEFAULT_CONFIG.enableRightClickDownload)
     };
   }
 
@@ -45,6 +52,8 @@
     GM_setValue('userColor', config.userColor);
     GM_setValue('enableCustom', config.enableCustom);
     GM_setValue('enableRemoveWatermark', config.enableRemoveWatermark);
+    GM_setValue('enableDragDownload', config.enableDragDownload);
+    GM_setValue('enableRightClickDownload', config.enableRightClickDownload);
   }
 
   // 应用样式
@@ -117,6 +126,21 @@
     }
     // 移除处理标记
     img.removeAttribute('data-watermark-removed');
+  }
+
+  // 去除图片后缀参数，让图片保存为PNG格式
+  function removeImageSuffixParams(url) {
+    // 匹配花瓣图片URL中的后缀参数，如 _fw658webp
+    const suffixRegex = /(_fw\d+webp)(\.webp)?$/i;
+
+    if (suffixRegex.test(url)) {
+      // 去除后缀参数，保留图片ID和扩展名
+      const cleanUrl = url.replace(suffixRegex, '');
+      console.log('去除图片后缀参数:', url, '→', cleanUrl);
+      return cleanUrl;
+    }
+
+    return url;
   }
 
   // 去水印功能：修改图片链接
@@ -493,6 +517,196 @@
     console.log('图片点击事件拦截器已启动');
   }
 
+  // 拦截拖拽和右键下载事件，移除图片后缀参数
+  function interceptDragAndDownload() {
+    // 监听拖拽开始事件
+    document.addEventListener('dragstart', function (e) {
+      const img = e.target;
+      if (img.tagName === 'IMG' && img.src.includes('gd-hbimg.huaban.com')) {
+        // 检查是否为需要处理的图片类型
+        if (img.matches('img[data-button-name="查看大图"]') ||
+          img.closest('#imageViewerWrapper') ||
+          img.matches('img.vYzIMzy2[alt="查看图片"]') ||
+          // 新增：支持预览图片（a标签内的img标签）
+          (img.closest('a') && img.closest('a').querySelector('span[style*="display: none"]'))) {
+
+          // 检查拖拽下载功能是否启用
+          const config = getConfig();
+          if (!config.enableDragDownload) {
+            console.log('拖拽下载功能已禁用，跳过处理');
+            return;
+          }
+
+          console.log('检测到图片拖拽开始:', img.src);
+
+          // 移除后缀参数，保存为PNG格式
+          const cleanUrl = removeImageSuffixParams(img.src);
+          if (cleanUrl !== img.src) {
+            console.log('拖拽时移除后缀参数，新URL:', cleanUrl);
+
+            // 设置拖拽数据为处理后的URL
+            e.dataTransfer.setData('text/uri-list', cleanUrl);
+            e.dataTransfer.setData('text/plain', cleanUrl);
+
+            // 设置文件名：优先使用alt属性，如果没有则使用URL生成的文件名
+            const fileName = getFileNameFromAlt(img, cleanUrl);
+            e.dataTransfer.setData('DownloadURL', `image/png:${fileName}:${cleanUrl}`);
+          }
+        }
+      }
+    });
+
+    // 监听右键菜单事件 - 使用GM_download API直接下载
+    document.addEventListener('contextmenu', function (e) {
+      const img = e.target;
+      if (img.tagName === 'IMG' && img.src.includes('gd-hbimg.huaban.com')) {
+        // 检查是否为需要处理的图片类型
+        if (img.matches('img[data-button-name="查看大图"]') ||
+          img.closest('#imageViewerWrapper') ||
+          img.matches('img.vYzIMzy2[alt="查看图片"]') ||
+          // 新增：支持预览图片（a标签内的img标签）
+          (img.closest('a') && img.closest('a').querySelector('span[style*="display: none"]'))) {
+
+          // 检查右键下载功能是否启用
+          const config = getConfig();
+          if (!config.enableRightClickDownload) {
+            console.log('右键下载功能已禁用，跳过处理');
+            return;
+          }
+
+          console.log('检测到图片右键菜单，使用GM_download下载:', img.src);
+
+          // 移除后缀参数，获取干净的URL
+          const cleanUrl = removeImageSuffixParams(img.src);
+          if (cleanUrl !== img.src) {
+            console.log('处理后的下载URL:', cleanUrl);
+
+            // 阻止默认的右键菜单行为
+            e.preventDefault();
+
+            // 使用GM_download API直接下载处理后的图片
+            // 注意：GM_download需要用户确认，所以这里使用异步方式
+            setTimeout(() => {
+              try {
+                // 使用alt属性作为文件名，如果没有alt则使用默认文件名
+                const fileName = getFileNameFromAlt(img, cleanUrl);
+
+                // 使用GM_download下载图片
+                // 注意：GM_download会弹出下载确认对话框
+                GM_download({
+                  url: cleanUrl,
+                  name: fileName,
+                  onload: function () {
+                    console.log('图片下载成功:', fileName);
+                  },
+                  onerror: function (error) {
+                    console.error('图片下载失败:', error);
+                    // 如果GM_download失败，尝试备用方案
+                    fallbackDownload(cleanUrl, fileName);
+                  }
+                });
+              } catch (error) {
+                console.error('GM_download调用失败:', error);
+                // 备用下载方案
+                fallbackDownload(cleanUrl, getFileNameFromAlt(img, cleanUrl));
+              }
+            }, 100);
+          }
+        }
+      }
+    });
+
+    // 备用下载方案：创建隐藏的下载链接
+    function fallbackDownload(url, fileName) {
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        console.log('备用下载方案执行成功');
+      } catch (error) {
+        console.error('备用下载方案也失败:', error);
+        // 最后的手段：在新标签页打开图片
+        window.open(url, '_blank');
+      }
+    }
+
+    console.log('拖拽和右键下载拦截器已启动');
+  }
+
+  // 获取清理后的文件名（移除后缀参数，使用PNG扩展名）
+  function getCleanFileName(url) {
+    // 从URL中提取文件名
+    const urlParts = url.split('/');
+    let fileName = urlParts[urlParts.length - 1];
+
+    // 移除后缀参数
+    fileName = fileName.replace(/(_fw\d+webp)(\.webp)?$/i, '');
+
+    // 确保使用PNG扩展名
+    if (!fileName.includes('.')) {
+      fileName += '.png';
+    } else {
+      fileName = fileName.replace(/\.(jpg|jpeg|webp)$/i, '.png');
+    }
+
+    return fileName;
+  }
+
+  // 根据alt属性或span标签生成文件名，如果没有则使用默认文件名
+  function getFileNameFromAlt(img, url) {
+    // 首先检查是否为预览图片（a标签内的img标签，且有隐藏的span）
+    const parentA = img.closest('a');
+    if (parentA) {
+      const hiddenSpan = parentA.querySelector('span[style*="display: none"]');
+      if (hiddenSpan && hiddenSpan.textContent) {
+        // 使用span的文本内容作为文件名
+        let spanText = hiddenSpan.textContent.trim();
+        if (spanText) {
+          // 清理文本，移除特殊字符，只保留字母、数字、中文和空格
+          let cleanText = spanText.replace(/[^\w\u4e00-\u9fa5\s]/g, '').trim();
+
+          // 如果清理后的文本不为空，则使用span文本作为文件名
+          if (cleanText) {
+            // 限制文件名长度，避免过长
+            if (cleanText.length > 50) {
+              cleanText = cleanText.substring(0, 50);
+            }
+
+            // 添加.png扩展名
+            return cleanText + '.png';
+          }
+        }
+      }
+    }
+
+    // 获取alt属性值
+    const altText = img.alt || '';
+
+    // 如果alt属性有内容且不是默认的"查看图片"，则使用alt作为文件名
+    if (altText && altText.trim() && altText !== '查看图片') {
+      // 清理alt文本，移除特殊字符，只保留字母、数字、中文和空格
+      let cleanAlt = altText.replace(/[^\w\u4e00-\u9fa5\s]/g, '').trim();
+
+      // 如果清理后的文本不为空，则使用alt作为文件名
+      if (cleanAlt) {
+        // 限制文件名长度，避免过长
+        if (cleanAlt.length > 50) {
+          cleanAlt = cleanAlt.substring(0, 50);
+        }
+
+        // 添加.png扩展名
+        return cleanAlt + '.png';
+      }
+    }
+
+    // 如果没有有效的alt属性或span文本，则使用默认的文件名生成逻辑
+    return getCleanFileName(url);
+  }
+
   // 创建配置界面
   function createConfigUI() {
     const config = getConfig();
@@ -517,7 +731,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 999999;
+            z-index: 1000;
             backdrop-filter: blur(4px);
         `;
 
@@ -527,7 +741,7 @@
             background: white;
             border-radius: 24px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            width: 320px;
+            width: 420px;
             max-width: 95vw;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         `;
@@ -541,9 +755,14 @@
             background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
         `;
     header.innerHTML = `
-            <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
-                花瓣 - 设置首选项
-            </h3>
+            <div style="display: flex;gap: 10px;align-items: center;justify-content: center;">
+                <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
+                    花瓣 - 设置首选项
+                </h3>
+                <a href="#" id="usageGuideLink" style="font-size: 12px; color: #94a3b8; text-decoration: none; cursor: pointer;">
+                    使用说明
+                </a>
+            </div>
         `;
 
     // 卡片内容
@@ -674,9 +893,127 @@
 
     enableWatermarkSection.innerHTML = enableWatermarkHTML;
 
+    // 拖拽下载功能开关
+    const enableDragSection = document.createElement('div');
+    enableDragSection.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        `;
+
+    const enableDragHTML = `
+            <span style="
+                font-size: 14px;
+                font-weight: 500;
+                color: #475569;
+                display: flex;
+                align-items: center;
+            ">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 1024 1024" style="margin-right: 6px;">
+                    <path d="M597.333333 512a85.333333 85.333333 0 1 1-170.666666 0 85.333333 85.333333 0 0 1 170.666666 0z" fill="#3b82f6"></path>
+                    <path d="M512 210.304L391.338667 330.965333 330.965333 270.634667 512 89.642667l181.034667 180.992-60.330667 60.330666L512 210.346667z m181.034667 181.034667l60.330666-60.373334L934.4 512l-181.034667 181.034667-60.330666-60.373334L813.653333 512l-120.661333-120.661333z m-60.330667 301.653333L512 813.781333l-120.661333-120.746666-60.373334 60.373333L512 934.357333l181.034667-180.992-60.330667-60.330666z m-362.069333 0L89.642667 512l180.992-181.034667 60.330666 60.373334L210.346667 512l120.661333 120.661333-60.330667 60.373334z" fill="#3b82f6"></path>
+                </svg>
+                拖拽下载图片<span style="font-size: 12px; color: #94a3b8; margin-left: 4px;">（适配资源管理器/<a href="https://wwz.lanzouq.com/iyUTy1zt2b4d" target="_blank" style="color: #3b82f6; text-decoration: none;" title="点击下载PureRef">PureRef</a>）</span>
+            </span>
+            <div style="position: relative; width: 40px; height: 20px; cursor: pointer;" id="enableDragContainer">
+                <input type="checkbox" id="enableDragSwitch" ${config.enableDragDownload ? 'checked' : ''}
+                       style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 3;">
+                <span style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: ${config.enableDragDownload ? '#3b82f6' : '#e2e8f0'};
+                    border-radius: 10px;
+                    transition: background 0.2s ease;
+                    z-index: 1;
+                "></span>
+                <span style="
+                    position: absolute;
+                    width: 16px;
+                    height: 16px;
+                    left: ${config.enableDragDownload ? '22px' : '2px'};
+                    top: 2px;
+                    background: white;
+                    border-radius: 50%;
+                    transition: left 0.2s ease;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    z-index: 2;
+                " id="enableDragThumb"></span>
+            </div>
+        `;
+
+    enableDragSection.innerHTML = enableDragHTML;
+
+    // 右键下载功能开关
+    const enableRightClickSection = document.createElement('div');
+    enableRightClickSection.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        `;
+
+    const enableRightClickHTML = `
+            <span style="
+                font-size: 14px;
+                font-weight: 500;
+                color: #475569;
+                display: flex;
+                align-items: center;
+            ">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 1024 1024" style="margin-right: 6px;">
+                    <path d="M588.8 61.44c-20.48-5.12-40.96 10.24-46.08 30.72-5.12 20.48 5.12 40.96 25.6 46.08 0 0 117.76 35.84 148.48 153.6 5.12 15.36 20.48 30.72 35.84 30.72h10.24c20.48-5.12 35.84-25.6 30.72-46.08-40.96-168.96-199.68-209.92-204.8-215.04z" fill="#8b5cf6"></path>
+                    <path d="M855.04 174.08c-35.84-102.4-117.76-148.48-158.72-168.96-20.48-10.24-40.96 0-51.2 20.48s0 40.96 20.48 51.2c35.84 15.36 92.16 51.2 117.76 122.88 5.12 15.36 20.48 25.6 35.84 25.6h10.24c20.48-10.24 30.72-30.72 25.6-51.2zM419.84 133.12C261.12 133.12 128 266.24 128 430.08v296.96C128 890.88 261.12 1024 419.84 1024s296.96-133.12 296.96-296.96V430.08c0-163.84-133.12-296.96-296.96-296.96zM384 215.04v225.28H204.8v-10.24C204.8 322.56 281.6 235.52 384 215.04z m35.84 732.16c-117.76 0-215.04-97.28-215.04-215.04v-209.92H634.88v209.92c5.12 117.76-92.16 215.04-215.04 215.04z" fill="#8b5cf6"></path>
+                </svg>
+                右键下载图片<span style="font-size: 12px; color: #94a3b8; margin-left: 4px;">（修正乱码名称）</span>
+            </span>
+            <div style="position: relative; width: 40px; height: 20px; cursor: pointer;" id="enableRightClickContainer">
+                <input type="checkbox" id="enableRightClickSwitch" ${config.enableRightClickDownload ? 'checked' : ''}
+                       style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 3;">
+                <span style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: ${config.enableRightClickDownload ? '#8b5cf6' : '#e2e8f0'};
+                    border-radius: 10px;
+                    transition: background 0.2s ease;
+                    z-index: 1;
+                "></span>
+                <span style="
+                    position: absolute;
+                    width: 16px;
+                    height: 16px;
+                    left: ${config.enableRightClickDownload ? '22px' : '2px'};
+                    top: 2px;
+                    background: white;
+                    border-radius: 50%;
+                    transition: left 0.2s ease;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    z-index: 2;
+                " id="enableRightClickThumb"></span>
+            </div>
+        `;
+
+    enableRightClickSection.innerHTML = enableRightClickHTML;
+
     // 组装开关区域
     switchesSection.appendChild(enableCustomSection);
     switchesSection.appendChild(enableWatermarkSection);
+    switchesSection.appendChild(enableDragSection);
+    switchesSection.appendChild(enableRightClickSection);
 
     // 颜色设置区域
     const colorSettings = `
@@ -858,6 +1195,38 @@
       }, 200);
     });
 
+    // 获取拖拽下载和右键下载开关元素
+    const enableDragSwitch = document.getElementById('enableDragSwitch');
+    const enableDragThumb = document.getElementById('enableDragThumb');
+    const enableDragContainer = document.getElementById('enableDragContainer');
+    const enableRightClickSwitch = document.getElementById('enableRightClickSwitch');
+    const enableRightClickThumb = document.getElementById('enableRightClickThumb');
+    const enableRightClickContainer = document.getElementById('enableRightClickContainer');
+
+    // 拖拽下载开关功能
+    enableDragSwitch.addEventListener('change', function () {
+      const isChecked = this.checked;
+      const switchBg = enableDragContainer.querySelector('span:nth-child(2)');
+      switchBg.style.background = isChecked ? '#3b82f6' : '#e2e8f0';
+      enableDragThumb.style.left = isChecked ? '22px' : '2px';
+
+      // 立即更新拖拽下载功能状态
+      console.log('拖拽下载开关状态变化:', isChecked);
+      // 拖拽功能会在下次页面加载时生效，因为事件监听器是基于配置动态添加的
+    });
+
+    // 右键下载开关功能
+    enableRightClickSwitch.addEventListener('change', function () {
+      const isChecked = this.checked;
+      const switchBg = enableRightClickContainer.querySelector('span:nth-child(2)');
+      switchBg.style.background = isChecked ? '#8b5cf6' : '#e2e8f0';
+      enableRightClickThumb.style.left = isChecked ? '22px' : '2px';
+
+      // 立即更新右键下载功能状态
+      console.log('右键下载开关状态变化:', isChecked);
+      // 右键功能会在下次页面加载时生效，因为事件监听器是基于配置动态添加的
+    });
+
     // 颜色验证
     function isValidColor(color) {
       const hexRegex = /^#([0-9A-F]{3}|[0-9A-F]{6})$/i;
@@ -910,6 +1279,8 @@
       const newConfig = {
         enableCustom: enableCustomSwitch.checked,
         enableRemoveWatermark: enableWatermarkSwitch.checked,
+        enableDragDownload: enableDragSwitch.checked,
+        enableRightClickDownload: enableRightClickSwitch.checked,
         materialColor: materialColor,
         userColor: userColor
       };
@@ -946,6 +1317,18 @@
         const watermarkSwitchBg = enableWatermarkContainer.querySelector('span:nth-child(2)');
         watermarkSwitchBg.style.background = DEFAULT_CONFIG.enableRemoveWatermark ? '#ff6b6b' : '#e2e8f0';
         enableWatermarkThumb.style.left = DEFAULT_CONFIG.enableRemoveWatermark ? '22px' : '2px';
+
+        // 恢复拖拽下载开关
+        enableDragSwitch.checked = DEFAULT_CONFIG.enableDragDownload;
+        const dragSwitchBg = enableDragContainer.querySelector('span:nth-child(2)');
+        dragSwitchBg.style.background = DEFAULT_CONFIG.enableDragDownload ? '#3b82f6' : '#e2e8f0';
+        enableDragThumb.style.left = DEFAULT_CONFIG.enableDragDownload ? '22px' : '2px';
+
+        // 恢复右键下载开关
+        enableRightClickSwitch.checked = DEFAULT_CONFIG.enableRightClickDownload;
+        const rightClickSwitchBg = enableRightClickContainer.querySelector('span:nth-child(2)');
+        rightClickSwitchBg.style.background = DEFAULT_CONFIG.enableRightClickDownload ? '#8b5cf6' : '#e2e8f0';
+        enableRightClickThumb.style.left = DEFAULT_CONFIG.enableRightClickDownload ? '22px' : '2px';
 
         // 恢复颜色设置
         materialInput.value = DEFAULT_CONFIG.materialColor;
@@ -1148,6 +1531,9 @@
     // 拦截图片点击事件
     interceptImageClicks();
 
+    // 拦截拖拽和右键下载事件
+    interceptDragAndDownload();
+
     // 处理大图查看器
     handleImageViewer();
 
@@ -1163,6 +1549,273 @@
 
     console.log('花瓣"去"水印 v2. 初始化完成');
   }
+
+  // 显示使用说明弹窗
+  function showUsageGuide() {
+    // 检查是否已存在使用说明弹窗
+    const existingGuide = document.getElementById('huabanUsageGuide');
+    if (existingGuide) {
+      existingGuide.remove();
+      return;
+    }
+
+    // 创建主容器
+    const container = document.createElement('div');
+    container.id = 'huabanUsageGuide';
+    container.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        `;
+
+    // 创建卡片
+    const card = document.createElement('div');
+    card.style.cssText = `
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            width: 600px;
+            max-width: 95vw;
+            max-height: 80vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+        `;
+
+    // 卡片头部
+    const header = document.createElement('div');
+    header.style.cssText = `
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
+            border-radius: 24px 24px 0 0;
+        `;
+    header.innerHTML = `
+            <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
+                使用说明
+            </h3>
+            <button id="closeUsageGuide" style="
+                background: none;
+                border: none;
+                font-size: 18px;
+                color: #64748b;
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 4px;
+            ">&times;</button>
+        `;
+
+    // 卡片内容
+    const content = document.createElement('div');
+    content.style.cssText = `
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            /* 隐藏滚动条但保持滚动功能 */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        `;
+    // 隐藏Webkit浏览器的滚动条
+    content.style.cssText += `
+            ::-webkit-scrollbar { display: none; }
+        `;
+    content.innerHTML = `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 14px; color: #64748b;">正在加载使用说明...</div>
+            </div>
+        `;
+
+    // 组装卡片
+    card.appendChild(header);
+    card.appendChild(content);
+    container.appendChild(card);
+    document.body.appendChild(container);
+
+    // 加载外部markdown内容
+    const markdownUrl = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts/花瓣去水印/使用说明.md';
+    fetch(markdownUrl)
+      .then(response => response.text())
+      .then(markdown => {
+        // 动态加载fancybox灯箱库
+        const fancyboxCSS = document.createElement('link');
+        fancyboxCSS.rel = 'stylesheet';
+        fancyboxCSS.href = 'https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css';
+        document.head.appendChild(fancyboxCSS);
+
+        const fancyboxScript = document.createElement('script');
+        fancyboxScript.src = 'https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js';
+
+        // 动态加载轻量级markdown解析库 - Marked.js
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js';
+
+        // 等待所有脚本加载完成
+        Promise.all([
+          new Promise(resolve => fancyboxScript.onload = resolve),
+          new Promise(resolve => script.onload = resolve)
+        ]).then(() => {
+          // 处理相对路径，转换为完整URL
+          const baseUrl = markdownUrl.substring(0, markdownUrl.lastIndexOf('/') + 1);
+
+          // 替换图片的相对路径
+          markdown = markdown.replace(/!\[(.*?)\]\((.*?)\)/g, (match, altText, imgPath) => {
+            // 如果已经是完整URL，则不处理
+            if (imgPath.startsWith('http')) {
+              return match;
+            }
+            // 如果是相对路径，转换为完整URL
+            return `![${altText}](${baseUrl}${imgPath})`;
+          });
+
+          // 替换链接的相对路径
+          markdown = markdown.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, linkPath) => {
+            // 如果已经是完整URL，则不处理
+            if (linkPath.startsWith('http')) {
+              return match;
+            }
+            // 如果是相对路径，转换为完整URL
+            return `[${linkText}](${baseUrl}${linkPath})`;
+          });
+
+          // 使用marked.js解析markdown
+          content.innerHTML = marked.parse(markdown);
+
+          // 添加基本样式
+          content.style.cssText += `
+                  font-size: 14px;
+                  line-height: 1.6;
+                  color: #334155;
+              `;
+
+          // 限制图片宽度不超过容器并添加灯箱功能
+          const images = content.querySelectorAll('img');
+          images.forEach(img => {
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            img.style.cursor = 'pointer';
+
+            // 添加fancybox属性
+            img.setAttribute('data-fancybox', 'gallery');
+            img.setAttribute('data-src', img.src);
+          });
+
+          // 为标题添加样式
+          const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
+          headings.forEach(heading => {
+            heading.style.marginTop = '20px';
+            heading.style.marginBottom = '10px';
+            heading.style.color = '#1e293b';
+          });
+
+          // 为代码块添加样式
+          const codeBlocks = content.querySelectorAll('code, pre');
+          codeBlocks.forEach(code => {
+            code.style.backgroundColor = '#f1f5f9';
+            code.style.padding = '2px 4px';
+            code.style.borderRadius = '4px';
+            code.style.fontFamily = 'monospace';
+          });
+
+          // 为链接添加样式
+          const links = content.querySelectorAll('a');
+          links.forEach(link => {
+            link.style.color = '#3b82f6';
+            link.style.textDecoration = 'none';
+            link.target = '_blank';
+          });
+
+          // 初始化fancybox灯箱
+          if (typeof Fancybox !== 'undefined') {
+            // 先解绑可能存在的绑定
+            Fancybox.unbind('[data-fancybox]');
+
+            // 重新绑定灯箱，让浏览器自动处理层级关系
+            Fancybox.bind('[data-fancybox]', {
+              // 灯箱配置选项
+              Thumbs: false,
+              Toolbar: false,
+              infinite: false,
+              // 确保灯箱显示在最顶层
+              parentEl: document.body
+            });
+          }
+        });
+
+        // 将脚本添加到页面
+        document.head.appendChild(fancyboxScript);
+        document.head.appendChild(script);
+
+        script.onerror = () => {
+          // 如果加载失败，使用简单的文本显示
+          content.innerHTML = `
+                    <div style="white-space: pre-wrap; font-family: monospace; font-size: 14px; line-height: 1.5;">
+                        ${markdown.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                    </div>
+                `;
+        };
+        document.head.appendChild(script);
+      })
+      .catch(error => {
+        content.innerHTML = `
+                <div style="text-align: center; color: #ef4444;">
+                    <div style="font-size: 14px;">加载使用说明失败</div>
+                    <div style="font-size: 12px; margin-top: 8px;">${error.message}</div>
+                </div>
+            `;
+      });
+
+    // 关闭按钮事件
+    const closeButton = header.querySelector('#closeUsageGuide');
+    closeButton.addEventListener('click', () => {
+      container.remove();
+    });
+
+    // 点击外部关闭
+    container.addEventListener('click', (e) => {
+      if (e.target === container) container.remove();
+    });
+
+    // ESC键关闭
+    const escHandler = (e) => {
+      if (e.key === 'Escape') container.remove();
+    };
+    document.addEventListener('keydown', escHandler);
+
+    // 清理事件监听器
+    container.addEventListener('remove', () => {
+      document.removeEventListener('keydown', escHandler);
+    });
+  }
+
+  // 在配置界面创建完成后添加使用说明链接的事件监听
+  function addUsageGuideListener() {
+    const usageGuideLink = document.getElementById('usageGuideLink');
+    if (usageGuideLink) {
+      usageGuideLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showUsageGuide();
+      });
+    }
+  }
+
+  // 修改createConfigUI函数，在创建完成后添加使用说明链接的事件监听
+  const originalCreateConfigUI = createConfigUI;
+  createConfigUI = function () {
+    originalCreateConfigUI();
+    // 延迟一点时间确保DOM已渲染
+    setTimeout(addUsageGuideListener, 100);
+  };
 
   // 启动脚本
   init();
