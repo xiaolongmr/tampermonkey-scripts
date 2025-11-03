@@ -1643,7 +1643,7 @@
     document.body.appendChild(container);
 
     // 加载外部markdown内容
-    const markdownUrl = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts/花瓣去水印/使用说明.md';
+    const markdownUrl = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@master/花瓣去水印/花瓣脚本使用说明.md';
     fetch(markdownUrl)
       .then(response => response.text())
       .then(markdown => {
