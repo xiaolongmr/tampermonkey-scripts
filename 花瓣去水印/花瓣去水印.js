@@ -1643,69 +1643,120 @@
     container.appendChild(card);
     document.body.appendChild(container);
 
-    // 从markdown中提取版本号信息的函数
+    // 从UserScript注释中提取本地版本号
+    function getLocalVersion() {
+      const scriptContent = document.querySelector('script[src*="花瓣去水印"]')?.textContent || '';
+      const versionMatch = scriptContent.match(/@version\s+(\d+\.\d+)/);
+      return versionMatch ? versionMatch[1] : '2.6'; // 默认版本号
+    }
+
+    // 从markdown的YAML front matter中提取版本号
     function extractVersionFromMarkdown(markdown) {
-      // 尝试匹配markdown中的JSON配置块
-      const configRegex = /<!--\s*配置信息开始\s*-->\s*```json\s*([\s\S]*?)\s*```\s*<!--\s*配置信息结束\s*-->/;
-      const match = markdown.match(configRegex);
-      
-      if (match && match[1]) {
-        try {
-          const config = JSON.parse(match[1]);
-          // 只返回版本号信息
-          if (config.version) {
-            console.log('成功从markdown中提取版本号:', config.version);
-            return config.version;
-          }
-        } catch (e) {
-          console.error('解析markdown中的JSON配置失败:', e);
-        }
-      }
-      return null;
+      // 匹配YAML front matter中的version字段
+      const versionMatch = markdown.match(/version:\s*(\d+\.\d+)/);
+      return versionMatch ? versionMatch[1] : null;
     }
 
-    // 比较版本号并提示更新
-    function checkVersionUpdate(latestVersion) {
-      if (!latestVersion) return;
+    // 比较版本号
+    function compareVersions(localVersion, remoteVersion) {
+      if (!remoteVersion) return 0;
       
-      // 获取当前脚本版本号
-      const currentVersion = '2.6'; // 从UserScript注释中获取的版本号
+      const localParts = localVersion.split('.').map(Number);
+      const remoteParts = remoteVersion.split('.').map(Number);
       
-      // 比较版本号
-      if (compareVersions(latestVersion, currentVersion) > 0) {
-        console.log(`检测到新版本: v${latestVersion} (当前版本: v${currentVersion})`);
+      for (let i = 0; i < Math.max(localParts.length, remoteParts.length); i++) {
+        const local = localParts[i] || 0;
+        const remote = remoteParts[i] || 0;
         
-        // 显示更新提示
-        if (confirm(`检测到花瓣去水印脚本的新版本 v${latestVersion}\n当前版本: v${currentVersion}\n\n是否前往更新？`)) {
-          window.open('https://update.greasyfork.org/scripts/554301/%E8%8A%B1%E7%93%A3%E7%9C%9F%E5%81%87PNG.user.js', '_blank');
+        if (remote > local) return 1; // 远程版本更新
+        if (remote < local) return -1; // 本地版本更新
+      }
+      
+      return 0; // 版本相同
+    }
+
+    // 检查版本更新
+    function checkVersionUpdate(remoteVersion) {
+      const localVersion = getLocalVersion();
+      const comparison = compareVersions(localVersion, remoteVersion);
+      
+      console.log(`版本检查: 本地版本 ${localVersion}, 远程版本 ${remoteVersion || '未知'}`);
+      
+      if (comparison === 1) {
+        // 有新版本可用
+        const lastChecked = GM_getValue('lastVersionCheck', 0);
+        const now = Date.now();
+        const day = 24 * 60 * 60 * 1000; // 24小时
+        
+        // 每天只提示一次
+        if (now - lastChecked > day) {
+          GM_setValue('lastVersionCheck', now);
+          
+          // 创建更新提示
+          const updateNotice = document.createElement('div');
+          updateNotice.className = 'huaban-update-notice';
+          updateNotice.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #3b82f6;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            cursor: pointer;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease;
+          `;
+          updateNotice.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 5px;">发现新版本 v${remoteVersion}</div>
+            <div style="font-size: 13px;">点击前往Greasy Fork更新</div>
+          `;
+          
+          // 添加点击事件
+          updateNotice.addEventListener('click', () => {
+            window.open('https://update.greasyfork.org/scripts/554301/%E8%8A%B1%E7%93%A3%E7%9C%9F%E5%81%87PNG.user.js', '_blank');
+            updateNotice.remove();
+          });
+          
+          // 添加关闭按钮
+          const closeBtn = document.createElement('span');
+          closeBtn.textContent = '×';
+          closeBtn.style.cssText = `
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+          `;
+          closeBtn.addEventListener('mouseover', () => closeBtn.style.opacity = '1');
+          closeBtn.addEventListener('mouseout', () => closeBtn.style.opacity = '0.7');
+          closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateNotice.remove();
+          });
+          
+          updateNotice.appendChild(closeBtn);
+          document.body.appendChild(updateNotice);
+          
+          console.log('已显示版本更新提示');
         }
       }
     }
-    
-    // 比较两个版本号的函数
-    function compareVersions(version1, version2) {
-      const v1 = version1.split('.').map(Number);
-      const v2 = version2.split('.').map(Number);
-      
-      for (let i = 0; i < Math.max(v1.length, v2.length); i++) {
-        const num1 = v1[i] || 0;
-        const num2 = v2[i] || 0;
-        
-        if (num1 > num2) return 1;
-        if (num1 < num2) return -1;
-      }
-      
-      return 0;
-    }
 
-    // 加载外部markdown内容以检查版本更新
+    // 加载外部markdown内容
     const markdownUrl = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@master/花瓣去水印/花瓣脚本使用说明.md';
     fetch(markdownUrl)
       .then(response => response.text())
       .then(markdown => {
-        // 提取markdown中的版本号并检查更新
-        const latestVersion = extractVersionFromMarkdown(markdown);
-        checkVersionUpdate(latestVersion);
+        // 从markdown中提取版本号并检查更新
+        const remoteVersion = extractVersionFromMarkdown(markdown);
+        checkVersionUpdate(remoteVersion);
+        
         // 动态加载fancybox灯箱库
         const fancyboxCSS = document.createElement('link');
         fancyboxCSS.rel = 'stylesheet';
