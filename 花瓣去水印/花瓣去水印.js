@@ -28,6 +28,7 @@
     enableCustom: true,
     // 启用自定义背景色
     enableRemoveWatermark: true,
+    // 仅支持花瓣官方素材，不支持第三方素材
     enableDragDownload: true,
     // 启用拖拽下载功能
     enableRightClickDownload: true
@@ -1661,10 +1662,20 @@
         script.src = 'https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js';
 
         // 等待所有脚本加载完成
-        Promise.all([
-          new Promise(resolve => fancyboxScript.onload = resolve),
-          new Promise(resolve => script.onload = resolve)
-        ]).then(() => {
+          Promise.all([
+            new Promise(resolve => fancyboxScript.onload = resolve),
+            new Promise(resolve => script.onload = resolve)
+          ]).then(() => {
+            // 配置marked.js，允许HTML渲染
+            if (typeof marked !== 'undefined') {
+              marked.setOptions({
+                breaks: true,
+                gfm: true,
+                sanitize: false,  // 允许HTML渲染
+                html: true        // 启用HTML解析
+              });
+              console.log('marked.js配置完成，已启用HTML渲染');
+            }
           // 处理相对路径，转换为完整URL
           const baseUrl = markdownUrl.substring(0, markdownUrl.lastIndexOf('/') + 1);
 
