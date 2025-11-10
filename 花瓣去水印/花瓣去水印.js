@@ -1644,7 +1644,9 @@
     document.body.appendChild(container);
 
     // 加载外部markdown内容
-    const markdownUrl = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@master/花瓣去水印/花瓣脚本使用说明.md';
+    // const markdownUrl = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@master/花瓣去水印/花瓣脚本使用说明.md';
+    const markdownUrl = 'http://127.0.0.1:5500/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E8%84%9A%E6%9C%AC%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md';
+    //本地测试使用的markdown内容
     fetch(markdownUrl)
       .then(response => response.text())
       .then(markdown => {
@@ -1656,117 +1658,14 @@
 
         const fancyboxScript = document.createElement('script');
         fancyboxScript.src = 'https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js';
+        document.head.appendChild(fancyboxScript);
 
         // 动态加载轻量级markdown解析库 - Marked.js
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js';
-
-        // 等待所有脚本加载完成
-          Promise.all([
-            new Promise(resolve => fancyboxScript.onload = resolve),
-            new Promise(resolve => script.onload = resolve)
-          ]).then(() => {
-            // 配置marked.js，允许HTML渲染
-            if (typeof marked !== 'undefined') {
-              marked.setOptions({
-                breaks: true,
-                gfm: true,
-                sanitize: false,  // 允许HTML渲染
-                html: true        // 启用HTML解析
-              });
-              console.log('marked.js配置完成，已启用HTML渲染');
-            }
-          // 处理相对路径，转换为完整URL
-          const baseUrl = markdownUrl.substring(0, markdownUrl.lastIndexOf('/') + 1);
-
-          // 替换图片的相对路径
-          markdown = markdown.replace(/!\[(.*?)\]\((.*?)\)/g, (match, altText, imgPath) => {
-            // 如果已经是完整URL，则不处理
-            if (imgPath.startsWith('http')) {
-              return match;
-            }
-            // 如果是相对路径，转换为完整URL
-            return `![${altText}](${baseUrl}${imgPath})`;
-          });
-
-          // 替换链接的相对路径
-          markdown = markdown.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, linkPath) => {
-            // 如果已经是完整URL，则不处理
-            if (linkPath.startsWith('http')) {
-              return match;
-            }
-            // 如果是相对路径，转换为完整URL
-            return `[${linkText}](${baseUrl}${linkPath})`;
-          });
-
-          // 使用marked.js解析markdown
-          content.innerHTML = marked.parse(markdown);
-
-          // 添加基本样式
-          content.style.cssText += `
-                  font-size: 14px;
-                  line-height: 1.6;
-                  color: #334155;
-              `;
-
-          // 限制图片宽度不超过容器并添加灯箱功能
-          const images = content.querySelectorAll('img');
-          images.forEach(img => {
-            img.style.maxWidth = '100%';
-            img.style.height = 'auto';
-            img.style.cursor = 'pointer';
-
-            // 添加fancybox属性
-            img.setAttribute('data-fancybox', 'gallery');
-            img.setAttribute('data-src', img.src);
-          });
-
-          // 为标题添加样式
-          const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
-          headings.forEach(heading => {
-            heading.style.marginTop = '20px';
-            heading.style.marginBottom = '10px';
-            heading.style.color = '#1e293b';
-          });
-
-          // 为代码块添加样式
-          const codeBlocks = content.querySelectorAll('code, pre');
-          codeBlocks.forEach(code => {
-            code.style.backgroundColor = '#f1f5f9';
-            code.style.padding = '2px 4px';
-            code.style.borderRadius = '4px';
-            code.style.fontFamily = 'monospace';
-          });
-
-          // 为链接添加样式
-          const links = content.querySelectorAll('a');
-          links.forEach(link => {
-            link.style.color = '#3b82f6';
-            link.style.textDecoration = 'none';
-            link.target = '_blank';
-          });
-
-          // 初始化fancybox灯箱
-          if (typeof Fancybox !== 'undefined') {
-            // 先解绑可能存在的绑定
-            Fancybox.unbind('[data-fancybox]');
-
-            // 重新绑定灯箱，让浏览器自动处理层级关系
-            Fancybox.bind('[data-fancybox]', {
-              // 灯箱配置选项
-              Thumbs: false,
-              Toolbar: false,
-              infinite: false,
-              // 确保灯箱显示在最顶层
-              parentEl: document.body
-            });
-          }
-        });
-
-        // 将脚本添加到页面
-        document.head.appendChild(fancyboxScript);
         document.head.appendChild(script);
 
+        // 错误处理
         script.onerror = () => {
           // 如果加载失败，使用简单的文本显示
           content.innerHTML = `
@@ -1775,7 +1674,123 @@
                     </div>
                 `;
         };
-        document.head.appendChild(script);
+
+        // 等待所有脚本加载完成
+        Promise.all([
+          new Promise(resolve => fancyboxScript.onload = resolve),
+          new Promise(resolve => script.onload = resolve)
+        ]).then(() => {
+          // 配置marked.js，允许HTML渲染
+          if (typeof marked !== 'undefined') {
+            marked.setOptions({
+              breaks: true,
+              gfm: true,
+              sanitize: false,  // 允许HTML渲染
+              html: true        // 启用HTML解析
+            });
+            console.log('marked.js配置完成，已启用HTML渲染');
+
+            // 处理相对路径，转换为完整URL
+            const baseUrl = markdownUrl.substring(0, markdownUrl.lastIndexOf('/') + 1);
+
+            // 替换图片的相对路径
+            let processedMarkdown = markdown.replace(/!\[(.*?)\]\((.*?)\)/g, (match, altText, imgPath) => {
+              // 如果已经是完整URL，则不处理
+              if (imgPath.startsWith('http')) {
+                return match;
+              }
+              // 如果是相对路径，转换为完整URL
+              return `![${altText}](${baseUrl}${imgPath})`;
+            });
+
+            // 替换链接的相对路径
+            processedMarkdown = processedMarkdown.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, linkPath) => {
+              // 如果已经是完整URL，则不处理
+              if (linkPath.startsWith('http')) {
+                return match;
+              }
+              // 如果是相对路径，转换为完整URL
+              return `[${linkText}](${baseUrl}${linkPath})`;
+            });
+
+            // 使用marked.js解析markdown
+            content.innerHTML = marked.parse(processedMarkdown);
+
+            // 执行已解析的脚本标签（这很重要，确保twikoo脚本能正常执行）
+            const scripts = content.querySelectorAll('script');
+            scripts.forEach(oldScript => {
+              const newScript = document.createElement('script');
+              Array.from(oldScript.attributes).forEach(attr => {
+                newScript.setAttribute(attr.name, attr.value);
+              });
+              newScript.textContent = oldScript.textContent;
+              oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+
+            // 添加基本样式
+            content.style.cssText += `
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #334155;
+                `;
+
+            // 限制图片宽度不超过容器并添加灯箱功能
+            const images = content.querySelectorAll('img');
+            images.forEach(img => {
+              img.style.maxWidth = '100%';
+              img.style.height = 'auto';
+              img.style.cursor = 'pointer';
+
+              // 添加fancybox属性
+              img.setAttribute('data-fancybox', 'gallery');
+              img.setAttribute('data-src', img.src);
+            });
+
+            // 为标题添加样式
+            const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            headings.forEach(heading => {
+              heading.style.marginTop = '20px';
+              heading.style.marginBottom = '10px';
+              heading.style.color = '#1e293b';
+            });
+
+            // 为代码块添加样式
+            const codeBlocks = content.querySelectorAll('code, pre');
+            codeBlocks.forEach(code => {
+              code.style.backgroundColor = '#f1f5f9';
+              code.style.padding = '2px 4px';
+              code.style.borderRadius = '4px';
+              code.style.fontFamily = 'monospace';
+            });
+
+            // 为链接添加样式
+            const links = content.querySelectorAll('a');
+            links.forEach(link => {
+              link.style.color = '#3b82f6';
+              link.style.textDecoration = 'none';
+              link.target = '_blank';
+            });
+
+            // 初始化fancybox灯箱
+            if (typeof Fancybox !== 'undefined') {
+              // 先解绑可能存在的绑定
+              Fancybox.unbind('[data-fancybox]');
+
+              // 重新绑定灯箱，让浏览器自动处理层级关系
+              Fancybox.bind('[data-fancybox]', {
+                // 灯箱配置选项
+                Thumbs: false,
+                Toolbar: false,
+                infinite: false,
+                // 确保灯箱显示在最顶层
+                parentEl: document.body
+              });
+            }
+          } else {
+            console.error('marked.js 未加载成功');
+            content.innerHTML = '<div style="text-align: center; color: #ef4444;">Markdown解析库加载失败</div>';
+          }
+        });
       })
       .catch(error => {
         content.innerHTML = `
