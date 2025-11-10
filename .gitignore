@@ -1,0 +1,35 @@
+# 花瓣去水印脚本相关文件
+花瓣去水印/twikoo.html
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# IDE相关文件
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 日志文件
+*.log
+logs/
+
+# 缓存文件
+.cache/
+node_modules/
+
+# 构建输出
+dist/
+build/
+out/
+
+# 环境变量文件
+.env
+.env.local
+.env.production.local
+.env.development.local
+.env.test.local
