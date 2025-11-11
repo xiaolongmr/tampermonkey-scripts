@@ -1,0 +1,268 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="description" content="致谢名单" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* 自定义滚动条样式 - Webkit浏览器(Chrome, Safari等) */
+    #donorsList::-webkit-scrollbar {
+      width: 4px;
+      /* 滚动条宽度 */
+    }
+
+    #donorsList::-webkit-scrollbar-track {
+      background: #f8f0f0;
+      /* 滚动条轨道背景色 */
+      border-radius: 2px;
+      /* 轨道圆角 */
+    }
+
+    #donorsList::-webkit-scrollbar-thumb {
+      background: #ffb3b3;
+      /* 滚动条滑块颜色 - 粉色调 */
+      border-radius: 2px;
+      /* 滑块圆角 */
+    }
+
+    #donorsList::-webkit-scrollbar-thumb:hover {
+      background: #ff9999;
+      /* 鼠标悬停时滑块颜色 */
+    }
+
+    /* Firefox滚动条样式 */
+    #donorsList {
+      scrollbar-width: thin;
+      /* 滚动条宽度: auto, thin, none */
+      scrollbar-color: #ffb3b3 #f8f0f000;
+      /* 滑块颜色 轨道颜色 */
+    }
+  </style>
+</head>
+
+<body>
+  <div class="relative w-[26.25rem] h-[36.5625rem]">
+    <img src="https://cdn.h5ds.com/space/files/600972551685382144/20251112/912767776417554432.svg"
+      class="absolute left-0 top-0 w-[26.25rem] h-[36.5625rem]" />
+    <div class="absolute left-[1.0625rem] top-[8.4375rem] w-[24.125rem] h-[28.125rem]" style="
+    background: #ffffff7d;
+    border-radius: 24px;
+    backdrop-filter: blur(20px);
+"></div>
+    <div
+      class="absolute left-14 top-[9.75rem] text-center text-base font-['HarmonyOSSansCondensed'] font-bold text-[#fe483f] leading-[1.3125rem] tracking[0.8px]">
+      致谢名单
+    </div>
+    <!-- 感谢语言区域 - 将通过JS动态更新 -->
+    <div id="thanksMessage"
+      class="absolute left-[3.5625rem] top-[11.8125rem] w-[19.125rem] h-[2.125rem] text-left text-xs font-['HarmonyOSSansCondensed'] font-medium text-[#6e6e6e] tracking[0.6000000000000001px]">
+      加载中...
+    </div>
+
+    <!-- 捐赠者列表容器 - 将通过JS动态生成 -->
+    <div class="relative absolute left-7 top-[16.1875rem] w-[22.8125rem] h-[18.5rem]">
+      <!-- 滚动容器 - 包含实际数据内容 -->
+      <div id="donorsList" class="absolute inset-0 overflow-y-auto overflow-x-hidden pr-2">
+        <!-- 捐赠者列表将在这里动态生成 -->
+        <div class="text-center py-10 text-gray-500">加载中...</div>
+      </div>
+      <!-- 底部渐变遮罩 - 放置在滚动容器之上，但不覆盖滚动条区域 -->
+      <div class="absolute left-0 right-[12px] bottom-0 h-16 pointer-events-none" style="
+        background: linear-gradient(to bottom, transparent 0%, rgb(255 251 251) 100%);
+      "></div>
+    </div>
+
+    <img src="https://cdn.h5ds.com/space/files/600972551685382144/20251112/912739448413126656.png"
+      class="absolute left-[17.0625rem] top-[5.75rem] w-[5.125rem] h-[5.125rem]">
+
+    <div
+      class="absolute left-[6.375rem] top-[14.9375rem] text-left text-xs font-['HarmonyOSSansCondensed'] font-bold text-[#191919] leading-4 tracking[0.6000000000000001px]">
+      昵称
+    </div>
+    <div
+      class="absolute left-[14.8125rem] top-[14.9375rem] text-left text-xs font-['HarmonyOSSansCondensed'] font-bold text-[#191919] leading-4 tracking[0.6000000000000001px]">
+      金额
+    </div>
+    <div
+      class="absolute left-[20.1875rem] top-[14.9375rem] text-left text-xs font-['HarmonyOSSansCondensed'] font-bold text-[#191919] leading-4 tracking[0.6000000000000001px]">
+      时间
+    </div>
+
+    <div class="absolute left-[1.0625rem] top-[14.4375rem] w-[24.102928161621122rem] h-[0.0625rem] opacity-[0.41]"
+      style="
+    border: none;
+    background-image: url(&quot;data:image/svg+xml,%3csvg width='7' height='1' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='4' height='1' fill='%23ffc6c4'/%3e%3c/svg%3e&quot;);
+    background-size: 16px 1px;
+    background-repeat: repeat-x;
+    background-position: top;
+    padding: 10px 0;
+"></div>
+  </div>
+
+  <script>
+    // 动态加载和渲染致谢名单数据
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // 从JSON文件获取数据
+        const response = await fetch('致谢名单.json');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        // 更新感谢语言
+        const thanksMessage = document.getElementById('thanksMessage');
+        thanksMessage.textContent = data.致谢名单.感谢语言;
+
+        // 渲染捐赠者列表
+        const donorsList = document.getElementById('donorsList');
+        donorsList.innerHTML = '';
+
+        // 获取捐赠者数据并按时间倒序排序
+        const donors = data.致谢名单.捐赠者;
+        donors.sort((a, b) => new Date(b.时间) - new Date(a.时间));
+
+        // 为每个捐赠者创建HTML元素
+        donors.forEach((donor) => {
+          // 创建捐赠者条目容器
+          const donorItem = document.createElement('div');
+          donorItem.className = 'relative w-full h-[3.8125rem] mb-2 transition-all duration-300 cursor-pointer hover:opacity-[0.8]'; // 添加过渡效果和鼠标指针样式
+
+          // 为容器添加hover事件，当鼠标移入时，让头像也缩放并为背景div添加边框，同时将有链接的昵称变为粉色
+          donorItem.addEventListener('mouseenter', function () {
+            const avatar = this.querySelector('img');
+            const background = this.querySelector('div'); // 获取第一个div（背景div）
+            const linkElement = this.querySelector('a'); // 获取链接元素
+
+            if (avatar) {
+              avatar.classList.add('scale-125');
+            }
+            if (background) {
+              background.classList.add('border-2', 'border-[#ff5252]');
+            }
+            // 鼠标移入数据项时，将链接文字设置为粉色
+            if (linkElement) {
+              linkElement.classList.add('text-[#ff5252]');
+              linkElement.classList.remove('text-black');
+            }
+          });
+
+          // 鼠标移出时，恢复头像原始大小并移除背景div边框，同时恢复链接文字为黑色
+          donorItem.addEventListener('mouseleave', function () {
+            const avatar = this.querySelector('img');
+            const background = this.querySelector('div'); // 获取第一个div（背景div）
+            const linkElement = this.querySelector('a'); // 获取链接元素
+
+            if (avatar) {
+              avatar.classList.remove('scale-125');
+            }
+            if (background) {
+              background.classList.remove('border-2', 'border-[#ff5252]');
+            }
+            // 鼠标移出数据项时，将链接文字恢复为黑色
+            if (linkElement) {
+              linkElement.classList.remove('text-[#ff5252]');
+              linkElement.classList.add('text-black');
+            }
+          });
+
+          // 构建捐赠者条目内容
+          // 检查捐赠者是否有链接，如果有则将昵称显示为可点击的链接
+          let nicknameHtml = '';
+          if (donor.链接 && donor.链接.trim() !== '') {
+            // 有链接时，使用a标签包装昵称，但默认不显示为粉色
+            nicknameHtml = `
+              <a href="${donor.链接}" target="_blank" class="text-black hover:text-[#ff5252] transition-colors duration-300">
+                ${donor.昵称}
+              </a>
+            `;
+          } else {
+            // 无链接时，正常显示昵称
+            nicknameHtml = donor.昵称;
+          }
+
+          donorItem.innerHTML = `
+            <div class="absolute left-0 top-0 w-full h-full opacity-[0.61] transition-all duration-300" style="background: #fff5f4;border-radius: 50px;
+            "></div>
+            <div
+              class="absolute left-[4.625rem] top-[0.8125rem] text-left text-[0.8125rem] font-['HarmonyOSSansCondensed'] font-black text-black leading-[1.0625rem] tracking[0.65px]">
+              ${nicknameHtml}
+            </div>
+            <div
+              class="absolute left-[12.8125rem] top-[0.6875rem] text-left text-sm font-['HarmonyOSSansCondensed'] font-normal text-[#828282] leading-[1.1875rem] tracking[0.7000000000000001px]">
+              ¥${donor.金额}
+            </div>
+            <div
+              class="absolute left-[4.625rem] top-[2.0625rem] text-left text-[0.8125rem] font-['HarmonyOSSansCondensed'] font-normal text-[#6e6e6e] leading-[1.0625rem] tracking[0.65px]">
+              留言：${donor.留言 || '无'}
+            </div>
+            <div
+              class="absolute right-[1.2rem] top-[0.6875rem] text-left text-sm font-['HarmonyOSSansCondensed'] font-normal text-[#bbbbbb] leading-[1.1875rem] tracking[0.7000000000000001px]">
+              ${formatDate(donor.时间)}
+            </div>
+            <img 
+              src="${donor.头像}" 
+              class="absolute left-[0.8125rem] top-[0.8125rem] w-9 h-9 rounded-[2rem] transition-transform duration-300" 
+              alt="${donor.昵称}"
+            >
+          `;
+
+          // 修复链接点击问题，确保点击链接时不被外层容器的事件影响
+          if (donor.链接 && donor.链接.trim() !== '') {
+            const linkElement = donorItem.querySelector('a');
+            if (linkElement) {
+              linkElement.addEventListener('click', function (e) {
+                // 允许链接正常跳转，不阻止默认行为
+                // 这里主要是确保事件冒泡不会影响到正常的点击功能
+                e.stopPropagation(); // 阻止事件冒泡到外层容器
+              });
+            }
+          }
+
+          donorsList.appendChild(donorItem);
+        });
+
+        // 如果没有捐赠者数据
+        if (donors.length === 0) {
+          donorsList.innerHTML = `
+            <div class="w-full text-center text-gray-500 py-10">
+              暂无捐赠记录
+            </div>
+          `;
+        }
+
+      } catch (error) {
+        console.error('加载致谢名单失败:', error);
+        const donorsList = document.getElementById('donorsList');
+        donorsList.innerHTML = `
+          <div class="w-full text-center text-red-500 py-10">
+            加载失败，请刷新页面重试
+          </div>
+        `;
+      }
+    });
+
+    // 格式化日期函数
+    // 规则：如果是今年的日期，只显示月日（MM-DD）；如果不是今年的日期，显示完整日期（YYYY-MM-DD）
+    function formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      const currentYear = new Date().getFullYear();
+      const targetYear = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+
+      // 判断是否是今年的日期
+      if (targetYear === currentYear) {
+        // 今年的日期只显示月日
+        return `${month}-${day}`;
+      } else {
+        // 非今年的日期显示完整年月日
+        return `${targetYear}-${month}-${day}`;
+      }
+    }
+  </script>
+</body>
+
+</html>

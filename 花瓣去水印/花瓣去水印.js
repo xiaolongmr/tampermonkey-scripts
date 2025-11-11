@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         花瓣"去"水印
-// @version      2.6
+// @version      2.71
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -28,6 +28,7 @@
     enableCustom: true,
     // 启用自定义背景色
     enableRemoveWatermark: true,
+    // 仅支持花瓣官方素材去水印功能，第三方素材无效
     enableDragDownload: true,
     // 启用拖拽下载功能
     enableRightClickDownload: true
@@ -754,16 +755,156 @@
             text-align: center;
             background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
         `;
+    // 获取脚本版本号
+    const getScriptVersion = () => {
+      try {
+        return (GM_info && GM_info.script && typeof GM_info.script.version === 'string')
+          ? GM_info.script.version
+          : '未知';
+      } catch (error) {
+        console.warn('获取脚本版本失败:', error);
+        return '未知';
+      }
+    };
+
     header.innerHTML = `
-            <div style="display: flex;gap: 10px;align-items: center;justify-content: center;">
-                <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
-                    花瓣 - 设置首选项
-                </h3>
-                <a href="#" id="usageGuideLink" style="font-size: 12px; color: #94a3b8; text-decoration: none; cursor: pointer;">
-                    使用说明
-                </a>
-            </div>
-        `;
+            <div style="display: flex;gap: 10px;align-items: center;justify-content: space-between; padding: 0 15px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
+                        花瓣 - 设置首选项
+                    </h3>
+                    <sup style="font-size: 10px; color: #94a3b8; font-weight: 400;">
+                        v${getScriptVersion()}
+                    </sup>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <a href="#" id="thanksListLink" style="font-size: 12px; color: #64748b; text-decoration: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;">
+                        致谢名单
+                    </a>
+                    <a href="#" id="usageGuideLink" style="font-size: 12px; color: #64748b; text-decoration: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;">
+                        使用说明
+                    </a>
+                </div>
+            </div>`;
+
+    // 显示致谢名单函数
+    const showThanksList = () => {
+      try {
+        // 创建模态框
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                backdrop-filter: blur(4px);
+            `;
+
+        // 创建容器
+        const container = document.createElement('div');
+        container.style.cssText = `
+                position: relative;
+                width: 420px;
+                height: 585px;
+                max-width: 95vw;
+                max-height: 90vh;
+                overflow: hidden;
+            `;
+
+        // 创建iframe嵌套致谢名单HTML文件
+        const iframe = document.createElement('iframe');
+        iframe.src = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@master/花瓣去水印/致谢名单.html';
+        iframe.style.cssText = `
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                border: none;
+                outline: none;
+            `;
+        iframe.allow = 'autoplay; clipboard-write';
+        iframe.frameBorder = '0';
+
+        // 创建关闭按钮
+        const closeButton = document.createElement('div');
+        closeButton.style.cssText = `
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                width: 30px;
+                height: 30px;
+                background-color: rgba(0, 0, 0, 0.1);
+                border-radius: 50%;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                user-select: none;
+                z-index: 10;
+            `;
+        // 创建SVG关闭图标
+        const closeIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        closeIcon.setAttribute('width', '16');
+        closeIcon.setAttribute('height', '16');
+        closeIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        closeIcon.setAttribute('viewBox', '0 0 1024 1024');
+        closeIcon.setAttribute('fill', 'white');
+
+        // 创建路径
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M198.1 267.7l75.4-75.4 576.3 576.3-75.4 75.4-576.3-576.3zm576.4-69.3l75.4 75.4-580.7 580.8-75.4-75.4 580.7-580.8z');
+
+        // 组装SVG图标
+        closeIcon.appendChild(path);
+        closeButton.appendChild(closeIcon);
+        closeButton.addEventListener('click', () => {
+          document.body.removeChild(modal);
+        });
+        closeButton.addEventListener('mouseenter', () => {
+          closeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
+        });
+        closeButton.addEventListener('mouseleave', () => {
+          closeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+        });
+
+        // 组装模态框
+        container.appendChild(iframe);
+        container.appendChild(closeButton);
+        modal.appendChild(container);
+
+        // 点击模态框背景关闭
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            document.body.removeChild(modal);
+          }
+        });
+
+        // 添加到文档
+        document.body.appendChild(modal);
+
+      } catch (error) {
+        console.error('显示致谢名单失败:', error);
+        alert('无法加载致谢名单，请稍后再试');
+      }
+    };
+
+    // 延迟添加事件监听器，确保DOM已渲染
+    setTimeout(() => {
+      const thanksListLink = document.getElementById('thanksListLink');
+      if (thanksListLink) {
+        thanksListLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          showThanksList();
+        });
+      }
+    }, 0);
 
     // 卡片内容
     const content = document.createElement('div');
@@ -1608,12 +1749,17 @@
             <button id="closeUsageGuide" style="
                 background: none;
                 border: none;
-                font-size: 18px;
-                color: #64748b;
                 cursor: pointer;
                 padding: 4px;
                 border-radius: 4px;
-            ">&times;</button>
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="#64748b">
+                    <path d="M198.1 267.7l75.4-75.4 576.3 576.3-75.4 75.4-576.3-576.3zm576.4-69.3l75.4 75.4-580.7 580.8-75.4-75.4 580.7-580.8z"/>
+                </svg>
+            </button>
         `;
 
     // 卡片内容
@@ -1704,6 +1850,7 @@
             img.style.maxWidth = '100%';
             img.style.height = 'auto';
             img.style.cursor = 'pointer';
+            img.style.borderRadius = '8px';
 
             // 添加fancybox属性
             img.setAttribute('data-fancybox', 'gallery');
@@ -1820,7 +1967,7 @@
   // 启动脚本
   init();
 
-  console.log('花瓣"去"水印 v2. 已加载');
-  console.log('功能：花瓣网背景色自定义+官网素材去水印（完美修复版）');
-  console.log('特点：支持开关状态实时切换，自动恢复原始URL');
+  // console.log('花瓣"去"水印 v${getScriptVersion()} 已加载');
+  // console.log('功能：花瓣网背景色自定义+官网素材去水印（完美修复版）');
+  // console.log('特点：支持开关状态实时切换，自动恢复原始URL');
 })();
