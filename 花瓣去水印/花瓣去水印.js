@@ -819,7 +819,7 @@
 
         // 创建iframe嵌套致谢名单HTML文件
         const iframe = document.createElement('iframe');
-        iframe.src = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@master/花瓣去水印/致谢名单.html';
+        iframe.src = 'https://xiaolongmr.github.io/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%87%B4%E8%B0%A2%E5%90%8D%E5%8D%95.html';
         iframe.style.cssText = `
                 position: absolute;
                 left: 0;
@@ -1805,18 +1805,18 @@
     // 比较版本号
     function compareVersions(localVersion, remoteVersion) {
       if (!remoteVersion) return 0;
-      
+
       const localParts = localVersion.split('.').map(Number);
       const remoteParts = remoteVersion.split('.').map(Number);
-      
+
       for (let i = 0; i < Math.max(localParts.length, remoteParts.length); i++) {
         const local = localParts[i] || 0;
         const remote = remoteParts[i] || 0;
-        
+
         if (remote > local) return 1; // 远程版本更新
         if (remote < local) return -1; // 本地版本更新
       }
-      
+
       return 0; // 版本相同
     }
 
@@ -1824,19 +1824,19 @@
     function checkVersionUpdate(remoteVersion) {
       const localVersion = getLocalVersion();
       const comparison = compareVersions(localVersion, remoteVersion);
-      
+
       console.log(`版本检查: 本地版本 ${localVersion}, 远程版本 ${remoteVersion || '未知'}`);
-      
+
       if (comparison === 1) {
         // 有新版本可用
         const lastChecked = GM_getValue('lastVersionCheck', 0);
         const now = Date.now();
         const day = 24 * 60 * 60 * 1000; // 24小时
-        
+
         // 每天只提示一次
         if (now - lastChecked > day) {
           GM_setValue('lastVersionCheck', now);
-          
+
           // 创建更新提示
           const updateNotice = document.createElement('div');
           updateNotice.className = 'huaban-update-notice';
@@ -1859,13 +1859,13 @@
             <div style="font-weight: bold; margin-bottom: 5px;">发现新版本 v${remoteVersion}</div>
             <div style="font-size: 13px;">点击前往Greasy Fork更新</div>
           `;
-          
+
           // 添加点击事件
           updateNotice.addEventListener('click', () => {
             window.open('https://update.greasyfork.org/scripts/554301/%E8%8A%B1%E7%93%A3%E7%9C%9F%E5%81%87PNG.user.js', '_blank');
             updateNotice.remove();
           });
-          
+
           // 添加关闭按钮
           const closeBtn = document.createElement('span');
           closeBtn.textContent = '×';
@@ -1884,10 +1884,10 @@
             e.stopPropagation();
             updateNotice.remove();
           });
-          
+
           updateNotice.appendChild(closeBtn);
           document.body.appendChild(updateNotice);
-          
+
           console.log('已显示版本更新提示');
         }
       }
@@ -1901,7 +1901,7 @@
         // 从markdown中提取版本号并检查更新
         const remoteVersion = extractVersionFromMarkdown(markdown);
         checkVersionUpdate(remoteVersion);
-        
+
         // 动态加载fancybox灯箱库
         const fancyboxCSS = document.createElement('link');
         fancyboxCSS.rel = 'stylesheet';
