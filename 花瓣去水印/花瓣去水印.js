@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         花瓣"去"水印
-// @version      2.72
+// @version      2.73
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -18,6 +18,18 @@
 
 (function () {
   'use strict';
+
+  // 获取脚本版本号 - 移到全局作用域，确保所有地方都能访问
+  const getScriptVersion = () => {
+    try {
+      return (GM_info && GM_info.script && typeof GM_info.script.version === 'string')
+        ? GM_info.script.version
+        : '未知';
+    } catch (error) {
+      console.warn('获取脚本版本失败:', error);
+      return '未知';
+    }
+  };
 
   // 默认配置
   const DEFAULT_CONFIG = {
@@ -764,17 +776,6 @@
             text-align: center;
             background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
         `;
-    // 获取脚本版本号
-    const getScriptVersion = () => {
-      try {
-        return (GM_info && GM_info.script && typeof GM_info.script.version === 'string')
-          ? GM_info.script.version
-          : '未知';
-      } catch (error) {
-        console.warn('获取脚本版本失败:', error);
-        return '未知';
-      }
-    };
 
     header.innerHTML = `
             <div style="display: flex;gap: 10px;align-items: center;justify-content: space-between; padding: 0 15px;">
@@ -1797,119 +1798,59 @@
     container.appendChild(card);
     document.body.appendChild(container);
 
-    // 从UserScript注释中提取本地版本号
-    function getLocalVersion() {
-      const scriptContent = document.querySelector('script[src*="花瓣去水印"]')?.textContent || '';
-      const versionMatch = scriptContent.match(/@version\s+(\d+\.\d+)/);
-      return versionMatch ? versionMatch[1] : '2.6'; // 默认版本号
-    }
 
-    // 从markdown的YAML front matter中提取版本号
-    function extractVersionFromMarkdown(markdown) {
-      // 匹配YAML front matter中的version字段
-      const versionMatch = markdown.match(/version:\s*(\d+\.\d+)/);
-      return versionMatch ? versionMatch[1] : null;
-    }
+    // 从markdown的YAML front matter中提取所有键值对
+    function extractFrontMatter(markdown) {
+      // 匹配YAML front matter部分
+      const frontMatterMatch = markdown.match(/^---\s*([\s\S]*?)\s*---\s*/);
+      const frontMatter = {};
 
-    // 比较版本号
-    function compareVersions(localVersion, remoteVersion) {
-      if (!remoteVersion) return 0;
+      if (frontMatterMatch && frontMatterMatch[1]) {
+        // 解析每一行的键值对
+        const lines = frontMatterMatch[1].split('\n');
 
-      const localParts = localVersion.split('.').map(Number);
-      const remoteParts = remoteVersion.split('.').map(Number);
+        lines.forEach(line => {
+          // 跳过空行
+          if (!line.trim()) return;
 
-      for (let i = 0; i < Math.max(localParts.length, remoteParts.length); i++) {
-        const local = localParts[i] || 0;
-        const remote = remoteParts[i] || 0;
+          // 匹配键值对格式
+          const match = line.match(/^\s*([\w-]+)\s*:\s*(.+?)\s*$/);
+          if (match) {
+            const key = match[1];
+            let value = match[2];
 
-        if (remote > local) return 1; // 远程版本更新
-        if (remote < local) return -1; // 本地版本更新
+            // 移除可能的引号
+            if ((value.startsWith('"') && value.endsWith('"')) ||
+              (value.startsWith('\'') && value.endsWith('\''))) {
+              value = value.slice(1, -1);
+            }
+
+            frontMatter[key] = value;
+          }
+        });
       }
 
-      return 0; // 版本相同
+      return {
+        frontMatter,
+        // 返回移除front matter后的markdown内容
+        content: frontMatterMatch ? markdown.replace(frontMatterMatch[0], '') : markdown
+      };
     }
 
-    // 检查版本更新
-    function checkVersionUpdate(remoteVersion) {
-      const localVersion = getLocalVersion();
-      const comparison = compareVersions(localVersion, remoteVersion);
 
-      console.log(`版本检查: 本地版本 ${localVersion}, 远程版本 ${remoteVersion || '未知'}`);
 
-      if (comparison === 1) {
-        // 有新版本可用
-        const lastChecked = GM_getValue('lastVersionCheck', 0);
-        const now = Date.now();
-        const day = 24 * 60 * 60 * 1000; // 24小时
-
-        // 每天只提示一次
-        if (now - lastChecked > day) {
-          GM_setValue('lastVersionCheck', now);
-
-          // 创建更新提示
-          const updateNotice = document.createElement('div');
-          updateNotice.className = 'huaban-update-notice';
-          updateNotice.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #3b82f6;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 9999;
-            cursor: pointer;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            font-size: 14px;
-            transition: all 0.3s ease;
-          `;
-          updateNotice.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">发现新版本 v${remoteVersion}</div>
-            <div style="font-size: 13px;">点击前往Greasy Fork更新</div>
-          `;
-
-          // 添加点击事件
-          updateNotice.addEventListener('click', () => {
-            window.open('https://update.greasyfork.org/scripts/554301/%E8%8A%B1%E7%93%A3%E7%9C%9F%E5%81%87PNG.user.js', '_blank');
-            updateNotice.remove();
-          });
-
-          // 添加关闭按钮
-          const closeBtn = document.createElement('span');
-          closeBtn.textContent = '×';
-          closeBtn.style.cssText = `
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-          `;
-          closeBtn.addEventListener('mouseover', () => closeBtn.style.opacity = '1');
-          closeBtn.addEventListener('mouseout', () => closeBtn.style.opacity = '0.7');
-          closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            updateNotice.remove();
-          });
-
-          updateNotice.appendChild(closeBtn);
-          document.body.appendChild(updateNotice);
-
-          console.log('已显示版本更新提示');
-        }
-      }
-    }
 
     // 加载外部markdown内容
     const markdownUrl = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@master/花瓣去水印/花瓣脚本使用说明.md';
     fetch(markdownUrl)
       .then(response => response.text())
       .then(markdown => {
-        // 从markdown中提取版本号并检查更新
-        const remoteVersion = extractVersionFromMarkdown(markdown);
-        checkVersionUpdate(remoteVersion);
+        // 从markdown中提取YAML front matter和内容
+        const { frontMatter, content: markdownContent } = extractFrontMatter(markdown);
+
+        // 保存front matter中的评论配置
+        const commentConfig = frontMatter.comments || null;
+        console.log('解析到的YAML Front Matter:', { comments: commentConfig });
 
         // 动态加载fancybox灯箱库
         const fancyboxCSS = document.createElement('link');
@@ -1933,7 +1874,7 @@
           const baseUrl = markdownUrl.substring(0, markdownUrl.lastIndexOf('/') + 1);
 
           // 替换图片的相对路径
-          markdown = markdown.replace(/!\[(.*?)\]\((.*?)\)/g, (match, altText, imgPath) => {
+          let processedMarkdown = markdownContent.replace(/!\[(.*?)\]\((.*?)\)/g, (match, altText, imgPath) => {
             // 如果已经是完整URL，则不处理
             if (imgPath.startsWith('http')) {
               return match;
@@ -1943,7 +1884,7 @@
           });
 
           // 替换链接的相对路径
-          markdown = markdown.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, linkPath) => {
+          processedMarkdown = processedMarkdown.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, linkPath) => {
             // 如果已经是完整URL，则不处理
             if (linkPath.startsWith('http')) {
               return match;
@@ -1952,8 +1893,8 @@
             return `[${linkText}](${baseUrl}${linkPath})`;
           });
 
-          // 使用marked.js解析markdown
-          content.innerHTML = marked.parse(markdown);
+          // 使用marked.js解析markdown（只解析去除front matter后的内容）
+          content.innerHTML = marked.parse(processedMarkdown);
 
           // 添加基本样式
           content.style.cssText += `
