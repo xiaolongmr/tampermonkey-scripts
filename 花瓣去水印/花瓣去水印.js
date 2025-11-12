@@ -819,7 +819,7 @@
 
         // 创建iframe嵌套致谢名单HTML文件
         const iframe = document.createElement('iframe');
-        iframe.src = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@master/花瓣去水印/致谢名单.html';
+        iframe.src = 'https://xiaolongmr.github.io/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%87%B4%E8%B0%A2%E5%90%8D%E5%8D%95.html';
         iframe.style.cssText = `
                 position: absolute;
                 left: 0;
