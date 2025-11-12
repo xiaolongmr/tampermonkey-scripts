@@ -78,14 +78,14 @@
                 to { transform: rotate(360deg); }
             }
 
-            /* 花瓣素材背景色 */
-            .KKIUywzb[data-material-type="套系素材"] .transparent-img-bg {
+            /* 花瓣素材 背景色 */
+            .KKIUywzb[data-content-type="素材采集"] .transparent-img-bg {
                 background-color: ${config.enableCustom ? config.materialColor : 'transparent'} !important;
                 ${config.enableCustom ? 'background-image:none!important;' : ''}
             }
 
-            /* 用户上传背景色 */
-            .KKIUywzb:not([data-material-type="套系素材"]) .transparent-img-bg,.transparent-img-black-bg {
+            /* 用户上传背景色，非花瓣素材 */
+            .KKIUywzb:not([data-content-type="素材采集"]) .transparent-img-bg,.transparent-img-black-bg {
                 background-color: ${config.enableCustom ? config.userColor : 'transparent'} !important;
                 ${config.enableCustom ? 'background-image:none!important;' : ''}
             }
@@ -179,10 +179,14 @@
 
         // 核心判断逻辑：只处理包含"官方自营"字样的素材
         // 查找包含"官方自营"文本的元素
-        const isOfficialMaterial = Array.from(document.querySelectorAll('.fgsjNg46')).some(element =>
-          element.textContent && element.textContent.includes('官方自营')
-        );
-
+        const isOfficialMaterial =
+          // 原有条件：.fgsjNg46 元素包含“官方自营”文本
+          Array.from(document.querySelectorAll('.fgsjNg46')).some(element =>
+            element.textContent && element.textContent.includes('官方自营')
+          )
+          ||
+          // 新增条件：存在 title="来自官方自营" 的元素
+          document.querySelectorAll('[title="来自官方自营"]').length > 0;
         console.log('素材检查结果 - 是官方自营素材:', isOfficialMaterial);
 
         // 只处理官方自营素材，其他类型的素材一概跳过
@@ -479,10 +483,15 @@
       // 精准匹配：使用 data-button-name="查看大图" 属性
       const img = e.target.closest('img[data-button-name="查看大图"]');
       if (img && img.src.includes('gd-hbimg.huaban.com')) {
-        // 检查是否为官方自营素材
-        const isOfficialMaterial = Array.from(document.querySelectorAll('.fgsjNg46')).some(element =>
-          element.textContent && element.textContent.includes('官方自营')
-        );
+        // 检查是否为官方自营素材（新增 title 选择器，满足任一条件即判定）
+        const isOfficialMaterial =
+          // 原有条件：.fgsjNg46 元素包含“官方自营”文本
+          Array.from(document.querySelectorAll('.fgsjNg46')).some(element =>
+            element.textContent && element.textContent.includes('官方自营')
+          )
+          ||
+          // 新增条件：存在 title="来自官方自营" 的元素
+          document.querySelectorAll('[title="来自官方自营"]').length > 0;
 
         if (isOfficialMaterial) {
           console.log('检测到官方自营素材图片点击:', img.src);
