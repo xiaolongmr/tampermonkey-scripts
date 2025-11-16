@@ -211,26 +211,28 @@
       closeButton.textContent = '×';
       closeButton.style.cssText = `
         position: absolute;
-        top: 10px;
-        right: 10px;
-        background: rgba(0,0,0,0.2);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        font-size: 18px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    top: 14px;
+    right: 14px;
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex
+;
+    align-items: center;
+    justify-content: center;
         z-index: 10;
       `;
 
       // 创建iframe加载外部设置页面
       const settingsIframe = document.createElement('iframe');
       // 恢复为本地服务器URL，确保本地服务器已启动
-      settingsIframe.src = 'http://127.0.0.1:5501/%E8%B1%86%E5%8C%85%E5%8E%BB%E6%B0%B4%E5%8D%B0/svg%20to%20html/%E8%AE%BE%E7%BD%AE%E9%A6%96%E9%80%89%E9%A1%B9.html';
+      // 使用GitHub Pages上的设置界面URL，提高可访问性
+      settingsIframe.src = 'https://xiaolongmr.github.io/tampermonkey-scripts/%E8%B1%86%E5%8C%85%E5%8E%BB%E6%B0%B4%E5%8D%B0/svg%20to%20html/%E8%AE%BE%E7%BD%AE%E9%A6%96%E9%80%89%E9%A1%B9.html';
       // 添加错误处理
       settingsIframe.onerror = function () {
         alert('设置页面加载失败，请确保本地服务器已启动且文件路径正确');
@@ -248,7 +250,7 @@
           settingsIframe.contentWindow.postMessage({
             type: 'INITIAL_SETTINGS',
             settings: currentSettings
-          }, 'http://127.0.0.1:5501');
+          }, 'https://xiaolongmr.github.io');
         } catch (e) {
           console.error('Failed to send initial settings:', e);
         }
@@ -297,7 +299,7 @@
     document.querySelectorAll('img[src*="image_ori"], img[src*="image_preview"], img[src*="image_thumb"]').forEach(img => {
       // 提取原始URL（移除水印参数）
       const rawUrl = img.src.split('?')[0];
-      
+
       // 根据图片类型应用对应设置
       if (img.src.includes('image_ori') && downloadEnabled) {
         img.src = rawUrl;
@@ -317,7 +319,7 @@
     const iframe = document.getElementById('settings-iframe');
     if (iframe && iframe.contentWindow) {
       try {
-        iframe.contentWindow.postMessage({ type: 'SETTING_UPDATED', id, checked }, 'http://127.0.0.1:5501');
+        iframe.contentWindow.postMessage({ type: 'SETTING_UPDATED', id, checked }, 'https://xiaolongmr.github.io');
       } catch (e) {
         console.error('Failed to send setting update:', e);
       }
@@ -335,8 +337,10 @@
   }
 
   // 添加跨域消息通信
+  // 支持GitHub Pages域名的跨域消息通信
   window.addEventListener('message', function (e) {
-    if (e.origin !== 'http://127.0.0.1:5501') return;
+    // 允许来自GitHub Pages和本地服务器的消息，便于开发和生产环境切换
+    if (e.origin !== 'https://xiaolongmr.github.io' && e.origin !== 'http://127.0.0.1:5501') return;
 
     if (e.data.type === 'SETTING_CHANGED') {
       const { id, checked } = e.data;
