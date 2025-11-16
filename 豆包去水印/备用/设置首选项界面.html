@@ -1,0 +1,201 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="description" content="DIY可视化提供技术支持" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+
+  <div class="absolute left-0 top-0 w-[43.1875rem] h-[38.9375rem] rounded-[18px] border border-gray-200 bg-white">
+    <div class="absolute left-2 top-[13.5rem] w-[42.1875rem] h-[20.5625rem]" style="
+    background: #f5f5f5;
+    border-radius: 18px;
+"></div>
+
+    <!-- 这里是设置首选项的功能按钮，点击后跳转不同界面 -->
+    <div class="absolute left-[7.8125rem] top-[1.625rem] w-[25.5625rem] h-[19.125rem]">
+      <div
+        class="absolute left-0 top-[5.8125rem] w-28 h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px]">
+        <div class="text-xs font-['Inter'] font-normal text-[#0057ff]">
+          ⚙️ 设置首选项
+        </div>
+      </div>
+      <div
+        class="absolute left-[17.3125rem] top-[3.375rem] w-[6.5rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px]">
+        <div class="text-xs font-['Inter'] font-normal text-black">
+          🙇‍♂️致谢名单
+        </div>
+      </div>
+      <div
+        class="absolute left-[19.125rem] top-[9.0625rem] w-[6.4375rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px]">
+
+        <div class="text-xs font-['Inter'] font-normal text-black">
+          📑更新日志
+        </div>
+      </div>
+      <div
+        class="absolute left-[18.75rem] top-[6.3125rem] w-[6.5rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px]">
+        <div class="text-xs font-['Inter'] font-normal text-black">
+          🚀 版本 V1.0
+        </div>
+      </div>
+
+      <div
+        class="absolute left-[1.8125rem] top-[2.8125rem] w-[6.5rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px]">
+        <div class="text-xs font-['Inter'] font-normal text-black">
+          👋 脚本说明
+        </div>
+      </div>
+
+      <div
+        class="absolute left-[0.9375rem] top-[8.5625rem] w-[6.4375rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px]">
+
+        <div class="text-xs font-['Inter'] font-normal text-black">
+          🔊讨论说说
+        </div>
+      </div>
+      <img src="https://cdn.h5ds.com/space/files/600972551685382144/20251116/914492633045823488.png"
+        class="absolute left-[3.8125rem] top-0 w-[19.125rem] h-[19.125rem]" />
+    </div>
+
+    <!-- 这里是初始界面——设置首选项的界面，包含一些功能列表。这个界面是随着用户点击设置首选项按钮而显示的，是动态变化的 -->
+    <div>
+      <div class="absolute left-[1.4375rem] top-[20.875rem] w-[41.25rem] h-[2.953125rem]" style="
+    border-bottom: 1px solid #D4D4D4;
+">
+        <div class="absolute left-[3.03125rem] text-left text-base font-['Inter'] font-bold text-black">
+          下载位置
+        </div>
+        <div
+          class="absolute left-[3.03125rem] top-[1.625rem] text-left text-xs font-['Inter'] font-normal text-[#676767]">
+          C:\Users\Administrator\Downloads
+        </div>
+        <img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAmMAAAABCAYAAACSa6kFAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAeSURBVEiJ7cExAQAACAMg7V9vfWYMH2CTdAAA+NADStMEfPMHTa8AAAAASUVORK5CYII="
+          class="absolute left-[3.0625rem] top-[2.984375rem] w-[38.1875rem] h-0">
+        <div class="absolute left-[36.796875rem] top-0 w-[3.92125rem] h-[2.4375rem]">
+          <img
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD8AAAAnCAYAAAC42pApAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAKnSURBVGiB7Zq/a9RgHIc/ed805L27QGlLKF26Hh6U1PYOrnTUpeB8f4AgFCmCbi4FcSmdXFwcnIQ6+WNwLlZvCC05kI4VGrgbMoSjF32vfd9746CVag8H8RJ7yTO+fIfngeTNkK+GIcRxzA4ODu5wzm/FcVw9OzuzpJTasNn/EUqpopRySumbUqn0bmlp6cWwuUtBe3t7D4QQm5OTk5Zt27AsC6ZpYmJiYvTW/wghBKSU6HQ6CIIAUsrPhULhdrVa3b0490u867o7nPNGpVLB1NRUosKj5Pj4GL7vK8MwNuv1+uPz85/xruvuCCEajuOAMZaO5QjhnGN/fx+Msbu1Wu0pABAAcF13nXPeWF5eHstwAGCMwXEcnJycPPE8zwEAEscxi6Joq1KpXKn3+m+wLAvz8/N6FEXbAECazeZGsVi0xukd/xNzc3M4PT294XmeQ5RSa7Ztp+2UGIwx2LYNzvlNIqWsZSke+P74Symvk8FgYOq6nrZPojDGoGnaNSKl1Mb9ovsdXdehlLJI2iJpksdnlTw+q+TxWSWPzyp5fFbJ47NKHp9V8visku14XddjIUTaHokipQSl9AsxDONrv99P2ydRpJRQSnUIIcTr9Xpp+yRKGIZQSn0ghULhVRAEafskhhACQRCgXC6/JouLi8+63W4UhmHaXong+z5M09ydnZ39RDRN65mm+ejw8BCc87TdRkqv10O73R6USqX7wI9P3crKyjZj7GWr1cK43vycc7RaLZimec9xHA/IyGZGp9PB0dGRopRura6uPjw/v7ST47ruehRFW8Vi0bJtG7ZtQ9f1K/XvXgiBfr+PMAzh+z4ope2ZmZlGuVz+eHFu6IZVHMes2WxuKKXWpJS1wWBgXrVtLMMwukqp99PT028XFhaeD5v7BlE4E14oIR1zAAAAAElFTkSuQmCC"
+            class="absolute left-0 top-0 w-[3.92125rem] h-[2.4375rem]">
+          <div class="absolute left-[0.9375rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
+            更改
+          </div>
+        </div>
+        <svg id="组_16" data-name="组 16" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+          <rect id="矩形_5" data-name="矩形 5" width="34" height="34" rx="10" fill="#ff9500" />
+          <path id="路径_4" data-name="路径 4"
+            d="M9.017,12.286a.2.2,0,0,0,.309,0l2.746-3.475a.2.2,0,0,0-.153-.316H10.1V.2A.2.2,0,0,0,9.9,0H8.434a.2.2,0,0,0-.2.2v8.3H6.425a.2.2,0,0,0-.155.316l2.746,3.478Zm9.129-.858H16.676a.2.2,0,0,0-.2.2V15.4H1.864V11.625a.2.2,0,0,0-.2-.2H.2a.2.2,0,0,0-.2.2V16.48a.784.784,0,0,0,.784.784H17.559a.784.784,0,0,0,.784-.784V11.623a.2.2,0,0,0-.2-.2Z"
+            transform="translate(8 8)" fill="#fff" />
+        </svg>
+
+      </div>
+      <div class="absolute left-[1.4375rem] top-[24.4375rem] w-[41.25rem] h-[2.640625rem]" style="
+    border-bottom: 1px solid #D4D4D4;
+">
+        <div
+          class="absolute left-[3.03125rem] top-[0.4375rem] text-left text-base font-['Inter'] font-normal text-black">
+          图片名称格式
+        </div>
+        <svg id="组_15" data-name="组 15" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+          <rect id="矩形_2" data-name="矩形 2" width="34" height="34" rx="10" fill="#06f" />
+          <path id="路径_6" data-name="路径 6"
+            d="M140.1,64a1.166,1.166,0,0,1,.766.282l4.785,4.182a1.008,1.008,0,0,1,.352.756V81.308a2.161,2.161,0,0,1-2.236,2.077H130.236A2.161,2.161,0,0,1,128,81.308V66.077A2.161,2.161,0,0,1,130.236,64Zm-1.18,1.385H130.61a1.087,1.087,0,0,0-1.117.978v14.6A1.076,1.076,0,0,0,130.544,82H143.39a1.088,1.088,0,0,0,1.117-.978V70.231h-3.355a2.161,2.161,0,0,1-2.236-2.077Zm-1.468,6.438a.484.484,0,0,1,.475.388l.01.1v5.538a.483.483,0,0,1-.047.209h.676a.485.485,0,0,1,.1.96l-.1.01h-2.257a.485.485,0,0,1-.1-.96l.1-.01h.706a.481.481,0,0,1-.039-.111l-.01-.1V72.792h-.414a.485.485,0,0,1-.475-.388l-.01-.1a.484.484,0,0,1,.388-.475l.1-.01Zm-.249-2.517a.692.692,0,1,1-.692.692A.692.692,0,0,1,137.2,69.306Zm3.208-3.528v2.03a1.076,1.076,0,0,0,1.052,1.037h2.369Z"
+            transform="translate(-120 -57)" fill="#fff" />
+        </svg>
+
+      </div>
+      <div class="absolute left-[1.4375rem] top-[17.4375rem] w-[41.25rem] h-[2.953125rem]" style="
+    border-bottom: 1px solid #D4D4D4;
+">
+        <div class="absolute left-[3.03125rem] top-2.5 text-left text-base font-['Inter'] font-bold text-black">
+          下载图片格式
+        </div>
+        <img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAmMAAAABCAYAAACSa6kFAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAeSURBVEiJ7cExAQAACAMg7V9vfWYMH2CTdAAA+NADStMEfPMHTa8AAAAASUVORK5CYII="
+          class="absolute left-[3.0625rem] top-[2.984375rem] w-[38.1875rem] h-0">
+        <div class="absolute left-[27.53125rem] top-0 w-[13.1875rem] h-[2.4375rem]" style="
+    border: 1px solid #B8B8B8;
+    border-radius: 10px;
+">
+          <div class="absolute left-[0.9375rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
+            PNG （默认）
+          </div>
+          <img
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAGCAYAAAAVMmT4AAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAABuSURBVBiVdc0xGcMwEIPRPy2BQPF4NAKhDETBDMTEZdBkuzEQMmYshC4ZWn+uVr07TZIaUG3vDCJpBhrwuAEVaJLKH/gCVtvHPTPPiNiAFhFbZp4dfNquANPXl3LNLcDRwx/cHbx7OIykIkmj7gP3Ny7ZZ/qcgwAAAABJRU5ErkJggg=="
+            class="absolute left-[11.587499999999999rem] top-[0.9937499999999986rem] w-[0.604375rem] h-[0.3025rem]">
+        </div>
+        <svg id="组_15" data-name="组 15" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+          <rect id="矩形_2" data-name="矩形 2" width="34" height="34" rx="10" fill="#06f" />
+          <path id="路径_6" data-name="路径 6"
+            d="M140.1,64a1.166,1.166,0,0,1,.766.282l4.785,4.182a1.008,1.008,0,0,1,.352.756V81.308a2.161,2.161,0,0,1-2.236,2.077H130.236A2.161,2.161,0,0,1,128,81.308V66.077A2.161,2.161,0,0,1,130.236,64Zm-1.18,1.385H130.61a1.087,1.087,0,0,0-1.117.978v14.6A1.076,1.076,0,0,0,130.544,82H143.39a1.088,1.088,0,0,0,1.117-.978V70.231h-3.355a2.161,2.161,0,0,1-2.236-2.077Zm-1.468,6.438a.484.484,0,0,1,.475.388l.01.1v5.538a.483.483,0,0,1-.047.209h.676a.485.485,0,0,1,.1.96l-.1.01h-2.257a.485.485,0,0,1-.1-.96l.1-.01h.706a.481.481,0,0,1-.039-.111l-.01-.1V72.792h-.414a.485.485,0,0,1-.475-.388l-.01-.1a.484.484,0,0,1,.388-.475l.1-.01Zm-.249-2.517a.692.692,0,1,1-.692.692A.692.692,0,0,1,137.2,69.306Zm3.208-3.528v2.03a1.076,1.076,0,0,0,1.052,1.037h2.369Z"
+            transform="translate(-120 -57)" fill="#fff" />
+        </svg>
+
+      </div>
+      <div class="absolute left-[1.4375rem] top-[14.25rem] w-[41.25rem] h-[2.765625rem]" style="
+    border-bottom: 1px solid #D4D4D4;
+">
+
+        <div class="absolute left-[27.53125rem] top-0 w-[13.1875rem] h-[2.4375rem]" style="
+    border: 1px solid #B8B8B8;
+    border-radius: 10px;
+">
+          <div class="absolute left-[0.9375rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
+            LauZz方案 (默认)
+          </div>
+          <img
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAGCAYAAAAVMmT4AAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAABuSURBVBiVdc0xGcMwEIPRPy2BQPF4NAKhDETBDMTEZdBkuzEQMmYshC4ZWn+uVr07TZIaUG3vDCJpBhrwuAEVaJLKH/gCVtvHPTPPiNiAFhFbZp4dfNquANPXl3LNLcDRwx/cHbx7OIykIkmj7gP3Ny7ZZ/qcgwAAAABJRU5ErkJggg=="
+            class="absolute left-[11.587499999999999rem] top-[0.9937500000000004rem] w-[0.604375rem] h-[0.3025rem]">
+        </div>
+        <svg id="组_17" data-name="组 17" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+          <rect id="矩形_2" data-name="矩形 2" width="34" height="34" rx="10" fill="#27ce6e" />
+          <path id="路径_7" data-name="路径 7"
+            d="M108.4,79.131a3.173,3.173,0,1,0,3.173-3.173A3.173,3.173,0,0,0,108.4,79.131ZM118.406,68.76a6.291,6.291,0,0,1,2.412.474,3.17,3.17,0,0,1-4.825,0A6.3,6.3,0,0,1,118.406,68.76Zm2.435,12.223a.008.008,0,0,0,0,0,6.382,6.382,0,0,1-4.879,0s0,0,0,.007a4.773,4.773,0,0,1-.86,1.346,7.962,7.962,0,0,0,6.607,0A4.725,4.725,0,0,1,120.841,80.983Zm-6.82-11.955c-.06-.141-.112-.283-.156-.426a7.933,7.933,0,0,0-3.372,5.893,4.777,4.777,0,0,1,1.083-.124c.174,0,.347.01.521.027a6.256,6.256,0,0,1,.459-1.758,6.369,6.369,0,0,1,1.361-2.021,6.709,6.709,0,0,1,.682-.593A4.66,4.66,0,0,1,114.02,69.028Zm8.928-.426c-.045.144-.1.285-.156.426a4.774,4.774,0,0,1-.575,1,6.414,6.414,0,0,1,.682.593,6.342,6.342,0,0,1,1.361,2.021,6.277,6.277,0,0,1,.459,1.758,4.952,4.952,0,0,1,.508-.027,4.727,4.727,0,0,1,1.093.126A7.923,7.923,0,0,0,122.948,68.6Zm-7.715-1.428A3.173,3.173,0,1,0,118.406,64,3.173,3.173,0,0,0,115.233,67.173ZM108.4,79.131a3.173,3.173,0,1,0,3.173-3.173A3.173,3.173,0,0,0,108.4,79.131Zm20,0A3.173,3.173,0,1,1,124.7,76a3.182,3.182,0,0,1,1.582.134,3.174,3.174,0,0,1,2.122,2.995Z"
+            transform="translate(-101.4 -57)" fill="#fff" />
+        </svg>
+
+        <div class="absolute left-[3.03125rem] top-[0.4375rem] text-left text-base font-['Inter'] font-bold text-black">
+          去水印方案
+        </div>
+      </div>
+      <div class="absolute left-[1.4375rem] top-[27.6875rem] w-[41.25rem] h-[2.734375rem]" style="
+    border-bottom: 1px solid #D4D4D4;
+">
+        <div
+          class="absolute left-[3.03125rem] top-[0.40625rem] text-left text-base font-['Inter'] font-bold text-black">
+          分享脚本给好友
+        </div>
+        <svg id="组_20" data-name="组 20" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+          <rect id="矩形_2" data-name="矩形 2" width="34" height="34" rx="10" fill="#ff3b30" />
+          <path id="路径_8" data-name="路径 8"
+            d="M103.046,139.048a1.239,1.239,0,0,1-.8-.281c-.191-.158-4.863-3.771-6.732-6.709a7.4,7.4,0,0,1-1.475-4.154,5.44,5.44,0,0,1,5.178-5.651,5.044,5.044,0,0,1,3.827,1.824,4.95,4.95,0,0,1,3.816-1.824,5.432,5.432,0,0,1,5.178,5.651,7.292,7.292,0,0,1-1.452,4.12l-.023.034c-1.869,2.938-6.54,6.563-6.732,6.709a1.249,1.249,0,0,1-.788.281Z"
+            transform="translate(-86.041 -113.253)" fill="#fff" />
+        </svg>
+
+      </div>
+      <div class="absolute left-[1.4375rem] top-[30.9375rem] w-[7.03125rem] h-[2.125rem]">
+        <svg id="组_20" data-name="组 20" xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+          <rect id="矩形_2" data-name="矩形 2" width="34" height="34" rx="10" fill="#06f" />
+          <path id="路径_9" data-name="路径 9"
+            d="M11.708,13.035a.63.63,0,0,1-.63.63H6.818a.634.634,0,0,1,0-1.268h1.5V6.885H7.26a.634.634,0,0,1,0-1.268H8.947a.63.63,0,0,1,.63.63V12.4h1.5a.63.63,0,0,1,.63.63Zm-2.76-9.8a.63.63,0,1,1-.63.63A.63.63,0,0,1,8.947,3.24ZM9,0a9,9,0,1,0,9,9A9,9,0,0,0,9,0Z"
+            transform="translate(8 8)" fill="#fff" />
+        </svg>
+        <div class="absolute left-[3.03125rem] top-1.5 text-left text-base font-['Inter'] font-bold text-black">
+          关于脚本
+        </div>
+
+
+      </div>
+    </div>
+
+    <!-- 页脚注释 -->
+    <div class="absolute left-[7.76rem] top-[37.40625rem] text-left text-xs font-['Inter'] font-normal text-[#676767]">
+      脚本仅供个人学习测试使用，请在下载后24小时内删除，不得用于商业用途，否则后果自负
+    </div>
+  </div>
+</body>
+
+</html>

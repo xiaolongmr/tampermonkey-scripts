@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="211" height="149.339" viewBox="0 0 211 149.339">
+  <g id="下载图片格式下拉列表" transform="translate(-3083.5 -231)">
+    <g id="背景" transform="translate(3083.5 231)" fill="#f6f5f5" stroke="#a7a7a7" stroke-width="1">
+      <rect width="211" height="149.339" rx="10" stroke="none"/>
+      <rect x="0.5" y="0.5" width="210" height="148.339" rx="9.5" fill="none"/>
+    </g>
+    <g id="png" transform="translate(41.437 -374.75)">
+      <rect id="矩形_3" data-name="矩形 3" width="192.127" height="39" rx="6" transform="translate(3051.5 614.75)" fill="#ecebeb"/>
+      <text id="PNG_默认_" data-name="PNG  (默认)" transform="translate(3062.5 640.75)" font-size="16" font-family="SegoeUI, Segoe UI"><tspan x="0" y="0" xml:space="preserve">PNG  (</tspan><tspan y="0" font-family="YuGothicUI-Regular, Yu Gothic UI">默</tspan><tspan y="0" font-family="MicrosoftJhengHeiUIRegular, Microsoft JhengHei UI">认</tspan><tspan y="0">)</tspan></text>
+      <path id="路径_2" data-name="路径 2" d="M3211.582,581.216l3.434,3.219,7.774-7.774" transform="translate(0 55)" fill="none" stroke="#3e3e3e" stroke-width="1"/>
+    </g>
+    <g id="webp" transform="translate(41.437 -328.75)">
+      <rect id="矩形_3-2" data-name="矩形 3" width="192.127" height="39" rx="6" transform="translate(3051.5 614.75)" fill="#ecebeb" opacity="0"/>
+      <text id="WEBP_默认_" data-name="WEBP  (默认)" transform="translate(3062.5 640.75)" font-size="16" font-family="SegoeUI, Segoe UI"><tspan x="0" y="0" xml:space="preserve">WEBP  (</tspan><tspan y="0" font-family="YuGothicUI-Regular, Yu Gothic UI">默</tspan><tspan y="0" font-family="MicrosoftJhengHeiUIRegular, Microsoft JhengHei UI">认</tspan><tspan y="0">)</tspan></text>
+      <path id="路径_2-2" data-name="路径 2" d="M3211.582,581.216l3.434,3.219,7.774-7.774" transform="translate(0 55)" fill="none" stroke="#3e3e3e" stroke-width="1" opacity="0"/>
+    </g>
+    <g id="jpg" transform="translate(41.437 -282.75)">
+      <rect id="矩形_3-3" data-name="矩形 3" width="192.127" height="39" rx="6" transform="translate(3051.5 614.75)" fill="#ecebeb" opacity="0"/>
+      <text id="JPG_" data-name="JPG " transform="translate(3062.5 640.75)" font-size="16" font-family="SegoeUI, Segoe UI"><tspan x="0" y="0">JPG </tspan></text>
+      <path id="路径_2-3" data-name="路径 2" d="M3211.582,581.216l3.434,3.219,7.774-7.774" transform="translate(0 55)" fill="none" stroke="#3e3e3e" stroke-width="1" opacity="0"/>
+    </g>
+  </g>
+</svg>

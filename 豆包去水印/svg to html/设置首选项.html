@@ -1,0 +1,373 @@
+<!doctype html>
+<html>
+
+<head>
+  <!-- 文件作用: 豆包去水印脚本的设置首选项界面 -->
+  <!-- 使用的库: Tailwind CSS, Font Awesome Pro -->
+  <meta charset="utf-8" />
+  <meta name="description" content="豆包去水印脚本设置界面" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://font.onmicrosoft.cn/font6pro@6.7.1/css/all.min.css">
+  <style>
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-6px);
+      }
+    }
+
+    .animate-float {
+      animation: float 6s ease-in-out infinite;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 主容器: 设置界面主窗口 -->
+  <div class="relative w-[36.4375rem] h-[39.4375rem] overflow-hidden bg-white">
+    <div class="absolute left-0 top-0 w-[36.4375rem] h-[39.4375rem]" style="
+    border: 1px solid #e7e7e7;
+    border-radius: 28px;
+">
+      <div
+        class="absolute left-[4.4375rem] top-[37.90625rem] text-left text-[0.6875rem] font-['Inter'] font-normal text-[#676767]">
+        脚本仅供个人学习测试使用，请在下载后24小时内删除，不得用于商业用途，否则后果自负
+      </div>
+      <div class="absolute left-2 top-[1.625rem] w-[35.45124816894531rem] h-[34.9375rem]">
+        <div class="absolute left-0 top-[11.875rem] w-[35.45125rem] h-[23.0625rem]" style="
+    background: #F5F5F5;
+    border-radius: 18px;
+">
+          <div class="absolute left-[0.9375rem] top-3 w-[34.51375rem] h-[21.5625rem]">
+            <div class="absolute left-0 top-[19.4375rem] w-[7.03125rem] h-[2.125rem]">
+              <div class="absolute left-[3.03125rem] top-1.5 text-left text-base font-['Inter'] font-bold text-black">
+                关于脚本
+              </div>
+              <img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiCAYAAAA6RwvCAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAFESURBVFiF7dixasJAGMDx/3eDIPUJxLFP4JME97q1Y8Wt+ATdpLoZyFA3B/VJxAfoKKHOWgSh+TqcNnq1BMTklvznC/eD5A6+CJfqapUtLSBAaAINoHJxbXbfwCewJGFGwoRINu4i+fPYoz4gvAL1KzfOao3SI5Tof8iTvgHPOQHOU4aE8rtXCikSkTZgJJ0UYl/He8EIm9ImlLHQ1SpffJDfN5FVzB335nA6fCEA6mxpGSDwiDgWmMM94TehabCXle8ahutvzFtWMb4Fx0qIWwlxKyFuJcSthLiVEDeDnTt8tzfY4cd3KwMsfStQFoaEmW8HMDckTIC1R0RMjakhkg1KzxtDeaEvO3t8Q4lQhh4YA0IZw+k9YgfiQaGIw9x7DgEYSQelDcQ5AmKU9ikCLv0fgVv/qNkDK5QFMKfGlL7s3EU/8sJTJ4Aqol4AAAAASUVORK5CYII="
+                class="absolute left-0 top-0 w-[2.125rem] h-[2.125rem]" /><img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAADvSURBVDiNrZRtbcQwEERnjeAgGEIgmEFbBoVQJgchEK4MnCJoGLgMUgavP7yntjk7yUk3kuVI0T7PfthSQ0AERiADi68CnIHUimkBMvvKQNyClAOQqxZgaEGWTsAZuHT+lX/O2E7nc8dpliSjFi83sv2WNPmeJLVrUvUit95zEoET8LbhCGAMflpLg6Qi6dldbWkIO5aPKoYDpx3So0BfQdL8ANAsYOh04gK8eueif/cGMwUzm1Xn5cau70m/nW2VYTKzGs/99+yqwvryeor3wJYbyB/Y0WdkXEOsA0ySnlSnWpJOXrNJ0oeZva9jfgBCzz+2+AeuFAAAAABJRU5ErkJggg=="
+                class="absolute left-2 top-2 w-[1.125rem] h-[1.125rem]" />
+            </div>
+            <div class="absolute left-0 top-[16.1875rem] w-[34.51375rem] h-[2.734375rem]">
+              <div
+                class="absolute left-[3.03125rem] top-[0.40625rem] text-left text-base font-['Inter'] font-bold text-black">
+                分享脚本给好友
+              </div>
+              <img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfgAAAABCAYAAAAywrwaAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAgSURBVDiNY7xy5cp/hlEwCkbBKBgFo2AUDBvAyMhoAQB0vwO4SzmFXQAAAABJRU5ErkJggg=="
+                class="absolute left-[3.0625rem] top-[2.765625rem] w-[31.45125rem] h-0" /><img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiCAYAAAA6RwvCAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAFaSURBVFiF7dixasJQFIDh/5xByCuIY3fBzeJDiHt9g+pafIKu6t6hbg7WhzBmEzMKHSXoLBgQ6ulgKzZaAqK5S/7twoH7QcKFe4ULWbXqoXEDo45QwSghFC7NpidfYCuMOSIfsB2Kv9icTZ0hHstPiLwCxes2Tm2NWEcm4du/EKuVu5i07gRIZH3xw+Ne6gYBIM9WK3ePKzh+jvfsECeZNWUaDuTnx/zkfv9EWhF770HRuOEQAVBE44Zi1B0iDhl1Rai4diBUFKPk2oFR0utPzBsmFDR9KptySLIckiyHJMshyXJIshySTA/3DscZOwVbuXYgLBVj7tqBMdPDNdBxwlhhOwTWDhkRe2+k4i82iHWcMcxeJAhiBThciK2fOUKsJ9NwACfniPhhC7FepohJ2P5d/jnQZBK2MWsC0R0JEWbNUwRceB+BGz/UGDuEJcYMYczeG0kQxMmxbz1YeNkLIO77AAAAAElFTkSuQmCC"
+                class="absolute left-0 top-0 w-[2.125rem] h-[2.125rem]" /><img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAARCAYAAAA/mJfHAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAC7SURBVDiNrZRdFYMwDEa/ogAJSEACEpCAk0lAAhImYXOAhM5BJdw9kHEYK3/t7mPbc5s0SSUDqIABGIEA3IF2sd/ZWgA80AOV1gCtHYjRA7eNvbC8UEBpi6n4OUK7OZdBkgpJzU/e16klyQFBUplrc865QtIrV/Rx/Ev2lDT3Vy7NrGVq1lQeXzFadD5BFNiYgjpBVm++ItP8naU7LIsJj8brWLRKOSYMu6ntCNdF8cQe+4KwZPoIhjOiN5qZjG7FPr/sAAAAAElFTkSuQmCC"
+                class="absolute left-[0.4993749999999999rem] top-[0.5625rem] w-[1.125625rem] h-[1.05rem]" />
+            </div>
+            <div class="absolute left-0 top-[12.9375rem] w-[34.51375rem] h-[2.640625rem]">
+              <div
+                class="absolute left-[3.03125rem] top-[0.4375rem] text-left text-base font-['Inter'] font-bold text-black">
+                图片命名格式
+              </div>
+              <img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiCAYAAAA6RwvCAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAF7SURBVFiF7dixSsNAGMDx/3exBTehW1Hi4ODsk9SC3ewiVBftKn0CV+1UBwe7RUhKH0R8AJeiFDsUhA6Vkvg5VKWe1Yra3pL/duHgfpDwwUWYUrBzt9yPk6InUlDYAl0FyU7b+4MS4AH0RiHKxE/BXntzYG8S+8F5sbMLnCjkf3nw9yk9QWuVaP3iS0hju3OKcDQXwCcP9YPQfz/LuEAACBw2tjunE+vx61C4XBTCApUrod+UYOdu+TF5vp3bNzEb0l3xzIbpx0nRFQJAId+Pk6LxRAquEG95IgUznhNuU9gy42HlOl01f5iY/5hkzexNiymF2KUQuxRil0LsUohdCrEzjO8djtORAR5cM0DuDeiNcwZcG4XINSRRbZlM/BSg9FwhBLq5JS80e+3NgaA1VxDguHS1NjQAlWj9QqG+cIJyVgn9Jji8hKOc7Ud+9W35YaDtR35VoCzQndf5Al2B8iTi9fnn/vdHjY5A7gWuE9VWbskLS1drQ3vXC7GOgHsk/cibAAAAAElFTkSuQmCC"
+                class="absolute left-0 top-0 w-[2.125rem] h-[2.125rem]" /><img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAARCAYAAADpPU2iAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAB7SURBVCiR5ZLBDYNADAR3EQVcB9BBWkgppBM6ogVKoARKSAeTjy+5nHgALyRG2oe9trSybADtxLZbSWvRS6HMO7QNMPDPUM80e+NceKGVJKCPOlV+yp7tVZIMJElTDPShzKLfWV956cttzgo8i7qr/Efp25595r3HI5E+vgBGqCq+V7AAAAAASUVORK5CYII="
+                class="absolute left-[0.6875rem] top-[0.5625rem] w-[0.69rem] h-[1.035rem]" /><img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfgAAAABCAYAAAAywrwaAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAgSURBVDiNY7xy5cp/hlEwCkbBKBgFo2AUDBvAyMhoAQB0vwO4SzmFXQAAAABJRU5ErkJggg=="
+                class="absolute left-[3.0625rem] top-[2.671875rem] w-[31.45125rem] h-0" />
+            </div>
+            <div class="absolute left-0 top-[9.375rem] w-[34.51375rem] h-[2.953125rem]">
+              <div class="absolute left-[3.03125rem] top-1 text-left text-base font-['Inter'] font-bold text-black">
+                下载位置
+              </div>
+              <div
+                class="absolute left-[3.03125rem] top-[1.625rem] text-left text-xs font-['Inter'] font-normal text-[#676767]">
+                C:\Users\Administrator\Downloads
+              </div>
+              <img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfgAAAABCAYAAAAywrwaAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAgSURBVDiNY7xy5cp/hlEwCkbBKBgFo2AUDBvAyMhoAQB0vwO4SzmFXQAAAABJRU5ErkJggg=="
+                class="absolute left-[3.0625rem] top-[2.984375rem] w-[31.45125rem] h-0" />
+              <div class="absolute left-[30.060625rem] top-0 w-[3.92125rem] h-[2.4375rem]">
+                <img
+                  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAD8AAAAnCAYAAAC42pApAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAIxSURBVGiB7ZpBbtpQEIb/GSQErHwE36BwgtAVPLwIPkGSE1BOEHGCtCcoPYHNwn5iRW8Q5wY+gncYJN50kQdKUlhULXbB/iRvrFn8/9ObeYv5CSeI43jMzLcAugBcAM6p2v+QzH6hiCyUUj+PFdHHH1rreyJ6BJCIyMIYk2y329T3/ey8ev8dQRA4rVbLYeY7ERkDyHa73dTzvORt3Tvzy+XyUUTuReTh1GldInEcf2HmiYjMlFLz/f+DeWt8LCK+UiotQ+Q50Vq7RLQyxkxHo1EIWPO2v5/W63Xvkq73nxJFUbfRaKxEpKeUShkAmPlJRB6u2TgAeJ6XENFXO9NAdsDdDYfDz2WLKwJ7/Z9FpMdEdGOMWZQtqijsPAsB9BlAn4jCciUVizHmhYg+MQAnz/Or7vUjpABcBuBc+6D7CBFlABwuW0iZ1OarSm2+qtTmq0ptvqrU5qtKbb6q1OarSm2+qlTefBYEwSUtIf8aEXEAZAwgbTabbsl6CoWIDuYTZu6WLahI7K7ihY0xCyK6LVtQUdgWH282mznbjWVXa90vWVchdDqdCYDQ9/2MAUBEZkT0XWvtlivtvERR1LX5gxlgnzql1JyI5kQUXOvk11q7jUYjMMZM9/mDwzs/GAxmRBS22+3na2sBu4leGWO+7YMJwJFMzj6oACC1wzDM8zy7pJVWEAROs9l0iajPzBMAqY3apG/rfjO/x57WDYA+XpNYl9QOGV6XkYmI/DiVL/oFldXwT8iTxpEAAAAASUVORK5CYII="
+                  class="absolute left-0 top-0 w-[3.92125rem] h-[2.4375rem]" />
+                <div
+                  class="absolute left-[0.9375rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
+                  更改
+                </div>
+              </div>
+              <img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiCAYAAAA6RwvCAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAHzSURBVFiF7Zi/SxtRHMA/32cwdFAKOtlAIzhkqiXQrYv9BxrdDZn1MOpScWq3Tv5sVwt1c9CMbjrYqSDq7JBBDwUH4QSJIM/hXU0470y8l3gU/CyPx33v+z7c+3H3PSEEvcAr0owBBSCPJoPQHRbbArfAGXAAbHHFhnzBCwbJA4kfjCN8BwZiDvw4mnNgXhzWIkX0T5aBqY4IPBRaFac+1r3Is0rUWZFJyvci/nT8fmYJg6YoDuviL8xjOrUmmuNSY0j5uyMpCYAB0owpzBZNmoIC8lYpPu/AhIaerE2WvEKTsRJpB5qMsjgx24fQrZJ2+MeLSJAXkSCp2HfmStDzFnqzpj9chtolHC2b9onEfyIXB/Dha/0gezdt2hgS9iJ7M/X+6S78/RY7XXORT7/g42L4taMlOFwCrwrbo+ExgwWTo/+9pUiuBNlH3ot/ZqAyEj0l/cMmR5+tSCt4VesU/9n2Tb828xyHJmujUeQW6IqM8Kpmi+ZK8UQa80ShuUlhip83kUGVEduPHoO7G31NOElhKrBoEa/alsXYhH0FbHV6lBaoKK7Y8MvApHCpsan8gng+MQ3NnMxyrQDEYQ3NagIaK+KwDkkW4Q11LwROVpmkjKYIuB0UcNEUGyUg5P8ItPlHjeYG4QTYByrU2JRZroNhd60JhIMdXYhJAAAAAElFTkSuQmCC"
+                class="absolute left-0 top-[0.53125rem] w-[2.125rem] h-[2.125rem]" />
+            </div>
+            <div class="absolute left-0 top-[5.9375rem] w-[34.51375rem] h-[2.953125rem]">
+              <div class="absolute left-[3.03125rem] top-2.5 text-left text-base font-['Inter'] font-bold text-black">
+                下载图片格式
+              </div>
+              <img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfgAAAABCAYAAAAywrwaAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAgSURBVDiNY7xy5cp/hlEwCkbBKBgFo2AUDBvAyMhoAQB0vwO4SzmFXQAAAABJRU5ErkJggg=="
+                class="absolute left-[3.0625rem] top-[2.984375rem] w-[31.45125rem] h-0" />
+              <div class="absolute left-[20.795rem] top-0 w-[13.1875rem] h-[2.4375rem]" style="
+    border: 1px solid #B8B8B8;
+    border-radius: 10px;
+">
+                <div
+                  class="absolute left-[0.9375rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
+                  PNG （默认）
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="10.381" height="5.898" viewBox="0 0 10.381 5.898"
+                  class="absolute left-[11.587499999999999rem] top-[0.9937500000000004rem] w-[0.604375rem] h-[0.3025rem]">
+                  <path id="路径_1" data-name="路径 1" d="M1740.406,613.9l4.837,4.837,4.837-4.837"
+                    transform="translate(-1740.052 -613.549)" fill="none" stroke="#707070" stroke-width="1"></path>
+                </svg>
+              </div>
+              <img
+                src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiCAYAAAA6RwvCAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAJhSURBVFiF7Zg/TBNRHMc/79KQtDKcwQklaYzBtXHDRYyjGisDmwUGO9p0M0RjuxAXUykDkSYVZOsATehKohMbdCYqJJJGBuIZ8Bqb0OfwWktre3f0+scYP8tdk+9779P363vXd4JmRKWXEyaAIIIbwBVgoGnWnlPgK5CnzDplMqTFcWNI/NHssXyE4CUw3ObAdhwimSUl0q1FwnIeeNIlgXokC6TE77FqIr2UqJFkSURqIqoc73osoZCESIlVQVR6+cFHuvebsKPABa5pldXRLwmAYU6Y8ABBq1RgBN5OqasT9o/g9it1PQdBQVh+Aq62Suw8A90H85tgmK170n2QmFT3hgkzK5DNOxb5LAjLn1hsVvINxDYgnrPuyT8Ee3MQzcCDAIyPOmtXoaRZSbSDYarSvN6E2H14cc9RswFPxwSKSiJyB/JfVCl1r5LxX4KZZev2mlsB/5D61oapZiEwAjvPVZmmb6rM9Jh9P65nRPfB96K6j+dgZUvJVZkaqwl1VcQwYXmr9nn/qH7p3hp11o/r0iQm1RJ3i2uRh4vuJaADIp3iv0gj/4aI7oNvCbVvuF05rvYRw4SLUXcCVf6q0pxaBQwTxq/Xb9tO0X0QDFj/j6lQ8qAOP5dbJaqP872584tUiW3YRg48QN5KJJ6DD7vtzQio5877XZuQZNtDmXU07lrlbDtyT1ajTAY47PpQrSkwyJpGWhwjme2bhuQpCVFUyzcl0kgW+qCRJCVW4ew+og7EyZ5KVM699SIASyKCJAQUuihQQBI6KwHN3o9Ap1/UlIADJNtAlkHWSIhiY+gXTGiy7OsqwO4AAAAASUVORK5CYII="
+                class="absolute left-0 top-[0.1875rem] w-[2.125rem] h-[2.125rem]" />
+            </div>
+            <div class="absolute left-[8.625rem] top-12 flex space-x-8 items-center" style="
+    padding: 10px;
+    background: #ffffff;
+    border-radius: 10px;
+    width: 402px;
+">
+              <!-- 下载去水印选项 -->
+              <label class="flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" id="download-watermark"
+                  data-storage-key="download-watermark">
+                <div
+                  class="w-5 h-5 border-2 border-gray-300 rounded-full peer-checked:border-4 peer-checked:border-blue-500 transition-colors">
+                </div>
+                <span class="ml-2 text-sm font-['Inter'] text-black">下载去水印</span>
+              </label>
+
+              <!-- 大图去水印选项 -->
+              <label class="flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" id="large-watermark" data-storage-key="large-watermark">
+                <div
+                  class="w-5 h-5 border-2 border-gray-300 rounded-full peer-checked:border-4 peer-checked:border-blue-500 transition-colors">
+                </div>
+                <span class="ml-2 text-sm font-['Inter'] text-black">大图去水印</span>
+              </label>
+
+              <!-- 预览去水印选项 -->
+              <label class="flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" id="preview-watermark" data-storage-key="preview-watermark">
+                <div
+                  class="w-5 h-5 border-2 border-gray-300 rounded-full peer-checked:border-4 peer-checked:border-blue-500 transition-colors">
+                </div>
+                <span class="ml-2 text-sm font-['Inter'] text-black">预览去水印</span>
+              </label>
+            </div>
+            <div class="absolute left-[2.875rem] top-[3.75rem] text-left text-sm font-['Inter'] font-bold text-black">
+              去水印开关
+            </div>
+            <img
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfgAAAABCAYAAAAywrwaAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAgSURBVDiNY7xy5cp/hlEwCkbBKBgFo2AUDBvAyMhoAQB0vwO4SzmFXQAAAABJRU5ErkJggg=="
+              class="absolute left-[3.0625rem] top-[2.796875rem] w-[31.45125rem] h-0" />
+
+
+            <div class="absolute left-[20.795rem] top-0 w-[13.1875rem] h-[2.4375rem]" style="
+    border: 1px solid #B8B8B8;
+    border-radius: 10px;
+">
+              <div class="absolute left-[0.9375rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
+                LauZz方案 (默认)
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10.381" height="5.898" viewBox="0 0 10.381 5.898"
+                class="absolute left-[11.587499999999999rem] top-[0.9937500000000004rem] w-[0.604375rem] h-[0.3025rem]">
+                <path id="路径_1" data-name="路径 1" d="M1740.406,613.9l4.837,4.837,4.837-4.837"
+                  transform="translate(-1740.052 -613.549)" fill="none" stroke="#707070" stroke-width="1"></path>
+              </svg>
+            </div>
+
+            <img
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiCAYAAAA6RwvCAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAFzSURBVFiF7dixSsNAGMDx/3eKIJl1kHQT3W/2IUp3+wZauolP4CZN9g5269D2SULXFDdLsHUstSAtn0O11KNSkTa35L9dOLgfJHyQEzYUvtSPg/G8gkgZwaKEwNGmvdtS1YWIvKpqX8R0eZ+006vmxN0n7oOL5PZa4AE4+8/BW2EwEvQ+tXHzV8hlUmuA3u4DsAEUD2y0Osv4QAAI3CzPXK1Xr+MpL8R6CtWBjVoSvtSPg7fFM3v6Jv5QNj05ODfBeF7xiAA4C8bzikGk7BGxTKRsEKxvB4I1X8PKb0po+OfE3HFHZvuefCogbgXErYC4FRC3AuJWQNyMqi58I4APIyKvvhUIQ6Oqfd8OlMSImK5vB6o9w/ukrTDyyMimp4cdk141J4Le+1Io3A1LjzMDkNq4qRDnz5BoYKMWrM2R5Q+xRHkiUtuofa9+DLTUNmoKVSDboyBTqK4jYMP9COz2ogb4QBiiJKj2pqeHnWHpceZu+gQAWYD5lLzn4gAAAABJRU5ErkJggg=="
+              class="absolute left-0 top-0 w-[2.125rem] h-[2.125rem]" /><img
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAEJSURBVDiNnZRhbcMwEIVP0QAYQiAEQiEUQiF0CAyhGoJC2IogZVAIHoOMwbcfe9aule3afVIUO3fvxfd8tlkDQABOQAI2IAKhxWlCYo84vyoWCmIZ1VVODc1WaWNlA7PeSSu6+bHP6RGLQNI4+PI09z+Lz8SOvcYDZ+UeawlBrZF6WkP52Ya5lBAV3D0Tc5y9OIdS8BPYesUcLwFrnr+52MXMPkYFzezdRttoGPJvkx9rT48Bs2ziroXcZnikDsFU4MVaoLnbwK7CSZPVDX3F6DCZ2Vch8GNm1wbxW88jrtnc1S87l6vvK3/H7KRxPud7t5GZ918VsHjfuL+tM24SDy5nAZYRX4bwCxv11+PwAImhAAAAAElFTkSuQmCC"
+              class="absolute left-[0.4375rem] top-[0.4375rem] w-5 h-[1.190625rem]" />
+            <div
+              class="absolute left-[3.03125rem] top-[0.4375rem] text-left text-base font-['Inter'] font-bold text-black">
+              去水印方案
+            </div>
+          </div>
+        </div>
+
+        <!-- 顶部高级导航栏 -->
+        <div class="absolute left-[4.9375rem] top-0 w-[25.5625rem] h-[auto]">
+          <a href="#"
+            class="absolute left-0 top-[5.8125rem] w-28 h-[1.625rem] flex items-center justify-center bg-[#0057ff0f] border-[1.5px] border-[#0057ff26] rounded-[50px] animate-float text-xs font-['Inter'] font-normal text-blue-600 transition-all duration-300 hover:bg-[#0057ff0f] hover:text-blue-700 hover:border-blue-600"
+            style="animation-delay: 0s;">
+            ⚙️ 设置首选项
+          </a>
+          <a href="#"
+            class="absolute left-[17.3125rem] top-[3.375rem] w-[6.5rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px] animate-float text-xs font-['Inter'] font-normal text-gray-700 transition-all duration-300 hover:bg-[#0057ff0f] hover:text-blue-600 hover:border-[#0057ff26]"
+            style="animation-delay: 0.1s;">
+            🙇‍♂️ 致谢名单
+          </a>
+          <a href="#"
+            class="absolute left-[19.125rem] top-[9.0625rem] w-[6.4375rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px] animate-float text-xs font-['Inter'] font-normal text-gray-700 transition-all duration-300 hover:bg-[#0057ff0f] hover:text-blue-600 hover:border-[#0057ff26]"
+            style="animation-delay: 0.2s;">
+            📑 更新日志
+          </a>
+          <a href="#"
+            class="absolute left-[18.75rem] top-[6.3125rem] w-[6.5rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px] animate-float text-xs font-['Inter'] font-normal text-gray-700 transition-all duration-300 hover:bg-[#0057ff0f] hover:text-blue-600 hover:border-[#0057ff26]"
+            style="animation-delay: 0.3s;">
+            🚀 版本 V1.0
+          </a>
+          <a href="#"
+            class="absolute left-[1.8125rem] top-[2.8125rem] w-[6.5rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px] animate-float text-xs font-['Inter'] font-normal text-gray-700 transition-all duration-300 hover:bg-[#0057ff0f] hover:text-blue-600 hover:border-[#0057ff26]"
+            style="animation-delay: 0.4s;">
+            👋 脚本说明
+          </a>
+          <a href="#"
+            class="absolute left-[0.9375rem] top-[8.5625rem] w-[6.4375rem] h-[1.625rem] flex items-center justify-center bg-gray-100 border-[1.5px] border-gray-200 rounded-[50px] animate-float text-xs font-['Inter'] font-normal text-gray-700 transition-all duration-300 hover:bg-[#0057ff0f] hover:text-blue-600 hover:border-[#0057ff26]"
+            style="animation-delay: 0.5s;">
+            🔊 讨论说说
+          </a>
+          <img src="https://cdn.h5ds.com/space/files/600972551685382144/20251117/914596156886687744.png"
+            class="absolute left-[8.125rem] top-0 w-[19.125rem] h-[19.125rem]" style="
+    width: 162px;
+    height: 162px;
+    top: 32px;
+" />
+
+          <img
+            src="https://gss0.baidu.com/7Po3dSag_xI4khGko9WTAnF6hhy/zhidao/pic/item/09fa513d269759ee02b0a766b0fb43166c22dfbf.jpg"
+            class="absolute left-[9.125rem] top-0 w-[19.125rem] h-[19.125rem]" style="
+    width: 62px;
+    height: 62px;
+    top: 24px;
+    mix-blend-mode: screen; /* 滤色模式核心属性 */
+     /* 兼容 Safari/Chrome 旧版 */
+    left: 184px;
+  ">
+          <img
+            src="https://gss0.baidu.com/7Po3dSag_xI4khGko9WTAnF6hhy/zhidao/pic/item/09fa513d269759ee02b0a766b0fb43166c22dfbf.jpg"
+            class="absolute left-[9.125rem] top-0 w-[19.125rem] h-[19.125rem]" style="
+      width: 62px;
+      height: 62px;
+      top: 100px;
+      mix-blend-mode: screen; /* 滤色模式核心属性 */
+       /* 兼容 Safari/Chrome 旧版 */
+      left: 231px;
+    ">
+        </div>
+        <!-- 顶部高级导航栏结束 -->
+
+      </div>
+
+      <!-- 关闭按钮 -->
+      <!-- <svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38"
+        class="absolute left-[33rem] top-4 w-[2.375rem] h-[2.375rem]">
+        <g id="关闭按钮" transform="translate(-1856 -2094)">
+          <circle id="椭圆_2" data-name="椭圆 2" cx="19" cy="19" r="19" transform="translate(1856 2094)" fill="#f5f5f5" />
+          <g id="组_72" data-name="组 72">
+            <line id="直线_7" data-name="直线 7" x2="13.397" y2="13.397" transform="translate(1868.801 2106.801)"
+              fill="none" stroke="#7e7e7e" stroke-width="2" />
+            <line id="直线_8" data-name="直线 8" x2="13.397" y2="13.397" transform="translate(1882.199 2106.801) rotate(90)"
+              fill="none" stroke="#7e7e7e" stroke-width="2" />
+          </g>
+        </g>
+      </svg> -->
+      <!-- 关闭按钮结束 -->
+
+    </div>
+  </div>
+  <script>
+    // 统一管理去水印设置的双向同步
+    document.addEventListener('DOMContentLoaded', function () {
+      // 获取所有去水印选项复选框
+      const checkboxes = [
+        { id: 'download-watermark', element: document.getElementById('download-watermark') },
+        { id: 'large-watermark', element: document.getElementById('large-watermark') },
+        { id: 'preview-watermark', element: document.getElementById('preview-watermark') }
+      ];
+
+      // 初始化复选框状态
+      function initCheckboxes() {
+        checkboxes.forEach(({ id, element }) => {
+          if (!element) return;
+
+          // 从GM存储加载状态，本地测试时使用localStorage
+          const isGM = typeof GM_getValue !== 'undefined';
+          const savedValue = isGM ?
+            GM_getValue(id, true) :
+            JSON.parse(localStorage.getItem(`watermark-${id}`)) ?? true;
+
+          element.checked = savedValue;
+        });
+      }
+
+      // 保存复选框状态到存储
+      function saveCheckboxState(id, checked) {
+        if (typeof GM_setValue !== 'undefined') {
+          GM_setValue(id, checked);
+          // 同时更新localStorage以便本地测试页面同步
+          localStorage.setItem(`watermark-${id}`, JSON.stringify(checked));
+        } else {
+          localStorage.setItem(`watermark-${id}`, JSON.stringify(checked));
+        }
+      }
+
+      // 绑定复选框事件监听器
+      function bindCheckboxEvents() {
+        checkboxes.forEach(({ id, element }) => {
+          if (element) {
+            element.addEventListener('change', () => {
+              saveCheckboxState(id, element.checked);
+              // 通知主脚本设置已更改
+              if (window.parent !== window) {
+                try {
+                  window.parent.postMessage({
+                    type: 'SETTING_CHANGED',
+                    id, checked: element.checked
+                  }, '*');
+                } catch (e) {
+                  console.error('Failed to send setting change:', e);
+                }
+              }
+            });
+          }
+        });
+      }
+
+      // 初始化并绑定事件
+      initCheckboxes();
+      bindCheckboxEvents();
+
+      // 监听本地存储变化，实现页面间同步
+      // 监听来自主脚本的消息
+      window.addEventListener('message', (e) => {
+        // 允许主脚本域名和本地服务器域名的消息
+        if (!['https://www.doubao.com', 'http://127.0.0.1:5501'].includes(e.origin)) return;
+
+        // 处理设置同步消息
+        if (e.data.type === 'INITIAL_SETTINGS') {
+          Object.entries(e.data.settings).forEach(([id, value]) => {
+            const checkbox = checkboxes.find(item => item.id === id);
+            if (checkbox?.element) {
+              checkbox.element.checked = value;
+            }
+          });
+        }
+      });
+
+      window.addEventListener('storage', (e) => {
+        if (e.key.startsWith('watermark-')) {
+          const id = e.key.replace('watermark-', '');
+          const checkbox = checkboxes.find(item => item.id === id);
+          if (checkbox?.element) {
+            checkbox.element.checked = JSON.parse(e.newValue);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="description" content="DIY可视化提供技术支持" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+  <div class="relative w-[13.1875rem] h-[9.33375rem] overflow-hidden bg-white">
+    <div class="absolute left-0 top-0 w-[13.1875rem] h-[9.33375rem]">
+      <img
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANMAAACWCAYAAABEkr0GAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAATESURBVHic7drPa9t1HMfxdz75fpOmaUfcd2mLWXcYG0g9dBZbSmjLzkUYIgy8eJgedUeHNy/qP+ClF3fYSQTdGNjLRo+eRm23jmDmILim3a+6LB1Lvv1+8/WglTG6ifJiWdzzcUzegdflSUKSlO1heXm5UK/XTyWdzjvtMJwOwzC31x3wqshms62+bPZK2vPOj42NfTM6Orr19E3q6QcuXbp0uvHgwReD+/YNHDp0yIrFomV839Lp9ItZDbxk4ji2MAzt7r17VqvV7NH29vaBYvGzubm5r5+8+zumhYUFf3h4+LznefPHxsdt//79L3410APu379vP6+sWJIkF1qt1nsnT56Mzczc7sHw8PD5fD4/Pzc7S0jAcwRBYHOzs9bX13eiv7//u93HnZnZjxcvfuqcm5+anDTP87q3EugRvu/b1OSkxVH07tLlyx+bmbnV1dXXHrVan7917Jj5vt/tjUDPyGQyNj4+bg8ajS83NzfzrlarfRQEQS4Igm5vA3rO0NCQ5QcGBtfW1k65OI7fP1gqdXsT0LMOlkr2+PHjE25nZ+dN3pWA/y4IAuvE8ZSLoiiTzWa7vQfoWX25nLXDcMCZmTnn/ukewDP4nmdRFKWoCBAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRIgJECEmQISYABFiAkSICRAhJkCEmAARYgJEiAkQISZAhJgAEWICRFwqlbIkSbq9A+hZnU7HzMyc53lxq93u8hygd7XbbfN9P3JZ39/Ybja7vQfoWc1m03zf/83FSXJhY2Oj23uAnlX/s5/v3cjIyNlb6+vGRz3g32u1Wlav15MgCM666enpK77v/3Dt2rVu7wJ6zurVq9aXzX47MzOz5szMisXiJ3fu3Ln7682b3d4G9IxqtWpbW1v110ul02Z//c5ULpfXc7ncfKVSaVYqFb4qB54jSRJbu37dfqlWfy8UCvMTExN3zcxSTx4tLS290Wg0zqXT6bePHjlipVLJ0ul0dxYDL5koiuzW+rrdqFYt5dxPQRB8UC6Xb+w+n9rrRYuLix+GYXhmZ2fnaKFQsEwmY87xZwm8mjqdjoXttjUePkwymUxlcHDwq+PHj597+m7PmHatrKwM3b59ez6KogNJkjz3Fvi/SqVSST6f3zh8+PDi6Ojo1rPu/gC+9At1shCWawAAAABJRU5ErkJggg=="
+        class="absolute left-0 top-0 w-[13.1875rem] h-[9.33375rem]" />
+      <div class="absolute left-[0.59rem] top-[0.5625rem] w-[12.008125rem] h-[2.4375rem]">
+        <img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMEAAAAnCAYAAAC2XywDAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAGGSURBVHic7d0/alRRGIbx9z1zZ/BPN5cLIwyWSWMhugXFLZglCC4glaBb0D2kygZcREAQhZQS5k6RDFiI3uHOfDbRJcyBfM+vPc3bPMU5zbFurVarB9Pp9I2l1xHxxPY9AXeE7W3s95e2z38Pw8flcnnz/0ySNpvN4/1u91nScbWVwOFcuZRXbdt+kySv1+uHzWRyIemo8jDgkPqQnndd15emad6KAJDPI0nvJKk44qTyGKAKSycRUXxzfT1ExKz2IKAKe1kIAJk14zgrtUcAtREB0iMCpEcESI8IkB4RID0iQHpEgPSIAOkRAdIjAqRHBEiPCJAeESA9IkB6RID0iADpEQHSIwKkRwRIjwiQHhEgPSJAekSA9IgA6REB0iu2t7VHALXMmmZbFPG99hCgkp/327YvYZ/VXgLUENKZ7X0Zx/GTpMvag4AD6yV9kKSyWCx+lcnkpQgBeVy5lBdd1/XS7evQfD7/Me52z2SfWvrCZRl3je2tIr5aev9nGJ7++7RPkv4CFtJYyuBsCdAAAAAASUVORK5CYII="
+          class="absolute left-0 top-0 w-[12.008125rem] h-[2.4375rem]" />
+        <div
+          class="absolute left-[0.6875000000000001rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
+          PNG 默认)
+        </div>
+        <img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAJCAYAAAAGuM1UAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAABuSURBVBiVlc7RDYMwDEXRa2cQsogjdwPYoBuUDTpCR2CVjNJFLPGDEKoaCO/7XOkJnTOzp4gMcgO/VfVxGRxxrfV7GvxiAHV378UAGhEvM1t6MIBsYAFySmmKiLGF9wCglPIBRoAW/vd7dvd8ZlZZUyznoIfgAgAAAABJRU5ErkJggg=="
+          class="absolute left-[10.005rem] top-[1.056875rem] w-[0.700625rem] h-[0.485625rem]" />
+      </div>
+      <div class="absolute left-[0.59rem] top-[3.4375rem] w-[12.008125rem] h-[2.4375rem]">
+        <img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMEAAAAnCAYAAAC2XywDAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAA0SURBVHic7cEBDQAAAMKg909tDwcUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMCtAXXDAAHtZRREAAAAAElFTkSuQmCC"
+          class="absolute left-0 top-0 w-[12.008125rem] h-[2.4375rem] opacity-[0]" />
+        <div
+          class="absolute left-[0.6875000000000001rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
+          WEBP 默认)
+        </div>
+        <img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAJCAYAAAAGuM1UAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAOSURBVBiVY2AYBUMSAAABuQAB8BBnUwAAAABJRU5ErkJggg=="
+          class="absolute left-[10.005rem] top-[1.0568749999999998rem] w-[0.700625rem] h-[0.485625rem] opacity-[0]" />
+      </div>
+      <div class="absolute left-[0.59rem] top-[6.3125rem] w-[12.008125rem] h-[2.4375rem]">
+        <img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMEAAAAnCAYAAAC2XywDAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAA0SURBVHic7cEBDQAAAMKg909tDwcUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMCtAXXDAAHtZRREAAAAAElFTkSuQmCC"
+          class="absolute left-0 top-0 w-[12.008125rem] h-[2.4375rem] opacity-[0]" />
+        <div
+          class="absolute left-[0.6875000000000001rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
+          JPG
+        </div>
+        <img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAJCAYAAAAGuM1UAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAOSURBVBiVY2AYBUMSAAABuQAB8BBnUwAAAABJRU5ErkJggg=="
+          class="absolute left-[10.005rem] top-[1.0568749999999998rem] w-[0.700625rem] h-[0.485625rem] opacity-[0]" />
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -97,7 +97,7 @@
             }
 
             /* 用户上传背景色，非花瓣素材 */
-            .KKIUywzb:not([data-content-type="素材采集"]) .transparent-img-bg,.transparent-img-black-bg {
+            .KKIUywzb:not([data-content-type="素材采集"]) .transparent-img-bg,.transparent-img-black-bg,.transparent-img-bg {
                 background-color: ${config.enableCustom ? config.userColor : 'transparent'} !important;
                 ${config.enableCustom ? 'background-image:none!important;' : ''}
             }
