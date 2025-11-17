@@ -5,40 +5,121 @@
   <meta charset="utf-8" />
   <meta name="description" content="DIY可视化提供技术支持" />
   <script src="https://cdn.tailwindcss.com"></script>
+
 </head>
 
 <body>
-  <div class="relative w-[13.1875rem] h-[6.20875rem] overflow-hidden bg-white">
-    <div class="absolute left-0 top-0 w-[13.1875rem] h-[6.20875rem]">
-      <img
-        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANMAAABkCAYAAAAcyAUUAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAQgSURBVHic7drPa9t1HMfxdz75fvOjaUfsd2mKWXooG0g9dBZbSmhLz0EYIhS8eJgedUeHNy/qP+ClF3fYSQTtGNhLR4+eRm3XjmDmILimv9baLB1Nvv1+8/WglVG6ivJm333d83FM3oHX5UlCkpicYmlpKVuv168Gnc47bdcdd103fdod8KpIJpOtVDJ5N25Zc0NDQ98Ui8W9kzexkw8sLCxca+zvf9Fz7lz3wMCA5HI5Sdi2xOPxF7MaeMn4vi+u68rO48dSq9Xk6cHBwflc7rOpqamvn737O6bZ2Vk7n8/PWZZVvjw8LL29vS9+NRABu7u78vPysgRBcKvVar03MzPji4iY44N8Pj+XyWTKU5OThAScwXEcmZqclFQqdaWrq+u748eNiMiPt29/aowpj42OimVZ4a0EIsK2bRkbHRXf895dvHPnYxERs7Ky8trTVuvzty5fFtu2w94IREYikZDh4WHZbzS+3NzczJharfaR4zhpx3HC3gZETl9fn2S6u3vW1tauGt/3379QKIS9CYisC4WCHB4eXjFHR0dv8q4E/HeO40jH98eM53mJZDIZ9h4gslLptLRdt9uIiBhj/ukewHPYliWe58WoCFBCTIASYgKUEBOghJgAJcQEKCEmQAkxAUqICVBCTIASYgKUEBOghJgAJcQEKCEmQAkxAUqICVBCTIASYgKUEBOghJgAJcQEKCEmQAkxAUqICVBCTIASYgKUEBOghJgAJcQEKCEmQAkxAUqICVBCTIASYgKUEBOghJgAJcQEKCEmQAkxAUqICVBCTIASYgKUEBOghJgAJcQEKCEmQAkxAUqICVBCTIASYgKUEBOghJgAJcQEKCEmQAkxAUqICVBCTIASYgKUEBOghJgAJcQEKCEmQAkxAUqICVBCTIASYgKUEBOghJgAJcQEKCEmQAkxAUqICVBCTIASYgKUEBOghJgAJcQEKDGxWEyCIAh7BxBZnU5HRESMZVl+q90OeQ4QXe12W2zb9kzStjcOms2w9wCR1Ww2xbbt34wfBLc2NjbC3gNEVv3Pfr43/f39Nx6trwsf9YB/r9VqSb1eDxzHuWHGx8fv2rb9w+rqati7gMhZuXdPUsnktxMTE2tGRCSXy32yvb298+vDh2FvAyKjWq3K3t5e/fVC4ZrIX78zlUql9XQ6Xa5UKs1KpcJX5cAZgiCQtfv35Zdq9fdsNlseGRnZERGJPXu0uLj4RqPRuBmPx9++dPGiFAoFicfj4SwGXjKe58mj9XV5UK1KzJifHMf5oFQqPTh+Pnbai+bn5z90Xff60dHRpWw2K4lEQozhzxJ4NXU6HXHbbWk8eRIkEolKT0/PV9PT0zdP3p0a07Hl5eW+ra2tsud554MgOPMW+L+KxWJBJpPZGBwcnC8Wi3vPu/sDOxILEVJPLKoAAAAASUVORK5CYII="
-        class="absolute left-0 top-0 w-[13.1875rem] h-[6.20875rem]" />
-      <div class="absolute left-[0.59rem] top-[0.5625rem] w-[12.008125rem] h-[2.4375rem]">
-        <img
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMEAAAAnCAYAAAC2XywDAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAGGSURBVHic7d0/alRRGIbx9z1zZ/BPN5cLIwyWSWMhugXFLZglCC4glaBb0D2kygZcREAQhZQS5k6RDFiI3uHOfDbRJcyBfM+vPc3bPMU5zbFurVarB9Pp9I2l1xHxxPY9AXeE7W3s95e2z38Pw8flcnnz/0ySNpvN4/1u91nScbWVwOFcuZRXbdt+kySv1+uHzWRyIemo8jDgkPqQnndd15emad6KAJDPI0nvJKk44qTyGKAKSycRUXxzfT1ExKz2IKAKe1kIAJk14zgrtUcAtREB0iMCpEcESI8IkB4RID0iQHpEgPSIAOkRAdIjAqRHBEiPCJAeESA9IkB6RID0iADpEQHSIwKkRwRIjwiQHhEgPSJAekSA9IgA6REB0iu2t7VHALXMmmZbFPG99hCgkp/327YvYZ/VXgLUENKZ7X0Zx/GTpMvag4AD6yV9kKSyWCx+lcnkpQgBeVy5lBdd1/XS7evQfD7/Me52z2SfWvrCZRl3je2tIr5aev9nGJ7++7RPkv4CFtJYyuBsCdAAAAAASUVORK5CYII="
-          class="absolute left-0 top-0 w-[12.008125rem] h-[2.4375rem]" />
-        <div
-          class="absolute left-[0.6875000000000001rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
-          LauZz方案 (默认)
-        </div>
-        <img
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAJCAYAAAAGuM1UAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAABuSURBVBiVlc7RDYMwDEXRa2cQsogjdwPYoBuUDTpCR2CVjNJFLPGDEKoaCO/7XOkJnTOzp4gMcgO/VfVxGRxxrfV7GvxiAHV378UAGhEvM1t6MIBsYAFySmmKiLGF9wCglPIBRoAW/vd7dvd8ZlZZUyznoIfgAgAAAABJRU5ErkJggg=="
-          class="absolute left-[10.005rem] top-[1.056875rem] w-[0.700625rem] h-[0.485625rem]" />
-      </div>
-      <div class="absolute left-[0.59rem] top-[3.4375rem] w-[12.008125rem] h-[2.4375rem]">
-        <img
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMEAAAAnCAYAAAC2XywDAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAA0SURBVHic7cEBDQAAAMKg909tDwcUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMCtAXXDAAHtZRREAAAAAElFTkSuQmCC"
-          class="absolute left-0 top-0 w-[12.008125rem] h-[2.4375rem] opacity-[0]" />
-        <div
-          class="absolute left-[0.6875000000000001rem] top-2.5 text-left text-base font-['Inter'] font-normal text-black">
-          拼接方案（爱吃馍）
-        </div>
-        <img
-          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAJCAYAAAAGuM1UAAAAAXNSR0IArs4c6QAAAARzQklUCAgICHwIZIgAAAAOSURBVBiVY2AYBUMSAAABuQAB8BBnUwAAAABJRU5ErkJggg=="
-          class="absolute left-[10.005rem] top-[1.0568749999999998rem] w-[0.700625rem] h-[0.485625rem] opacity-[0]" />
-      </div>
+  <!-- 去水印方案下拉列表组件 -->
+  <div class="relative w-64 mt-4 ml-4">
+    <!-- 下拉按钮 -->
+    <button id="dropdown-button"
+      class="w-full bg-white border border-gray-200 rounded-lg py-3 px-4 text-left shadow-sm hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 flex items-center justify-between">
+      <span id="selected-option" class="font-medium text-gray-900">LauZz方案 (默认)</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-500 transition-transform duration-200 chevron-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+      </svg>
+    </button>
+
+    <!-- 下拉菜单 -->
+    <div id="dropdown-menu"
+      class="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 hidden" style="
+    border-radius: 12px;
+">
+      <ul class="py-1" style="
+    padding: 10px;
+">
+        <li>
+          <button
+            class="dropdown-option w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors duration-150 flex items-center justify-between"
+            data-value="lauzz" style="
+    border-radius: 8px;
+">
+            <span>LauZz方案 (默认)</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500 check-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </li>
+        <li>
+          <button
+            class="dropdown-option w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors duration-150 flex items-center justify-between"
+            data-value="aichimo" style="
+    border-radius: 8px;
+">
+            <span>拼接方案（爱吃馍）</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500 hidden check-icon" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </li>
+      </ul>
     </div>
   </div>
+
+  <script>
+    // 下拉菜单交互逻辑
+    document.addEventListener('DOMContentLoaded', function () {
+      const dropdownButton = document.getElementById('dropdown-button');
+      const dropdownMenu = document.getElementById('dropdown-menu');
+      const selectedOption = document.getElementById('selected-option');
+      const options = document.querySelectorAll('.dropdown-option');
+      const chevronIcon = dropdownButton.querySelector('.chevron-icon');
+
+      // 检测Tampermonkey API是否可用
+      const hasTampermonkey = typeof GM_getValue !== 'undefined' && typeof GM_setValue !== 'undefined';
+
+      // 从存储加载保存的选项
+      const savedOption = hasTampermonkey ? GM_getValue('watermark_removal_option', 'lauzz') : localStorage.getItem('watermark_removal_option') || 'lauzz';
+      updateSelectedOption(savedOption);
+
+      // 切换下拉菜单显示/隐藏
+      dropdownButton.addEventListener('click', function () {
+        dropdownMenu.classList.toggle('hidden');
+        chevronIcon.classList.toggle('rotate-180');
+      });
+
+      // 点击选项时更新选择
+      options.forEach(option => {
+        option.addEventListener('click', function () {
+          const value = this.getAttribute('data-value');
+          updateSelectedOption(value);
+          // 保存选择到存储
+          if (hasTampermonkey) {
+            GM_setValue('watermark_removal_option', value);
+          } else {
+            localStorage.setItem('watermark_removal_option', value);
+          }
+          // 关闭下拉菜单
+          dropdownMenu.classList.add('hidden');
+          chevronIcon.classList.remove('rotate-180');
+        });
+      });
+
+      // 点击页面其他地方关闭下拉菜单
+      document.addEventListener('click', function (event) {
+        if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+          dropdownMenu.classList.add('hidden');
+          chevronIcon.classList.remove('rotate-180');
+        }
+      });
+
+      // 更新选中选项的显示
+      function updateSelectedOption(value) {
+        selectedOption.textContent = value === 'lauzz' ? 'LauZz方案 (默认)' : '拼接方案（爱吃馍）';
+
+        // 更新选中状态图标
+        options.forEach(option => {
+          const optionValue = option.getAttribute('data-value');
+          const checkIcon = option.querySelector('.check-icon');
+          if (optionValue === value) {
+            checkIcon.classList.remove('hidden');
+          } else {
+            checkIcon.classList.add('hidden');
+          }
+        });
+      }
+    });
+  </script>
 </body>
 
 </html>
