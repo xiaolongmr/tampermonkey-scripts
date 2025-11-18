@@ -11,7 +11,7 @@
     // @grant        GM_setValue
     // @grant        GM_registerMenuCommand
     // @icon         https://dh.z-l.top/assets/favicon.ico
-2. css一律使用 tailwindcss 框架，不到万不得已不要写style样式，首先使用tailwindcss的类名，避免写style样式
+2. css一律使用 tailwindcss 框架，不到万不得已不要写style样式，首先使用tailwindcss的类名，避免写style样式 ，花瓣去水印脚本不要使用tailwindcss
 3. 如果脚本过于复杂，可以添加新用户引导，使用库：Driver.js ,官网地址 https://driverjs.com/docs
    CDN链接:
    - <script src="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.js.iife.js"></script>

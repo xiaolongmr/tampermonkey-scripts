@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         花瓣"去"水印
-// @version      2.73
+// @version      2.74
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -1650,7 +1650,8 @@
 
   // 初始化
   function init() {
-    console.log('花瓣"去"水印 v2. 初始化');
+    console.log('花瓣"去"水印. 初始化');
+
 
     // 注册油猴菜单命令
     GM_registerMenuCommand('设置首选项', createConfigUI);
@@ -1693,12 +1694,148 @@
       processWatermark();
     }, 2000);
 
+    // 添加导航栏脚本设置选项
+    // 导航项配置常量
+    const NAV_ITEM_CONFIG = {
+      CLASS_NAME: '_GqsG2lD',
+      TARGET_TEXT: '稿定 AI',
+      RESOURCE_TITLE: '首选项',
+      ICON_CLASS: 'eLOgPHHe',
+      TEXT_CLASS: 'i6Xo9tIm',
+      COLLAPSED_CLASS: 'IzKZn_j3',
+      COLLAPSE_TRIGGER: '#sidenav-collapse-trigger button',
+      COLLAPSE_BUTTON_CLASS: 'cwsbaO4c',
+      DATA_ATTRIBUTES: {
+        'data-tooltip-position': 'right',
+        // 'data-module-name': '左侧导航栏',
+        // 'data-apply-client': '使用端',
+        // 'data-resource-title': '脚本设置',
+        // 'data-resource-location': '6'
+      }
+    };
+
+    // 查找导航项插入位置
+    function findInsertPosition(navItems) {
+      let targetIndex = -1;
+      navItems.forEach((item, index) => {
+        if (item.textContent.trim().includes(NAV_ITEM_CONFIG.TARGET_TEXT)) {
+          targetIndex = index + 1;
+        }
+      });
+      return targetIndex === -1 || targetIndex >= navItems.length ? navItems.length : targetIndex;
+    }
+
+    // 创建导航项元素
+    function createNavItemElement() {
+      const tempContainer = document.createElement('div');
+      const dataAttrs = Object.entries(NAV_ITEM_CONFIG.DATA_ATTRIBUTES)
+        .map(([key, value]) => `${key}="${value}"`).join(' ');
+
+      tempContainer.innerHTML = `
+        <a class="${NAV_ITEM_CONFIG.CLASS_NAME}" ${dataAttrs}>
+          <span class="${NAV_ITEM_CONFIG.ICON_CLASS}">
+            <span role="img" class="anticon">
+              <svg width="1em" height="1em" fill="currentColor" aria-hidden="true" focusable="false" class="">
+                <use xlink:href="#ic_settings"></use>
+              </svg>
+            </span>
+          </span>
+          <span class="${NAV_ITEM_CONFIG.TEXT_CLASS}">${NAV_ITEM_CONFIG.RESOURCE_TITLE}</span>
+        </a>
+      `;
+
+      const newItem = tempContainer.firstElementChild;
+      tempContainer.remove();
+
+      // 绑定点击事件
+      newItem.addEventListener('click', (e) => {
+        e.preventDefault();
+        createConfigUI();
+      });
+
+      return newItem;
+    }
+
+    // 更新导航项显示状态
+    function updateNavItemState(newItem) {
+      const collapseBtn = document.querySelector(NAV_ITEM_CONFIG.COLLAPSE_TRIGGER);
+      const isCollapsed = collapseBtn && collapseBtn.getAttribute('data-button-name') === '展开导航';
+      const textSpan = newItem.querySelector(`.${NAV_ITEM_CONFIG.TEXT_CLASS}`);
+
+      if (isCollapsed) {
+        newItem.classList.add(NAV_ITEM_CONFIG.COLLAPSED_CLASS);
+        if (textSpan) textSpan.style.display = 'none';
+      } else {
+        newItem.classList.remove(NAV_ITEM_CONFIG.COLLAPSED_CLASS);
+        if (textSpan) textSpan.style.display = 'inline';
+      }
+    }
+
+    // 设置折叠按钮事件监听
+    function setupCollapseListener(newItem) {
+      const collapseBtn = document.querySelector(`${NAV_ITEM_CONFIG.COLLAPSE_TRIGGER}.${NAV_ITEM_CONFIG.COLLAPSE_BUTTON_CLASS}`);
+      if (!collapseBtn) return;
+
+      // 使用命名函数便于移除
+      function handleCollapseClick() {
+        setTimeout(() => updateNavItemState(newItem), 100);
+      }
+
+      collapseBtn.addEventListener('click', handleCollapseClick);
+      // 存储事件处理函数便于后续清理
+      newItem._collapseHandler = handleCollapseClick;
+    }
+
+    // 添加导航栏脚本设置选项
+    function addScriptSettingToNav() {
+      // 避免重复添加
+      if (document.querySelector(`a[data-resource-title="${NAV_ITEM_CONFIG.RESOURCE_TITLE}"]`)) {
+        return;
+      }
+
+      const navItems = document.querySelectorAll(`a.${NAV_ITEM_CONFIG.CLASS_NAME}`);
+      if (navItems.length === 0) return;
+
+      const targetIndex = findInsertPosition(navItems);
+      const newItem = createNavItemElement();
+      const navContainer = navItems[0].parentNode;
+
+      // 插入到导航栏
+      if (targetIndex < navItems.length) {
+        navContainer.insertBefore(newItem, navItems[targetIndex]);
+      } else {
+        navContainer.appendChild(newItem);
+      }
+
+      // 初始化状态
+      updateNavItemState(newItem);
+      // 设置事件监听
+      setupCollapseListener(newItem);
+    }
+
+    // 页面卸载时清理事件监听
+    window.addEventListener('unload', () => {
+      const navItem = document.querySelector(`a[data-resource-title="${NAV_ITEM_CONFIG.RESOURCE_TITLE}"]`);
+      if (navItem && navItem._collapseHandler) {
+        const collapseBtn = document.querySelector(NAV_ITEM_CONFIG.COLLAPSE_TRIGGER);
+        if (collapseBtn) {
+          collapseBtn.removeEventListener('click', navItem._collapseHandler);
+        }
+      }
+    });
+
+    // 执行导航栏设置选项添加
+    addScriptSettingToNav();
+
+
+
     // 清理函数
     window.addEventListener('beforeunload', () => {
       observer.disconnect();
     });
 
-    console.log('花瓣"去"水印 v2. 初始化完成');
+    // 使用动态版本号输出日志
+    console.log(`花瓣"去"水印 v${getScriptVersion()}. 初始化完成`);
   }
 
   // 显示使用说明弹窗
