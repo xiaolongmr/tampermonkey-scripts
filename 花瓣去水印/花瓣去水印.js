@@ -1654,7 +1654,8 @@
 
 
     // 注册油猴菜单命令
-    GM_registerMenuCommand('设置首选项', createConfigUI);
+    GM_registerMenuCommand('⚙️ 设置首选项', createConfigUI);
+    GM_registerMenuCommand('🤝 网友互助区', showTwikooChat);
 
     // 应用样式（包含动画效果）
     applyStyles();
@@ -2139,6 +2140,135 @@
     container.addEventListener('remove', () => {
       document.removeEventListener('keydown', escHandler);
     });
+  }
+
+  // 显示Twikoo聊天模块
+  function showTwikooChat() {
+    // 检查是否已存在聊天弹窗
+    const existingChat = document.getElementById('huabanTwikooChat');
+    if (existingChat) {
+      existingChat.remove();
+      return;
+    }
+
+    // 创建主容器
+    const container = document.createElement('div');
+    container.id = 'huabanTwikooChat';
+    container.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        `;
+
+    // 创建卡片
+    const card = document.createElement('div');
+    card.style.cssText = `
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            width: 600px;
+            max-width: 95vw;
+            max-height: 80vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+        `;
+
+    // 卡片头部
+    const header = document.createElement('div');
+    header.style.cssText = `
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
+            border-radius: 24px 24px 0 0;
+        `;
+    header.innerHTML = `
+            <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
+                网友互助区
+            </h3>
+            <button id="closeTwikooChat" style="
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="#64748b">
+                    <path d="M198.1 267.7l75.4-75.4 576.3 576.3-75.4 75.4-576.3-576.3zm576.4-69.3l75.4 75.4-580.7 580.8-75.4-75.4 580.7-580.8z"/>
+                </svg>
+            </button>
+        `;
+
+    // 卡片内容
+    const content = document.createElement('div');
+    content.style.cssText = `
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        `;
+    content.innerHTML = `
+            <div id="tcomment"></div>
+        `;
+
+    // 组装卡片
+    card.appendChild(header);
+    card.appendChild(content);
+    container.appendChild(card);
+    document.body.appendChild(container);
+
+    // 关闭按钮事件
+    const closeButton = header.querySelector('#closeTwikooChat');
+    closeButton.addEventListener('click', () => {
+      container.remove();
+    });
+
+    // 点击外部关闭
+    container.addEventListener('click', (e) => {
+      if (e.target === container) container.remove();
+    });
+
+    // ESC键关闭
+    const escHandler = (e) => {
+      if (e.key === 'Escape') container.remove();
+    };
+    document.addEventListener('keydown', escHandler);
+
+    // 清理事件监听器
+    container.addEventListener('remove', () => {
+      document.removeEventListener('keydown', escHandler);
+    });
+
+    // 动态加载Twikoo并初始化
+    const twikooCss = document.createElement('link');
+    twikooCss.rel = 'stylesheet';
+    twikooCss.href = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.css';
+    document.head.appendChild(twikooCss);
+    const twikooScript = document.createElement('script');
+    twikooScript.src = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.nocss.js';
+    twikooScript.onload = function () {
+      if (typeof twikoo !== 'undefined') {
+        twikoo.init({
+          envId: 'https://twikookaishu.z-l.top',
+          el: '#tcomment',
+          path: '/huaban-helper-all', // 固定路径，使所有页面显示相同评论
+        });
+      }
+    };
+    document.head.appendChild(twikooScript);
   }
 
   // 在配置界面创建完成后添加使用说明链接的事件监听
