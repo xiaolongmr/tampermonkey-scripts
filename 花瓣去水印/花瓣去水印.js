@@ -108,6 +108,23 @@
             .setting-icon-container:hover ._iconImg_1xz4q_15 {
                 animation: spin 2s linear infinite;
             }
+            
+            /* 隐藏指定元素 */
+            // .CdxAiT3A {
+            //     display: none;
+            // }
+
+            /* antd弹出层样式宽度，花瓣采集框 */
+    .ant-popover {
+        min-width: 540px!important;
+    }
+/* 下面是：花瓣添加到花瓣，画板列表元素 */
+    .z8_k0U12 .JYXx0SF7 .__0nq08tOH {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0px, 1fr));
+        height: auto!important;
+        max-height: 300px;
+    }
         `;
     document.head.appendChild(style);
   }
@@ -1940,22 +1957,11 @@
     // 卡片内容
     const content = document.createElement('div');
     content.style.cssText = `
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-            /* 隐藏滚动条但保持滚动功能 */
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        `;
-    // 隐藏Webkit浏览器的滚动条
-    content.style.cssText += `
-            ::-webkit-scrollbar { display: none; }
-        `;
-    content.innerHTML = `
-            <div style="text-align: center; margin-bottom: 20px;">
-                <div style="font-size: 14px; color: #64748b;">正在加载使用说明...</div>
-            </div>
-        `;
+        padding: 20px;
+        overflow-y: auto;
+        flex: 1;
+    `;
+
 
     // 组装卡片
     card.appendChild(header);
@@ -2222,7 +2228,7 @@
         `;
     header.innerHTML = `
             <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
-                网友互助区
+                网友互助区 💬
             </h3>
             <button id="closeTwikooChat" style="
                 background: none;
@@ -2248,6 +2254,26 @@
             flex: 1;
         `;
     content.innerHTML = `
+            <div style="margin-bottom: 15px; padding: 12px; background: linear-gradient(135deg, #fff0f5 0%, #f0f9ff 100%); border-radius: 12px; border: 1px solid #ffd6e7; position: relative; overflow: hidden;">
+              <div style="position: absolute;top: 4px;right: 3px;font-size: 24px;transform: rotate(0deg);opacity: 0.6;"><img class="hb-image" alt="花瓣网" title="" src="https://grocery-cdn.huaban.com/file/hb_logo.svg"></div>
+                <div style="font-weight: 600; color: #ff6b9c; margin-bottom: 8px; font-size: 15px; display: flex; align-items: center;">
+                    <span>✨ 互助区使用说明</span>
+                </div>
+                <div style="font-size: 14px; color: #334155; line-height: 1.6;">
+                    <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                        <span style="margin-right: 6px;">💡</span>
+                        <span>在这里可以与其他花瓣用户交流互助</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                        <span style="margin-right: 6px;">❓</span>
+                        <span>可以提问问题、分享使用经验或提供帮助</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                        <span style="margin-right: 6px;">😊</span>
+                        <span>请保持友善，做文明设计师，祝大家升职加薪</span>
+                    </div>
+                </div>
+            </div>
             <div id="tcomment"></div>
         `;
 
@@ -2286,7 +2312,7 @@
     document.head.appendChild(twikooCss);
     const twikooScript = document.createElement('script');
     twikooScript.src = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.nocss.js';
-    twikooScript.onload = function () {
+    twikooScript.onload = function() {
       if (typeof twikoo !== 'undefined') {
         twikoo.init({
           envId: 'https://twikookaishu.z-l.top',
