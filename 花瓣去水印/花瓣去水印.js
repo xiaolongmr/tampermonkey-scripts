@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         花瓣"去"水印
-// @version      2.74
+// @version      2.75
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -11,9 +11,8 @@
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // @grant        GM_download
-// @downloadURL https://update.greasyfork.org/scripts/554301/%E8%8A%B1%E7%93%A3%E7%9C%9F%E5%81%87PNG.user.js
-// @updateURL https://update.greasyfork.org/scripts/554301/%E8%8A%B1%E7%93%A3%E7%9C%9F%E5%81%87PNG.meta.js
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
+// @require      file://G:/桌面/坚果云相册/油猴脚本/花瓣去水印/花瓣去水印.js
 // ==/UserScript==
 
 (function () {
@@ -192,7 +191,7 @@
         // 核心判断逻辑：只处理包含"官方自营"字样的素材
         // 查找包含"官方自营"文本的元素
         const isOfficialMaterial =
-          // 原有条件：.fgsjNg46 元素包含“官方自营”文本
+          // 原有条件：.fgsjNg46 元素包含"官方自营"文本
           Array.from(document.querySelectorAll('.fgsjNg46')).some(element =>
             element.textContent && element.textContent.includes('官方自营')
           )
@@ -214,33 +213,61 @@
         // 去水印规则：在域名后添加/small/
         const watermarkRegex = /(https?:\/\/gd-hbimg\.huaban\.com)\/([^\/]+)/;
 
-        let modified = false;
-
-        // 处理src属性
-        if (watermarkRegex.test(originalSrc) && !originalSrc.includes('/small/')) {
-          const newSrc = originalSrc.replace(watermarkRegex, '$1/small/$2');
-          console.log('修改VIP图片src:', originalSrc, '→', newSrc);
-          img.src = newSrc;
-          modified = true;
+        // 检查图片链接是否有效
+        function checkImageUrl(url) {
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = url;
+          });
         }
 
-        // 处理srcset属性
-        if (img.srcset && watermarkRegex.test(img.srcset) && !img.srcset.includes('/small/')) {
-          const newSrcset = img.srcset.replace(watermarkRegex, '$1/small/$2');
-          console.log('修改VIP图片srcset:', img.srcset, '→', newSrcset);
-          img.srcset = newSrcset;
-          modified = true;
-        }
+        // 处理图片链接
+        (async () => {
+          let modified = false;
 
-        if (modified) {
-          processedCount++;
-          img.setAttribute('data-watermark-removed', 'true');
-          console.log('图片处理成功');
-        } else {
-          skippedCount++;
-          console.log('图片无需处理或已处理');
-        }
+          // 处理src属性
+          if (watermarkRegex.test(originalSrc) && !originalSrc.includes('/small/')) {
+            const newSrc = originalSrc.replace(watermarkRegex, '$1/small/$2');
+            console.log('检查新图片URL是否有效:', newSrc);
+            
+            // 检查新链接是否有效
+            const isValid = await checkImageUrl(newSrc);
+            if (isValid) {
+              console.log('修改VIP图片src:', originalSrc, '→', newSrc);
+              img.src = newSrc;
+              modified = true;
+            } else {
+              console.log('新图片URL无效，跳过处理:', newSrc);
+            }
+          }
 
+          // 处理srcset属性
+          if (img.srcset && watermarkRegex.test(img.srcset) && !img.srcset.includes('/small/')) {
+            const newSrcset = img.srcset.replace(watermarkRegex, '$1/small/$2');
+            console.log('检查新图片srcset是否有效:', newSrcset);
+            
+            // 检查新链接是否有效
+            const isValid = await checkImageUrl(newSrcset.split(' ')[0]); // 取第一个URL检查
+            if (isValid) {
+              console.log('修改VIP图片srcset:', img.srcset, '→', newSrcset);
+              img.srcset = newSrcset;
+              modified = true;
+            } else {
+              console.log('新图片srcset URL无效，跳过处理:', newSrcset);
+            }
+          }
+
+          if (modified) {
+            processedCount++;
+            img.setAttribute('data-watermark-removed', 'true');
+            console.log('图片处理成功');
+          } else {
+            skippedCount++;
+            console.log('图片无需处理或已处理');
+          }
+        })();
       } catch (error) {
         console.error('水印处理失败:', error, '图片:', img.src);
         skippedCount++;
