@@ -12,7 +12,6 @@
 // @grant        GM_registerMenuCommand
 // @grant        GM_download
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
-// @require      file://G:/桌面/坚果云相册/油猴脚本/花瓣去水印/花瓣去水印.js
 // ==/UserScript==
 
 (function () {
