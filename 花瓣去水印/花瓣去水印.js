@@ -79,14 +79,6 @@
     const style = document.createElement('style');
     style.id = 'huaban-bg-style';
     style.textContent = `
-            /* 动画效果类 */
-            .icon-spin {
-                animation: spin 2s linear infinite;
-            }
-            @keyframes spin {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-            }
 
             /* 花瓣素材 背景色 */
             .KKIUywzb[data-content-type="素材采集"] .transparent-img-bg {
@@ -99,14 +91,7 @@
                 background-color: ${config.enableCustom ? config.userColor : 'transparent'} !important;
                 ${config.enableCustom ? 'background-image:none!important;' : ''}
             }
-            /* 设置按钮动画效果 */
-           .setting-icon-container ._iconImg_1xz4q_15 {
-                animation: spin 30s linear infinite;
-            }
-            /* 悬停动画效果 */
-            .setting-icon-container:hover ._iconImg_1xz4q_15 {
-                animation: spin 2s linear infinite;
-            }
+
             
             /* 隐藏指定元素 */
             // .CdxAiT3A {
@@ -1562,134 +1547,9 @@
     });
   }
 
-  // 创建悬浮提示（与客服按钮100%视觉一致）
-  function createPopupTip() {
-    // 获取或创建popup-root
-    let popupRoot = document.getElementById('popup-root');
-    if (!popupRoot) {
-      popupRoot = document.createElement('div');
-      popupRoot.id = 'popup-root';
-      document.body.appendChild(popupRoot);
-    }
-
-    // 创建提示框（完全使用花瓣原生类名和样式）
-    const popup = document.createElement('div');
-    popup.className = 'popup-content gd-suspension-panel_popup_tip-content gd-suspension-panel_popup_left-content center-content';
-    popup.role = 'tooltip';
-    popup.id = 'popup-0';
-    popup.style.cssText = `
-            position: absolute;
-            z-index: 999;
-            pointer-events: auto;
-            display: none;
-            visibility: hidden;
-            margin-left: -4px;
-        `;
-
-    // 提示框内容（完全复制客服按钮的结构，不设置颜色）
-    popup.innerHTML = `
-            <div style="height: 8px; width: 16px; position: absolute; background: transparent; z-index: -1; transform: rotate(90deg); top: 50%; left: 100%; margin-top: -4px; margin-left: -1px;">
-                <svg data-testid="arrow" class="popup-arrow gd-suspension-panel_popup_tip-arrow gd-suspension-panel_popup_left-arrow center-arrow" viewBox="0 0 32 16" style="position: absolute;">
-                    <path d="M16 0l16 16H0z" fill="currentcolor"></path>
-                </svg>
-            </div>
-            <div class="gd-suspension-panel_popup_content">
-                <div>花瓣 - 设置首选项</div>
-            </div>
-        `;
-
-    popupRoot.appendChild(popup);
-    return popup;
-  }
-
-  // 在页面右下角区域添加设置按钮（与客服按钮100%视觉一致）
-  function addSettingButtonToPage() {
-    // 创建原生样式的设置按钮，添加合适的间距
-    const settingButton = document.createElement('div');
-    settingButton.className = 'gd-suspension-panel_popup_trigger';
-    settingButton.setAttribute('aria-describedby', 'popup-0');
-    // 添加与其他按钮一致的间距
-    settingButton.style.marginBottom = '8px';
 
 
-    // 使用用户提供的SVG图标，添加动画容器
-    settingButton.innerHTML = `
-            <div class="_menuFeedback__trigger_1uwcl_1 setting-icon-container">
-                <div class="_iconBox_1xz4q_1">
-                    <img class="_iconImg_1xz4q_15"
-                         src="https://cdn.h5ds.com/space/files/600972551685382144/20251031/908681999043854336.svg"
-                         alt="settings">
-                </div>
-            </div>
-        `;
 
-    // 添加点击事件
-    settingButton.addEventListener('click', createConfigUI);
-
-    // 创建悬浮提示
-    const popup = createPopupTip();
-
-    // 鼠标悬停显示提示
-    settingButton.addEventListener('mouseenter', function () {
-      const buttonRect = this.getBoundingClientRect();
-
-      // 先显示提示框以计算实际尺寸
-      popup.style.display = 'block';
-      popup.style.visibility = 'visible';
-
-      // 获取提示框的实际尺寸
-      const popupRect = popup.getBoundingClientRect();
-
-      // 计算正确的位置（与客服按钮完全一致的间距）
-      const spacing = 4;
-      // 与花瓣网原生完全一致的间距
-
-      // 提示框左侧位置 = 按钮左侧 - 提示框宽度 - 间距
-      const left = buttonRect.left - popupRect.width - spacing;
-
-      // 提示框顶部位置 = 按钮垂直居中 - 提示框高度/2
-      const top = buttonRect.top + buttonRect.height / 2 - popupRect.height / 2 + window.scrollY;
-
-      // 设置提示框位置
-      popup.style.left = left + 'px';
-      popup.style.top = top + 'px';
-      popup.style.marginLeft = '-3px';
-
-      // 调整箭头位置（确保与客服按钮完全一致）
-      const arrowElement = popup.querySelector('div[style*="transform: rotate(90deg)"]');
-      if (arrowElement) {
-        // 固定箭头位置，确保与客服按钮一致
-        arrowElement.style.top = '50%';
-        arrowElement.style.left = '100%';
-        arrowElement.style.marginTop = '-4px';
-        arrowElement.style.marginLeft = '-2px';
-        arrowElement.style.zIndex = '-1';
-        // 不设置颜色，让它继承父元素的颜色
-      }
-    });
-
-    // 鼠标离开隐藏提示
-    settingButton.addEventListener('mouseleave', function () {
-      popup.style.display = 'none';
-      popup.style.visibility = 'hidden';
-    });
-
-    // 找到悬浮面板容器
-    function findSuspensionPanel() {
-      const panel = document.querySelector('div._suspensionPanel_1wovf_1');
-      if (panel) {
-        // 在面板最前面插入设置按钮
-        panel.insertBefore(settingButton, panel.firstChild);
-        console.log('与客服按钮100%视觉一致的设置按钮已添加到页面顶部');
-      } else {
-        // 如果没找到，1秒后重试
-        setTimeout(findSuspensionPanel, 1000);
-      }
-    }
-
-    // 开始查找并添加按钮
-    findSuspensionPanel();
-  }
 
   // 初始化
   function init() {
@@ -1703,8 +1563,7 @@
     // 应用样式（包含动画效果）
     applyStyles();
 
-    // 添加页面顶部设置按钮（与客服按钮100%视觉一致）
-    addSettingButtonToPage();
+    
 
     // 页面加载完成后执行水印处理
     window.addEventListener('load', () => {
@@ -1737,141 +1596,6 @@
     setInterval(() => {
       processWatermark();
     }, 2000);
-
-    // 添加导航栏脚本设置选项
-    // 导航项配置常量
-    const NAV_ITEM_CONFIG = {
-      CLASS_NAME: '_GqsG2lD',
-      TARGET_TEXT: '稿定 AI',
-      RESOURCE_TITLE: '首选项',
-      ICON_CLASS: 'eLOgPHHe',
-      TEXT_CLASS: 'i6Xo9tIm',
-      COLLAPSED_CLASS: 'IzKZn_j3',
-      COLLAPSE_TRIGGER: '#sidenav-collapse-trigger button',
-      COLLAPSE_BUTTON_CLASS: 'cwsbaO4c',
-      DATA_ATTRIBUTES: {
-        'data-tooltip-position': 'right',
-        // 'data-module-name': '左侧导航栏',
-        // 'data-apply-client': '使用端',
-        // 'data-resource-title': '脚本设置',
-        // 'data-resource-location': '6'
-      }
-    };
-
-    // 查找导航项插入位置
-    function findInsertPosition(navItems) {
-      let targetIndex = -1;
-      navItems.forEach((item, index) => {
-        if (item.textContent.trim().includes(NAV_ITEM_CONFIG.TARGET_TEXT)) {
-          targetIndex = index + 1;
-        }
-      });
-      return targetIndex === -1 || targetIndex >= navItems.length ? navItems.length : targetIndex;
-    }
-
-    // 创建导航项元素
-    function createNavItemElement() {
-      const tempContainer = document.createElement('div');
-      const dataAttrs = Object.entries(NAV_ITEM_CONFIG.DATA_ATTRIBUTES)
-        .map(([key, value]) => `${key}="${value}"`).join(' ');
-
-      tempContainer.innerHTML = `
-        <a class="${NAV_ITEM_CONFIG.CLASS_NAME}" ${dataAttrs}>
-          <span class="${NAV_ITEM_CONFIG.ICON_CLASS}">
-            <span role="img" class="anticon">
-              <svg width="1em" height="1em" fill="currentColor" aria-hidden="true" focusable="false" class="">
-                <use xlink:href="#ic_settings"></use>
-              </svg>
-            </span>
-          </span>
-          <span class="${NAV_ITEM_CONFIG.TEXT_CLASS}">${NAV_ITEM_CONFIG.RESOURCE_TITLE}</span>
-        </a>
-      `;
-
-      const newItem = tempContainer.firstElementChild;
-      tempContainer.remove();
-
-      // 绑定点击事件
-      newItem.addEventListener('click', (e) => {
-        e.preventDefault();
-        createConfigUI();
-      });
-
-      return newItem;
-    }
-
-    // 更新导航项显示状态
-    function updateNavItemState(newItem) {
-      const collapseBtn = document.querySelector(NAV_ITEM_CONFIG.COLLAPSE_TRIGGER);
-      const isCollapsed = collapseBtn && collapseBtn.getAttribute('data-button-name') === '展开导航';
-      const textSpan = newItem.querySelector(`.${NAV_ITEM_CONFIG.TEXT_CLASS}`);
-
-      if (isCollapsed) {
-        newItem.classList.add(NAV_ITEM_CONFIG.COLLAPSED_CLASS);
-        if (textSpan) textSpan.style.display = 'none';
-      } else {
-        newItem.classList.remove(NAV_ITEM_CONFIG.COLLAPSED_CLASS);
-        if (textSpan) textSpan.style.display = 'inline';
-      }
-    }
-
-    // 设置折叠按钮事件监听
-    function setupCollapseListener(newItem) {
-      const collapseBtn = document.querySelector(`${NAV_ITEM_CONFIG.COLLAPSE_TRIGGER}.${NAV_ITEM_CONFIG.COLLAPSE_BUTTON_CLASS}`);
-      if (!collapseBtn) return;
-
-      // 使用命名函数便于移除
-      function handleCollapseClick() {
-        setTimeout(() => updateNavItemState(newItem), 100);
-      }
-
-      collapseBtn.addEventListener('click', handleCollapseClick);
-      // 存储事件处理函数便于后续清理
-      newItem._collapseHandler = handleCollapseClick;
-    }
-
-    // 添加导航栏脚本设置选项
-    function addScriptSettingToNav() {
-      // 避免重复添加
-      if (document.querySelector(`a[data-resource-title="${NAV_ITEM_CONFIG.RESOURCE_TITLE}"]`)) {
-        return;
-      }
-
-      const navItems = document.querySelectorAll(`a.${NAV_ITEM_CONFIG.CLASS_NAME}`);
-      if (navItems.length === 0) return;
-
-      const targetIndex = findInsertPosition(navItems);
-      const newItem = createNavItemElement();
-      const navContainer = navItems[0].parentNode;
-
-      // 插入到导航栏
-      if (targetIndex < navItems.length) {
-        navContainer.insertBefore(newItem, navItems[targetIndex]);
-      } else {
-        navContainer.appendChild(newItem);
-      }
-
-      // 初始化状态
-      updateNavItemState(newItem);
-      // 设置事件监听
-      setupCollapseListener(newItem);
-    }
-
-    // 页面卸载时清理事件监听
-    window.addEventListener('unload', () => {
-      const navItem = document.querySelector(`a[data-resource-title="${NAV_ITEM_CONFIG.RESOURCE_TITLE}"]`);
-      if (navItem && navItem._collapseHandler) {
-        const collapseBtn = document.querySelector(NAV_ITEM_CONFIG.COLLAPSE_TRIGGER);
-        if (collapseBtn) {
-          collapseBtn.removeEventListener('click', navItem._collapseHandler);
-        }
-      }
-    });
-
-    // 执行导航栏设置选项添加
-    addScriptSettingToNav();
-
-
 
     // 清理函数
     window.addEventListener('beforeunload', () => {
