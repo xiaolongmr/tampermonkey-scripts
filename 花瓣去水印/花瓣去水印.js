@@ -10,6 +10,8 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
+// @grant        GM_xmlhttpRequest
+// @connect      *
 // @grant        GM_download
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
 // ==/UserScript==
@@ -65,6 +67,10 @@
     GM_setValue('enableRemoveWatermark', config.enableRemoveWatermark);
     GM_setValue('enableDragDownload', config.enableDragDownload);
     GM_setValue('enableRightClickDownload', config.enableRightClickDownload);
+    // 历史图片加载效果：spinner 或 blur
+    if (typeof config.historyLoadingStyle === 'string') {
+      GM_setValue('historyLoadingStyle', config.historyLoadingStyle);
+    }
   }
 
   // 应用样式
@@ -109,31 +115,122 @@
         height: auto!important;
         max-height: 300px;
     }
+
+    /* 历史下载窗口滚动条弱化（容器与瀑布流均处理，覆盖多浏览器） */
+    #huabanDownloadHistory .hb-history-content,
+    #huabanDownloadHistory .hb-history-masonry {
+        scrollbar-width: thin; /* Firefox */
+        scrollbar-color: #e8e8e8 transparent; /* Firefox */
+    }
+    #huabanDownloadHistory .hb-history-content::-webkit-scrollbar,
+    #huabanDownloadHistory .hb-history-masonry::-webkit-scrollbar {
+        width: 6px; /* Chrome/Safari */
+    }
+    #huabanDownloadHistory .hb-history-content::-webkit-scrollbar-track,
+    #huabanDownloadHistory .hb-history-masonry::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    #huabanDownloadHistory .hb-history-content::-webkit-scrollbar-thumb,
+    #huabanDownloadHistory .hb-history-masonry::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1; /* slate-300 */
+        border-radius: 8px;
+    }
+    #huabanDownloadHistory .hb-history-content:hover::-webkit-scrollbar-thumb,
+    #huabanDownloadHistory .hb-history-masonry:hover::-webkit-scrollbar-thumb {
+        background-color: #fce1e1ff; /* slate-400，悬浮时略加深 */
+    }
         `;
     document.head.appendChild(style);
+  }
+
+  // 历史图片缓存：使用 GM_setValue 存储 dataURL（持久化，含简单 LRU）
+  function getImageCache() {
+    try {
+      const map = GM_getValue('hb_img_cache', {});
+      return map && typeof map === 'object' ? map : {};
+    } catch (e) { return {}; }
+  }
+  function setImageCache(map) {
+    try { GM_setValue('hb_img_cache', map); } catch (e) {}
+  }
+  function getCacheSettings() {
+    try {
+      const ttl = GM_getValue('hb_img_cache_ttl_ms', 7 * 24 * 60 * 60 * 1000);
+      const max = GM_getValue('hb_img_cache_max', 500);
+      return { ttl: typeof ttl === 'number' ? ttl : 7 * 24 * 60 * 60 * 1000, max: typeof max === 'number' ? max : 500 };
+    } catch (e) { return { ttl: 7 * 24 * 60 * 60 * 1000, max: 500 }; }
+  }
+  function cacheGet(url) {
+    try {
+      const map = getImageCache();
+      const rec = map[url];
+      if (rec && rec.data) {
+        const { ttl } = getCacheSettings();
+        if (typeof rec.ts === 'number' && (Date.now() - rec.ts) > ttl) { delete map[url]; setImageCache(map); return null; }
+        rec.ts = Date.now(); setImageCache(map); return rec.data;
+      }
+      return null;
+    } catch (e) { return null; }
+  }
+  function cachePut(url, dataUrl) {
+    try {
+      const map = getImageCache();
+      map[url] = { data: dataUrl, ts: Date.now() };
+      const { max, ttl } = getCacheSettings();
+      // 先移除过期项
+      const keys = Object.keys(map);
+      for (const k of keys) { if ((Date.now() - (map[k].ts||0)) > ttl) delete map[k]; }
+      // 限制最多缓存 max 张，按时间淘汰最旧
+      const keys2 = Object.keys(map);
+      if (keys2.length > max) {
+        keys2.sort((a,b)=> (map[a].ts||0) - (map[b].ts||0));
+        const removeCount = keys2.length - max;
+        for (let i=0; i<removeCount; i++) delete map[keys2[i]];
+      }
+      setImageCache(map);
+    } catch (e) {}
+  }
+  function fetchImageAsDataURL(url, cb) {
+    try {
+      if (typeof GM_xmlhttpRequest !== 'function') { cb(null); return; }
+      GM_xmlhttpRequest({
+        method: 'GET',
+        url,
+        responseType: 'blob',
+        onload: function(res){
+          try {
+            const blob = res.response;
+            const reader = new FileReader();
+            reader.onloadend = function(){ cb(reader.result || null); };
+            reader.readAsDataURL(blob);
+          } catch (e) { cb(null); }
+        },
+        onerror: function(){ cb(null); }
+      });
+    } catch (e) { cb(null); }
   }
 
   // 保存原始URL到图片元素的dataset中
   function saveOriginalUrl(img) {
     if (!img.dataset.originalSrc) {
       img.dataset.originalSrc = img.src;
-      console.log('保存原始URL:', img.dataset.originalSrc);
+      debugLog('保存原始URL:', img.dataset.originalSrc);
     }
     if (img.srcset && !img.dataset.originalSrcset) {
       img.dataset.originalSrcset = img.srcset;
-      console.log('保存原始srcset:', img.dataset.originalSrcset);
+      debugLog('保存原始srcset:', img.dataset.originalSrcset);
     }
   }
 
   // 恢复图片的原始URL
   function restoreOriginalUrl(img) {
     if (img.dataset.originalSrc) {
-      console.log('恢复原始URL:', img.dataset.originalSrc);
+      debugLog('恢复原始URL:', img.dataset.originalSrc);
       img.src = img.dataset.originalSrc;
       delete img.dataset.originalSrc;
     }
     if (img.dataset.originalSrcset) {
-      console.log('恢复原始srcset:', img.dataset.originalSrcset);
+      debugLog('恢复原始srcset:', img.dataset.originalSrcset);
       img.srcset = img.dataset.originalSrcset;
       delete img.dataset.originalSrcset;
     }
@@ -149,19 +246,147 @@
     if (suffixRegex.test(url)) {
       // 去除后缀参数，保留图片ID和扩展名
       const cleanUrl = url.replace(suffixRegex, '');
-      console.log('去除图片后缀参数:', url, '→', cleanUrl);
+      debugLog('去除图片后缀参数:', url, '→', cleanUrl);
       return cleanUrl;
     }
 
     return url;
   }
 
+  // 下载历史存储与操作
+  function getDownloadHistory() {
+    try {
+      const list = GM_getValue('downloadHistory', []);
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveDownloadHistory(list) {
+    try {
+      GM_setValue('downloadHistory', list);
+    } catch (e) {
+      console.error('保存下载历史失败:', e);
+    }
+  }
+
+  // 保障：加载并桥接 pinyin-pro 到沙箱上下文
+  function ensurePinyinLib(onReady) {
+    const ready = () => { try { typeof onReady === 'function' && onReady(); } catch (e) {} };
+    try {
+      const has = (typeof window.pinyinPro !== 'undefined' && typeof window.pinyinPro.pinyin === 'function');
+      if (has) return ready();
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/pinyin-pro';
+      s.onload = () => {
+        try {
+          const gw = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
+          if (!window.pinyinPro || typeof window.pinyinPro.pinyin !== 'function') {
+            if (gw.pinyinPro && typeof gw.pinyinPro.pinyin === 'function') {
+              window.pinyinPro = { pinyin: gw.pinyinPro.pinyin };
+            } else if (typeof gw.pinyin === 'function') {
+              window.pinyinPro = { pinyin: gw.pinyin };
+            }
+          }
+        } catch (e) {}
+        ready();
+      };
+      document.head.appendChild(s);
+    } catch (e) { ready(); }
+  }
+
+  // 工具：生成文件名的拼音与首字母
+  function makePinyinForName(name) {
+    try {
+      const txt = String(name || '');
+      if (!txt) return { py: '', ac: '' };
+      const fn = window.pinyinPro && window.pinyinPro.pinyin;
+      if (typeof fn !== 'function') return { py: '', ac: '' };
+      const py = String(fn(txt, { toneType: 'none', type: 'string' }));
+      const arr = fn(txt, { toneType: 'none', type: 'array' }) || [];
+      const ac = arr.map(x => (typeof x === 'string' && x.length > 0) ? x[0] : '').join('');
+      return { py, ac };
+    } catch (e) { return { py: '', ac: '' }; }
+  }
+
+  function addDownloadHistoryItem(item) {
+    const list = getDownloadHistory();
+    // 预生成拼音字段（若库未就绪，后续 hydratePinyinForHistory 会补齐）
+    let pyInfo = { py: '', ac: '' };
+    try { pyInfo = makePinyinForName(item.fileName); } catch (e) {}
+    const record = {
+      id: Date.now() + Math.random().toString(16).slice(2),
+      fileName: item.fileName,
+      url: item.url,
+      pageUrl: item.pageUrl || location.href,
+      originHref: item.originHref || '',
+      time: Date.now(),
+      official: !!item.official,
+      width: item.width || 0,
+      height: item.height || 0,
+      action: item.action || 'download',
+      name_py: pyInfo.py,
+      name_py_acronym: pyInfo.ac
+    };
+    list.unshift(record);
+    // 限制最大记录数，避免无限增长
+    if (list.length > 300) list.length = 300;
+    saveDownloadHistory(list);
+    return record;
+  }
+
+  // 补齐历史记录中的拼音字段
+  function hydratePinyinForHistory() {
+    try {
+      const list = getDownloadHistory();
+      let changed = false;
+      for (let i = 0; i < list.length; i++) {
+        const it = list[i];
+        if (!it.name_py || !it.name_py_acronym) {
+          const info = makePinyinForName(it.fileName);
+          if (info.py || info.ac) {
+            it.name_py = info.py;
+            it.name_py_acronym = info.ac;
+            changed = true;
+          }
+        }
+      }
+      if (changed) saveDownloadHistory(list);
+    } catch (e) {}
+  }
+
+  function removeDownloadHistoryItem(id) {
+    const list = getDownloadHistory();
+    const next = list.filter(x => x.id !== id);
+    saveDownloadHistory(next);
+  }
+
+  function clearDownloadHistory() {
+    saveDownloadHistory([]);
+  }
+
+  function isOfficialMaterial() {
+    return (
+      Array.from(document.querySelectorAll('.fgsjNg46')).some(el => el.textContent && el.textContent.includes('官方自营')) ||
+      document.querySelectorAll('[title="来自官方自营"]').length > 0
+    );
+  }
+
+  function formatDateTime(ts) {
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function debugLog() { /* no-op */ }
+
   // 去水印功能：修改图片链接
   function processWatermark(force = false) {
     const config = getConfig();
     const materialImages = getMaterialImages();
 
-    console.log('执行水印处理，enable:', config.enableRemoveWatermark, 'force:', force);
+    debugLog('执行水印处理，enable:', config.enableRemoveWatermark, 'force:', force);
 
     let processedCount = 0;
     let skippedCount = 0;
@@ -176,7 +401,7 @@
           if (img.dataset.originalSrc) {
             restoreOriginalUrl(img);
             processedCount++;
-            console.log('恢复原始URL:', originalSrc);
+            debugLog('恢复原始URL:', originalSrc);
           } else {
             skippedCount++;
           }
@@ -199,11 +424,11 @@
           ||
           // 新增条件：存在 title="来自官方自营" 的元素
           document.querySelectorAll('[title="来自官方自营"]').length > 0;
-        console.log('素材检查结果 - 是官方自营素材:', isOfficialMaterial);
+        debugLog('素材检查结果 - 是官方自营素材:', isOfficialMaterial);
 
         // 只处理官方自营素材，其他类型的素材一概跳过
         if (!isOfficialMaterial) {
-          console.log('跳过非官方自营素材图片:', originalSrc);
+          debugLog('跳过非官方自营素材图片:', originalSrc);
           skippedCount++;
           return;
         }
@@ -231,42 +456,42 @@
           // 处理src属性
           if (watermarkRegex.test(originalSrc) && !originalSrc.includes('/small/')) {
             const newSrc = originalSrc.replace(watermarkRegex, '$1/small/$2');
-            console.log('检查新图片URL是否有效:', newSrc);
+            debugLog('检查新图片URL是否有效:', newSrc);
             
             // 检查新链接是否有效
             const isValid = await checkImageUrl(newSrc);
             if (isValid) {
-              console.log('修改VIP图片src:', originalSrc, '→', newSrc);
+              debugLog('修改VIP图片src:', originalSrc, '→', newSrc);
               img.src = newSrc;
               modified = true;
             } else {
-              console.log('新图片URL无效，跳过处理:', newSrc);
+              debugLog('新图片URL无效，跳过处理:', newSrc);
             }
           }
 
           // 处理srcset属性
           if (img.srcset && watermarkRegex.test(img.srcset) && !img.srcset.includes('/small/')) {
             const newSrcset = img.srcset.replace(watermarkRegex, '$1/small/$2');
-            console.log('检查新图片srcset是否有效:', newSrcset);
+            debugLog('检查新图片srcset是否有效:', newSrcset);
             
             // 检查新链接是否有效
             const isValid = await checkImageUrl(newSrcset.split(' ')[0]); // 取第一个URL检查
             if (isValid) {
-              console.log('修改VIP图片srcset:', img.srcset, '→', newSrcset);
+              debugLog('修改VIP图片srcset:', img.srcset, '→', newSrcset);
               img.srcset = newSrcset;
               modified = true;
             } else {
-              console.log('新图片srcset URL无效，跳过处理:', newSrcset);
+              debugLog('新图片srcset URL无效，跳过处理:', newSrcset);
             }
           }
 
           if (modified) {
             processedCount++;
             img.setAttribute('data-watermark-removed', 'true');
-            console.log('图片处理成功');
+            debugLog('图片处理成功');
           } else {
             skippedCount++;
-            console.log('图片无需处理或已处理');
+            debugLog('图片无需处理或已处理');
           }
         })();
       } catch (error) {
@@ -275,8 +500,8 @@
       }
     });
 
-    console.log(`\n=== 处理完成 ===`);
-    console.log(`总共处理了${processedCount}张图片，跳过了${skippedCount}张`);
+    debugLog('=== 处理完成 ===');
+    debugLog(`总共处理了${processedCount}张图片，跳过了${skippedCount}张`);
     return processedCount > 0;
   }
 
@@ -307,7 +532,7 @@
       return;
     }
 
-    console.log('检查大图查看器');
+    debugLog('检查大图查看器');
 
     let imageViewerInterval = null;
 
@@ -319,7 +544,7 @@
         if (viewerImage) {
           // 检查图片是否已加载完成
           if (viewerImage.complete && viewerImage.naturalWidth > 0) {
-            console.log('大图查看器：检测到已加载的图片，执行去水印处理');
+            debugLog('大图查看器：检测到已加载的图片，执行去水印处理');
             processWatermark(true); // 强制处理
 
             // 如果已成功处理，停止定时器
@@ -330,7 +555,7 @@
               }
             }
           } else {
-            console.log('大图查看器：等待图片加载完成...');
+            debugLog('大图查看器：等待图片加载完成...');
           }
         }
       } else if (imageViewerInterval) {
@@ -349,7 +574,7 @@
               // 检查是否是大图模态框
               if (node.querySelector('#imageViewerWrapper') ||
                 node.querySelector('img.vYzIMzy2[alt="查看图片"]')) {
-                console.log('检测到大图模态框打开');
+                debugLog('检测到大图模态框打开');
 
                 // 首次处理
                 setTimeout(() => {
@@ -358,7 +583,7 @@
 
                 // 启动定期检查，确保图片完全加载后能被处理
                 if (!imageViewerInterval) {
-                  console.log('启动大图查看器定期检查机制');
+                  debugLog('启动大图查看器定期检查机制');
                   imageViewerInterval = setInterval(processImageViewerImages, 300);
 
                   // 设置最长检查时间为5秒
@@ -366,7 +591,7 @@
                     if (imageViewerInterval) {
                       clearInterval(imageViewerInterval);
                       imageViewerInterval = null;
-                      console.log('大图查看器定期检查超时，停止检查');
+                      debugLog('大图查看器定期检查超时，停止检查');
                     }
                   }, 5000);
                 }
@@ -379,7 +604,7 @@
         if (mutation.type === 'attributes' && mutation.target.tagName === 'IMG') {
           if (mutation.target.matches('img.vYzIMzy2[alt="查看图片"]') &&
             mutation.target.closest('#imageViewerWrapper')) {
-            console.log('大图查看器：图片src属性发生变化，重新处理');
+            debugLog('大图查看器：图片src属性发生变化，重新处理');
             setTimeout(() => {
               processWatermark(true);
             }, 100);
@@ -396,7 +621,7 @@
       attributeFilter: ['src', 'srcset']
     });
 
-    console.log('大图查看器监听器已启动，增强版支持');
+    debugLog('大图查看器监听器已启动，增强版支持');
   }
 
   // 增强的页面变化监听，支持AJAX动态加载
@@ -432,7 +657,7 @@
 
       // 如果需要处理且距离上次处理时间足够长
       if (needProcess && now - lastProcessTime > MIN_PROCESS_INTERVAL) {
-        console.log('检测到图片变化，触发水印处理');
+        debugLog('检测到图片变化，触发水印处理');
         setTimeout(() => {
           processWatermark();
           lastProcessTime = Date.now();
@@ -448,7 +673,7 @@
       attributeFilter: ['src', 'srcset', 'data-material-type', 'class', 'data-button-name', 'alt']
     });
 
-    console.log('页面变化监听器已启动');
+    debugLog('页面变化监听器已启动');
     return observer;
   }
 
@@ -466,7 +691,7 @@
               this.responseURL.includes('/api/') ||
               this.responseURL.includes('/similar/') ||
               this.responseURL.includes('/image/'))) { // 图片查看相关请求
-            console.log('检测到AJAX请求完成:', this.responseURL);
+            debugLog('检测到AJAX请求完成:', this.responseURL);
             // 延迟执行，确保数据已渲染到页面
             setTimeout(() => {
               processWatermark();
@@ -480,7 +705,7 @@
       return originalSend.apply(this, arguments);
     };
 
-    console.log('AJAX请求拦截器已启动');
+    debugLog('AJAX请求拦截器已启动');
   }
 
   // 拦截fetch请求
@@ -498,7 +723,7 @@
                 url.includes('/api/') ||
                 url.includes('/similar/') ||
                 url.includes('/image/'))) { // 图片查看相关请求
-              console.log('检测到fetch请求完成:', url);
+              debugLog('检测到fetch请求完成:', url);
               // 延迟执行，确保数据已渲染到页面
               setTimeout(() => {
                 processWatermark();
@@ -511,7 +736,7 @@
         });
     };
 
-    console.log('fetch请求拦截器已启动');
+    debugLog('fetch请求拦截器已启动');
   }
 
   // 拦截图片点击事件，提前处理大图URL
@@ -534,7 +759,7 @@
           document.querySelectorAll('[title="来自官方自营"]').length > 0;
 
         if (isOfficialMaterial) {
-          console.log('检测到官方自营素材图片点击:', img.src);
+          debugLog('检测到官方自营素材图片点击:', img.src);
 
           if (config.enableRemoveWatermark) {
             // 提前保存原始URL
@@ -545,14 +770,14 @@
             if (watermarkRegex.test(img.src) && !img.src.includes('/small/')) {
               const baseImageKey = img.src.match(watermarkRegex)[2].split('_')[0];
               const largeImageUrl = `https://gd-hbimg.huaban.com/small/${baseImageKey}`;
-              console.log('预生成VIP大图URL:', largeImageUrl);
+              debugLog('预生成VIP大图URL:', largeImageUrl);
             }
           } else {
             // 如果功能已关闭，确保使用原始URL
             restoreOriginalUrl(img);
           }
         } else {
-          console.log('检测到非官方自营素材图片点击，跳过预处理:', img.src);
+          debugLog('检测到非官方自营素材图片点击，跳过预处理:', img.src);
           // 对于非官方自营素材，确保使用原始URL
           restoreOriginalUrl(img);
         }
@@ -564,7 +789,7 @@
       }
     }, true);
 
-    console.log('图片点击事件拦截器已启动');
+    debugLog('图片点击事件拦截器已启动');
   }
 
   // 拦截拖拽和右键下载事件，移除图片后缀参数
@@ -583,16 +808,16 @@
           // 检查拖拽下载功能是否启用
           const config = getConfig();
           if (!config.enableDragDownload) {
-            console.log('拖拽下载功能已禁用，跳过处理');
+          debugLog('拖拽下载功能已禁用，跳过处理');
             return;
           }
 
-          console.log('检测到图片拖拽开始:', img.src);
+          debugLog('检测到图片拖拽开始:', img.src);
 
           // 移除后缀参数，保存为PNG格式
           const cleanUrl = removeImageSuffixParams(img.src);
           if (cleanUrl !== img.src) {
-            console.log('拖拽时移除后缀参数，新URL:', cleanUrl);
+            debugLog('拖拽时移除后缀参数，新URL:', cleanUrl);
 
             // 设置拖拽数据为处理后的URL
             e.dataTransfer.setData('text/uri-list', cleanUrl);
@@ -601,6 +826,27 @@
             // 设置文件名：优先使用alt属性，如果没有则使用URL生成的文件名
             const fileName = getFileNameFromAlt(img, cleanUrl);
             e.dataTransfer.setData('DownloadURL', `image/png:${fileName}:${cleanUrl}`);
+            // 记录拖拽事件到历史（浏览器无法判断是否最终完成保存，但可作为“拖拽尝试”记录）
+            try {
+              const w = (img && img.naturalWidth) || 0;
+              const h = (img && img.naturalHeight) || 0;
+              const pa = img.closest('a');
+              const originHref = pa ? pa.href : '';
+              addDownloadHistoryItem({
+                fileName,
+                url: cleanUrl,
+                pageUrl: location.href,
+                originHref,
+                official: isOfficialMaterial(),
+                width: w,
+                height: h,
+                action: 'drag'
+              });
+              // 后台缓存原图，提升后续历史视图命中率
+              try { fetchImageAsDataURL(cleanUrl, (dataUrl)=>{ if (dataUrl) cachePut(cleanUrl, dataUrl); }); } catch(_){}
+            } catch (err) {
+              console.error('记录拖拽历史失败:', err);
+            }
           }
         }
       }
@@ -620,16 +866,16 @@
           // 检查右键下载功能是否启用
           const config = getConfig();
           if (!config.enableRightClickDownload) {
-            console.log('右键下载功能已禁用，跳过处理');
+          debugLog('右键下载功能已禁用，跳过处理');
             return;
           }
 
-          console.log('检测到图片右键菜单，使用GM_download下载:', img.src);
+          debugLog('检测到图片右键菜单，使用GM_download下载:', img.src);
 
           // 移除后缀参数，获取干净的URL
           const cleanUrl = removeImageSuffixParams(img.src);
           if (cleanUrl !== img.src) {
-            console.log('处理后的下载URL:', cleanUrl);
+            debugLog('处理后的下载URL:', cleanUrl);
 
             // 阻止默认的右键菜单行为
             e.preventDefault();
@@ -648,17 +894,37 @@
                   name: fileName,
                   onload: function () {
                     console.log('图片下载成功:', fileName);
+                    try {
+                      const w = (img && img.naturalWidth) || 0;
+                      const h = (img && img.naturalHeight) || 0;
+                      const pa = img.closest('a');
+                      const originHref = pa ? pa.href : '';
+                      addDownloadHistoryItem({
+                        fileName,
+                        url: cleanUrl,
+                        pageUrl: location.href,
+                        originHref,
+                        official: isOfficialMaterial(),
+                        width: w,
+                        height: h,
+                        action: 'download'
+                      });
+                      // 下载完成后立即缓存原图
+                      try { fetchImageAsDataURL(cleanUrl, (dataUrl)=>{ if (dataUrl) cachePut(cleanUrl, dataUrl); }); } catch(_){}
+                    } catch (e) {
+                      console.error('记录下载历史失败:', e);
+                    }
                   },
                   onerror: function (error) {
                     console.error('图片下载失败:', error);
                     // 如果GM_download失败，尝试备用方案
-                    fallbackDownload(cleanUrl, fileName);
+                    fallbackDownload(cleanUrl, fileName, img);
                   }
                 });
               } catch (error) {
                 console.error('GM_download调用失败:', error);
                 // 备用下载方案
-                fallbackDownload(cleanUrl, getFileNameFromAlt(img, cleanUrl));
+                fallbackDownload(cleanUrl, getFileNameFromAlt(img, cleanUrl), img);
               }
             }, 100);
           }
@@ -667,7 +933,7 @@
     });
 
     // 备用下载方案：创建隐藏的下载链接
-    function fallbackDownload(url, fileName) {
+    function fallbackDownload(url, fileName, img) {
       try {
         const a = document.createElement('a');
         a.href = url;
@@ -677,6 +943,26 @@
         a.click();
         document.body.removeChild(a);
         console.log('备用下载方案执行成功');
+        try {
+          const w = (img && img.naturalWidth) || 0;
+          const h = (img && img.naturalHeight) || 0;
+          const pa = img ? img.closest('a') : null;
+          const originHref = pa ? pa.href : '';
+          addDownloadHistoryItem({
+            fileName,
+            url,
+            pageUrl: location.href,
+            originHref,
+            official: isOfficialMaterial(),
+            width: w,
+            height: h,
+            action: 'download'
+          });
+          // 备用下载后也进行缓存
+          try { fetchImageAsDataURL(url, (dataUrl)=>{ if (dataUrl) cachePut(url, dataUrl); }); } catch(_){}
+        } catch (e) {
+          console.error('记录下载历史失败:', e);
+        }
       } catch (error) {
         console.error('备用下载方案也失败:', error);
         // 最后的手段：在新标签页打开图片
@@ -684,7 +970,7 @@
       }
     }
 
-    console.log('拖拽和右键下载拦截器已启动');
+    debugLog('拖拽和右键下载拦截器已启动');
   }
 
   // 获取清理后的文件名（移除后缀参数，使用PNG扩展名）
@@ -791,7 +1077,7 @@
             background: white;
             border-radius: 24px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            width: 420px;
+            width: 520px;
             max-width: 95vw;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         `;
@@ -805,7 +1091,7 @@
             background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
         `;
 
-    header.innerHTML = `
+  header.innerHTML = `
             <div style="display: flex;gap: 10px;align-items: center;justify-content: space-between; padding: 0 15px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
@@ -821,6 +1107,9 @@
                     </a>
                     <a href="#" id="usageGuideLink" style="font-size: 12px; color: #64748b; text-decoration: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;">
                         使用说明
+                    </a>
+                    <a href="#" id="downloadHistoryLink" style="font-size: 12px; color: #334155; text-decoration: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s; background: #f1f5f9; border: 1px solid #e2e8f0;">
+                        历史下载
                     </a>
                 </div>
             </div>`;
@@ -946,6 +1235,7 @@
 
     // 卡片内容
     const content = document.createElement('div');
+    content.id = 'hb-history-content';
     content.style.cssText = `
             padding: 16px;
         `;
@@ -1194,6 +1484,42 @@
     switchesSection.appendChild(enableDragSection);
     switchesSection.appendChild(enableRightClickSection);
 
+    // 历史图片加载效果选择
+    const loadingStyleSection = document.createElement('div');
+    loadingStyleSection.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        `;
+    const currentLoadingStyle = (typeof GM_getValue === 'function') ? GM_getValue('historyLoadingStyle', 'spinner') : 'spinner';
+    loadingStyleSection.innerHTML = `
+            <span style="
+                font-size: 14px;
+                font-weight: 500;
+                color: #475569;
+                display: flex;
+                align-items: center;
+            ">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                </svg>
+                历史图片加载效果
+            </span>
+            <select id="historyLoadingSelect" style="
+                height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #334155; background: #ffffff;">
+                <option value="spinner">动图加载</option>
+                <option value="blur">模糊渐清</option>
+            </select>
+        `;
+    switchesSection.appendChild(loadingStyleSection);
+
+
     // 颜色设置区域
     const colorSettings = `
             <!-- 花瓣素材颜色 -->
@@ -1350,6 +1676,13 @@
     const userInput = document.getElementById('userInput');
     const saveBtn = document.getElementById('saveBtn');
     const resetBtn = document.getElementById('resetBtn');
+    const historyLoadingSelect = document.getElementById('historyLoadingSelect');
+    if (historyLoadingSelect) {
+      try { historyLoadingSelect.value = (typeof GM_getValue === 'function') ? GM_getValue('historyLoadingStyle', 'spinner') : 'spinner'; } catch(_) {}
+      historyLoadingSelect.addEventListener('change', ()=>{
+        try { GM_setValue('historyLoadingStyle', historyLoadingSelect.value); } catch(_) {}
+      });
+    }
 
     // 修复自定义背景色开关功能
     enableCustomSwitch.addEventListener('change', function () {
@@ -1368,7 +1701,7 @@
       enableWatermarkThumb.style.left = isChecked ? '22px' : '2px';
 
       // 立即应用水印处理（根据开关状态决定是去水印还是恢复）
-      console.log('去水印开关状态变化，立即处理所有图片');
+      debugLog('去水印开关状态变化，立即处理所有图片');
       setTimeout(() => {
         processWatermark(true); // force=true，强制重新处理
       }, 200);
@@ -1390,7 +1723,7 @@
       enableDragThumb.style.left = isChecked ? '22px' : '2px';
 
       // 立即更新拖拽下载功能状态
-      console.log('拖拽下载开关状态变化:', isChecked);
+      debugLog('拖拽下载开关状态变化:', isChecked);
       // 拖拽功能会在下次页面加载时生效，因为事件监听器是基于配置动态添加的
     });
 
@@ -1402,9 +1735,10 @@
       enableRightClickThumb.style.left = isChecked ? '22px' : '2px';
 
       // 立即更新右键下载功能状态
-      console.log('右键下载开关状态变化:', isChecked);
+      debugLog('右键下载开关状态变化:', isChecked);
       // 右键功能会在下次页面加载时生效，因为事件监听器是基于配置动态添加的
     });
+
 
     // 颜色验证
     function isValidColor(color) {
@@ -1461,14 +1795,15 @@
         enableDragDownload: enableDragSwitch.checked,
         enableRightClickDownload: enableRightClickSwitch.checked,
         materialColor: materialColor,
-        userColor: userColor
+        userColor: userColor,
+        historyLoadingStyle: historyLoadingSelect ? historyLoadingSelect.value : (GM_getValue('historyLoadingStyle','spinner'))
       };
 
       saveConfig(newConfig);
       applyStyles();
 
       // 根据去水印开关状态处理图片
-      console.log('保存设置后，处理所有图片');
+    debugLog('保存设置后，处理所有图片');
       setTimeout(() => {
         processWatermark(true); // force=true
       }, 200);
@@ -1509,6 +1844,7 @@
         rightClickSwitchBg.style.background = DEFAULT_CONFIG.enableRightClickDownload ? '#8b5cf6' : '#e2e8f0';
         enableRightClickThumb.style.left = DEFAULT_CONFIG.enableRightClickDownload ? '22px' : '2px';
 
+
         // 恢复颜色设置
         materialInput.value = DEFAULT_CONFIG.materialColor;
         materialPreview.style.background = DEFAULT_CONFIG.materialColor;
@@ -1519,7 +1855,7 @@
 
         // 应用设置
         applyStyles();
-        console.log('恢复默认后，处理所有图片');
+      debugLog('恢复默认后，处理所有图片');
         setTimeout(() => {
           processWatermark(true); // force=true
         }, 200);
@@ -1553,12 +1889,16 @@
 
   // 初始化
   function init() {
-    console.log('花瓣"去"水印. 初始化');
+    // 提前加载拼音库，保障后续下载历史写入时可生成拼音字段
+    ensurePinyinLib(() => {
+      try { hydratePinyinForHistory(); } catch (e) {}
+    });
 
 
     // 注册油猴菜单命令
     GM_registerMenuCommand('⚙️ 设置首选项', createConfigUI);
     GM_registerMenuCommand('🤝 网友互助区', showTwikooChat);
+    GM_registerMenuCommand('📦 历史下载', showDownloadHistory);
 
     // 应用样式（包含动画效果）
     applyStyles();
@@ -1567,7 +1907,7 @@
 
     // 页面加载完成后执行水印处理
     window.addEventListener('load', () => {
-      console.log('页面加载完成，执行初始水印处理');
+      debugLog('页面加载完成，执行初始水印处理');
       setTimeout(() => {
         applyStyles();
         processWatermark(true); // 初始加载时强制处理，processWatermark函数内部会判断是否为VIP素材
@@ -1602,8 +1942,13 @@
       observer.disconnect();
     });
 
-    // 使用动态版本号输出日志
-    console.log(`花瓣"去"水印 v${getScriptVersion()}. 初始化完成`);
+    // 使用动态版本号输出日志（样式化控制台信息）
+    (function(){
+      const v = getScriptVersion();
+      const s1 = 'padding: 2px 6px; border-radius: 3px 0 0 3px; color: #fff; background: #FF6699; font-weight: bold;';
+      const s2 = 'padding: 2px 6px; border-radius: 0 3px 3px 0; color: #fff; background: #FF9999; font-weight: bold;';
+      console.info(`%c 花瓣去水印 %c v${v} `, s1, s2);
+    })();
   }
 
   // 显示使用说明弹窗
@@ -1638,7 +1983,7 @@
             background: white;
             border-radius: 24px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            width: 600px;
+            width: 800px;
             max-width: 95vw;
             max-height: 80vh;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -1744,7 +2089,7 @@
 
         // 保存front matter中的评论配置
         const commentConfig = frontMatter.comments || null;
-        console.log('解析到的YAML Front Matter:', { comments: commentConfig });
+        debugLog('解析到的YAML Front Matter:', { comments: commentConfig });
 
         // 动态加载fancybox灯箱库
         const fancyboxCSS = document.createElement('link');
@@ -1896,6 +2241,515 @@
     container.addEventListener('remove', () => {
       document.removeEventListener('keydown', escHandler);
     });
+  }
+
+  function showDownloadHistory() {
+    const existing = document.getElementById('huabanDownloadHistory');
+    if (existing) {
+      existing.remove();
+    }
+    const overlay = document.createElement('div');
+    overlay.id = 'huabanDownloadHistory';
+    overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        `;
+    const card = document.createElement('div');
+    card.style.cssText = `
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 8px 25px rgba(0,0,0,.15);
+            width: 1200px;
+            max-width: 95vw;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+        `;
+    const header = document.createElement('div');
+    header.style.cssText = `
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        `;
+    const tools = document.createElement('div');
+    tools.style.cssText = `
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        `;
+    const title = document.createElement('div');
+    title.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;">
+              <h3 style="margin:0;color:#334155;font-size:16px;font-weight:600;">历史下载</h3>
+              <span id="historyCount" style="font-size:12px;color:#64748b;">0 条</span>
+            </div>
+        `;
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = '支持拼音模糊搜索';
+    searchInput.style.cssText = `
+            height: 32px;
+            padding: 0 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #334155;
+            width: 220px;
+            background: #ffffff;
+        `;
+    const sortSelect = document.createElement('select');
+    sortSelect.style.cssText = `
+            height: 32px;
+            padding: 0 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #334155;
+            background: #ffffff;
+        `;
+    sortSelect.innerHTML = `
+            <option value="time_desc">最新优先</option>
+            <option value="time_asc">最旧优先</option>
+            <option value="name_asc">名称升序</option>
+            <option value="name_desc">名称降序</option>
+        `;
+    const officialOnly = document.createElement('label');
+    officialOnly.style.cssText = `
+            display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;padding:6px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;
+        `;
+    officialOnly.innerHTML = `
+            <input type="checkbox" id="officialOnlyCheckbox" style="cursor:pointer;"> 仅官方自营
+        `;
+    const clearBtn = document.createElement('button');
+    clearBtn.textContent = '清空列表';
+    clearBtn.style.cssText = `
+            height: 32px; padding: 0 12px; border: 1px solid #ef4444; color: #ef4444; background: #fff1f2; border-radius: 8px; font-size: 13px; cursor: pointer;
+        `;
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '关闭';
+    closeBtn.style.cssText = `
+            height: 32px; padding: 0 12px; border: 1px solid #e2e8f0; color: #64748b; background: #f8fafc; border-radius: 8px; font-size: 13px; cursor: pointer;
+        `;
+    tools.appendChild(searchInput);
+    tools.appendChild(sortSelect);
+    tools.appendChild(officialOnly);
+    // 选择模式开关
+    const selectBtn = document.createElement('button');
+    selectBtn.textContent = '选择';
+    selectBtn.style.cssText = `height: 32px; padding: 0 12px; border: 1px solid #e2e8f0; color: #334155; background: #ffffff; border-radius: 8px; font-size: 13px; cursor: pointer;`;
+    // 批量删除按钮
+    const bulkDelBtnLocal = document.createElement('button');
+    bulkDelBtnLocal.id = 'hb-bulk-delete-btn';
+    bulkDelBtnLocal.textContent = '删除已选';
+    bulkDelBtnLocal.style.cssText = `height: 32px; padding: 0 12px; border: 1px solid #ef4444; color: #ef4444; background: #fff1f2; border-radius: 8px; font-size: 13px; cursor: pointer;`;
+    bulkDelBtnLocal.disabled = true;
+    tools.appendChild(selectBtn);
+    tools.appendChild(bulkDelBtnLocal);
+    tools.appendChild(clearBtn);
+    tools.appendChild(closeBtn);
+    // 将本地引用赋值到闭包变量
+    // 绑定交互
+    selectBtn.addEventListener('click', ()=>{
+      selectionMode = !selectionMode;
+      selectBtn.textContent = selectionMode ? '退出选择' : '选择';
+      if (!selectionMode) { selectedIds.clear(); }
+      render();
+    });
+    bulkDelBtnLocal.addEventListener('click', ()=>{
+      if (selectedIds.size === 0) return;
+      const ok = window.confirm(`确定删除选中的 ${selectedIds.size} 条记录吗？`);
+      if (!ok) return;
+      const list = getDownloadHistory();
+      const next = list.filter(x => !selectedIds.has(x.id));
+      saveDownloadHistory(next);
+      selectedIds.clear();
+      selectionMode = false;
+      render();
+    });
+    header.appendChild(title);
+    header.appendChild(tools);
+    const content = document.createElement('div');
+    content.id = 'hb-history-content';
+    content.className = 'hb-history-content';
+    content.style.cssText = `
+            padding: 16px 6px 16px 16px; overflow-y: auto; flex: 1; background: #ffffff;
+        `;
+    const masonry = document.createElement('div');
+    masonry.className = 'hb-history-masonry';
+    masonry.style.cssText = `
+            column-count: 4;
+            column-gap: 16px;
+        `;
+    content.appendChild(masonry);
+    card.appendChild(header);
+    card.appendChild(content);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    // 返回顶部按钮（在历史下载滚动时显示，固定在窗口区域右下角）
+    const backTopBtn = document.createElement('button');
+    backTopBtn.id = 'hb-history-back-top';
+    backTopBtn.style.cssText = `position: absolute; right: 16px; bottom: 16px; width: 40px; height: 40px; border-radius: 20px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s ease; cursor: pointer; z-index: 100;`;
+    backTopBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>';
+    card.appendChild(backTopBtn);
+
+    // 批量选择/删除状态
+    let selectionMode = false;
+    const selectedIds = new Set();
+    let io; // IntersectionObserver for lazy images
+    function updateBulkBtnState() {
+      const btn = document.getElementById('hb-bulk-delete-btn');
+      if (!btn) return;
+      const count = selectedIds.size;
+      btn.disabled = count === 0;
+      btn.textContent = count > 0 ? `删除已选(${count})` : '删除已选';
+    }
+
+    function render() {
+      let list = getDownloadHistory();
+      // 准备拼音库（可选）
+      const hasPinyin = (typeof window.pinyinPro !== 'undefined' && typeof window.pinyinPro.pinyin === 'function') || (typeof window.pinyin === 'function');
+      const pinyinFn = typeof window.pinyinPro !== 'undefined' && typeof window.pinyinPro.pinyin === 'function'
+        ? window.pinyinPro.pinyin
+        : (typeof window.pinyin === 'function' ? window.pinyin : null);
+      const toPinyin = (s) => {
+        if (!s || !pinyinFn) return '';
+        try {
+          return String(pinyinFn(String(s), { toneType: 'none', type: 'string' })).toLowerCase();
+        } catch (e) { return ''; }
+      };
+      const acronym = (src) => {
+        if (!src || !pinyinFn) return '';
+        try {
+          const arr = pinyinFn(String(src), { toneType: 'none', type: 'array' }) || [];
+          return arr.map(x => (typeof x === 'string' && x.length > 0) ? x[0] : '').join('').toLowerCase();
+        } catch (e) { return ''; }
+      };
+      const isSubseq = (q, t) => {
+        let i=0; for (let c of q) { i = t.indexOf(c, i); if (i===-1) return false; i++; } return true;
+      };
+      document.getElementById('historyCount').textContent = `${list.length} 条`;
+      const q = searchInput.value.trim().toLowerCase();
+      if (q) {
+        const qFlat = q.replace(/\s+/g,'');
+        list = list.filter(x => {
+          const name = String(x.fileName||'').toLowerCase();
+          let pyFlat = String(x.name_py||'').toLowerCase().replace(/\s+/g,'');
+          let ac = String(x.name_py_acronym||'').toLowerCase();
+          // 对旧记录缺失字段的兜底：动态计算一次
+          if ((!pyFlat || !ac) && pinyinFn) {
+            try {
+              const pyDyn = String(pinyinFn(String(x.fileName||''), { toneType: 'none', type: 'string' }));
+              pyFlat = pyFlat || pyDyn.replace(/\s+/g,'');
+              const arrDyn = pinyinFn(String(x.fileName||''), { toneType: 'none', type: 'array' }) || [];
+              ac = ac || arrDyn.map(t => (typeof t === 'string' && t.length>0) ? t[0] : '').join('').toLowerCase();
+            } catch (e) {}
+          }
+          return (
+            name.includes(q) ||
+            (pyFlat && pyFlat.includes(qFlat)) ||
+            (ac && ac.includes(q)) ||
+            isSubseq(q, name) || (pyFlat && isSubseq(q, pyFlat))
+          );
+        });
+      }
+      const only = officialOnly.querySelector('input').checked;
+      if (only) list = list.filter(x => x.official);
+      const sort = sortSelect.value;
+      if (sort === 'time_desc') list.sort((a,b)=>b.time-a.time);
+      if (sort === 'time_asc') list.sort((a,b)=>a.time-b.time);
+      if (sort === 'name_asc') list.sort((a,b)=>String(a.fileName).localeCompare(String(b.fileName)));
+      if (sort === 'name_desc') list.sort((a,b)=>String(b.fileName).localeCompare(String(a.fileName)));
+      masonry.innerHTML = '';
+      list.forEach(item => {
+        const box = document.createElement('div');
+        box.className = 'hb-history-item';
+        box.style.cssText = `
+                break-inside: avoid; margin-bottom: 16px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+            `;
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'hb-history-img-wrap';
+        imgWrap.style.cssText = `
+                background: #f8fafc; position: relative; ${item.width && item.height ? `aspect-ratio:${item.width} / ${item.height};` : ''} overflow:hidden;
+            `;
+        const img = document.createElement('img');
+        img.setAttribute('loading', 'lazy');
+        img.dataset.src = item.url;
+        img.alt = item.fileName || '预览';
+        img.style.cssText = `width: 100%; height: 100%; object-fit: contain; display: block; opacity:0; transition: opacity .2s ease, filter .25s ease;`
+        imgWrap.appendChild(img);
+        // 立即命中缓存则直接使用，避免再次请求
+        let loader = null;
+        let cached0 = null;
+        try {
+          cached0 = cacheGet(item.url);
+          if (cached0) {
+            img.src = cached0;
+            img.style.opacity = '1';
+            img.style.filter = 'blur(0px)';
+            delete img.dataset.src;
+          }
+        } catch(_) {}
+        // 根据用户选择的加载样式：spinner 或 blur，仅在未命中缓存时启用
+        try {
+          if (!cached0) {
+            const mode = (typeof GM_getValue === 'function') ? GM_getValue('historyLoadingStyle', 'spinner') : 'spinner';
+            if (mode === 'spinner') {
+              loader = document.createElement('img');
+              loader.src = 'https://butterfly.js.org/img/loading.gif';
+              loader.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60%;height:auto;pointer-events:none;`;
+              loader.className = 'hb-history-loader';
+              imgWrap.appendChild(loader);
+            } else {
+              img.style.opacity = '1';
+              img.style.filter = 'blur(12px)';
+            }
+          }
+        } catch (_) {}
+        // 懒加载：可见时替换为真实地址
+        try {
+          if (!io && 'IntersectionObserver' in window) {
+            const rootEl = document.querySelector('.hb-history-masonry') || document.getElementById('hb-history-content') || content;
+            io = new IntersectionObserver((entries)=>{
+              entries.forEach(en => {
+                if (en.isIntersecting) {
+                  const el = en.target;
+                  const ds = el.dataset && el.dataset.src;
+                  if (ds) {
+                    el.addEventListener('load', ()=>{ try { el.style.opacity = '1'; const l = el.parentElement && el.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); el.style.filter = 'blur(0px)'; } catch(_){} });
+                    el.addEventListener('error', ()=>{ try { el.style.opacity = '1'; const l = el.parentElement && el.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); el.style.filter = 'blur(0px)'; } catch(_){} });
+                    const cached = cacheGet(ds);
+                    if (cached) {
+                      el.src = cached; delete el.dataset.src;
+                    } else {
+                      fetchImageAsDataURL(ds, (dataUrl)=>{
+                        try {
+                          if (dataUrl) { cachePut(ds, dataUrl); el.src = dataUrl; }
+                          else { el.src = ds; }
+                          delete el.dataset.src;
+                        } catch(_){}
+                      });
+                    }
+                  }
+                  io.unobserve(el);
+                }
+              });
+            }, { root: rootEl, rootMargin: '100px', threshold: 0.01 });
+          }
+          if (io) {
+            // 只有在尚未设置真实地址时才进行懒加载观察
+            if (img.dataset.src) io.observe(img);
+          } else {
+            // 兼容无 IO 的环境
+            setTimeout(()=>{
+              if (img.dataset.src) {
+                img.addEventListener('load', ()=>{ try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); img.style.filter = 'blur(0px)'; } catch(_){} });
+                img.addEventListener('error', ()=>{ try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); img.style.filter = 'blur(0px)'; } catch(_){} });
+                const ds = img.dataset.src;
+                const cached = cacheGet(ds);
+                if (cached) { img.src = cached; delete img.dataset.src; }
+                else {
+                  fetchImageAsDataURL(ds, (dataUrl)=>{
+                    try {
+                      if (dataUrl) { cachePut(ds, dataUrl); img.src = dataUrl; }
+                      else { img.src = ds; }
+                      delete img.dataset.src;
+                    } catch(_){}
+                  });
+                }
+              }
+            }, 0);
+          }
+        } catch(_) {
+          setTimeout(()=>{
+            if (img.dataset.src) {
+              img.addEventListener('load', ()=>{ try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); } catch(_){} });
+              img.addEventListener('error', ()=>{ try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); } catch(_){} });
+              const ds2 = img.dataset.src;
+              const cached2 = cacheGet(ds2);
+              if (cached2) { img.src = cached2; delete img.dataset.src; }
+              else { img.src = ds2; delete img.dataset.src; }
+            }
+          }, 0);
+        }
+
+        // 批量选择复选框（选择模式下显示）
+        const selectBox = document.createElement('input');
+        selectBox.type = 'checkbox';
+        selectBox.style.cssText = `position:absolute;top:8px;left:8px;width:20px;height:20px;transform:scale(1.3);border:1px solid #e2e8f0;border-radius:4px;opacity:${selectionMode ? '1' : '0'};pointer-events:${selectionMode ? 'auto' : 'none'};transition:opacity .2s ease;cursor:pointer;background:#ffffff;`;
+        selectBox.checked = selectedIds.has(item.id);
+        selectBox.addEventListener('click', (ev)=> ev.stopPropagation());
+        selectBox.addEventListener('change', ()=>{
+          if (selectBox.checked) selectedIds.add(item.id); else selectedIds.delete(item.id);
+          updateBulkBtnState();
+        });
+        imgWrap.appendChild(selectBox);
+        const info = document.createElement('div');
+        info.style.cssText = `padding: 10px; display: flex; flex-direction: column; gap: 6px;`
+        const nameLine = document.createElement('div');
+        nameLine.style.cssText = `font-size: 13px; color: #334155; font-weight: 600;`
+        if (item.originHref) {
+          const link = document.createElement('a');
+          link.href = item.originHref;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = item.fileName;
+          link.style.cssText = `color:#1f2937;text-decoration:none;`;
+          nameLine.appendChild(link);
+        } else {
+          nameLine.textContent = item.fileName;
+        }
+        const metaLine = document.createElement('div');
+        metaLine.style.cssText = `font-size: 12px; color: #64748b;`
+        const tag = item.official ? '官方自营' : '用户素材';
+        const act = item.action === 'drag' ? '拖拽' : '下载';
+        const wh = item.width && item.height ? `${item.width}×${item.height}` : '';
+        metaLine.textContent = `${formatDateTime(item.time)} · ${tag} · ${act}${wh ? ' · ' + wh : ''}`;
+        const actions = document.createElement('div');
+        actions.style.cssText = `display:flex; gap:10px;`
+        const redl = document.createElement('button');
+        redl.textContent = '重新下载';
+        redl.style.cssText = `height:28px;width:50%;padding:0 10px;border:1px solid #3b82f6;color:#ffffff;background:#3b82f6;border-radius:6px;font-size:12px;cursor:pointer;`
+        redl.addEventListener('click', ()=>{
+          try {
+            GM_download({ url: item.url, name: item.fileName, onload: function(){ try { fetchImageAsDataURL(item.url, (dataUrl)=>{ if (dataUrl) cachePut(item.url, dataUrl); }); } catch(_){} } });
+          } catch (e) {
+            const a = document.createElement('a');
+            a.href = item.url; a.download = item.fileName; a.style.display='none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            try { fetchImageAsDataURL(item.url, (dataUrl)=>{ if (dataUrl) cachePut(item.url, dataUrl); }); } catch(_){ }
+          }
+        });
+        const copy = document.createElement('button');
+        copy.textContent = '复制链接';
+        copy.style.cssText = `height:28px;width:50%;padding:0 10px;border:1px solid #e2e8f0;color:#334155;background:#f8fafc;border-radius:6px;font-size:12px;cursor:pointer;`
+        copy.addEventListener('click', ()=>{
+          navigator.clipboard && navigator.clipboard.writeText(item.url);
+        });
+        // 悬浮删除图标按钮（图片右上角显示）
+        const delIcon = document.createElement('button');
+        delIcon.style.cssText = `position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:18px;background:#ffffff;border:1px solid #e2e8f0;box-shadow:0 2px 6px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease;cursor:pointer;`;
+        delIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+        delIcon.addEventListener('click', (ev)=>{
+          ev.stopPropagation();
+          removeDownloadHistoryItem(item.id);
+          render();
+        });
+        imgWrap.addEventListener('mouseenter', ()=>{
+          delIcon.style.opacity = '1';
+          delIcon.style.pointerEvents = 'auto';
+        });
+        imgWrap.addEventListener('mouseleave', ()=>{
+          delIcon.style.opacity = '0';
+          delIcon.style.pointerEvents = 'none';
+        });
+        imgWrap.appendChild(delIcon);
+        actions.appendChild(redl);
+        actions.appendChild(copy);
+        info.appendChild(nameLine);
+        info.appendChild(metaLine);
+        info.appendChild(actions);
+        box.appendChild(imgWrap);
+        box.appendChild(info);
+        masonry.appendChild(box);
+        img.addEventListener('click', ()=>{
+          const pv = document.createElement('div');
+          pv.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:10001;`;
+          const img2 = document.createElement('img');
+          img2.src = item.url; img2.alt = item.fileName; img2.style.cssText = `max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.3);`;
+          pv.appendChild(img2);
+          pv.addEventListener('click', ()=> document.body.removeChild(pv));
+        document.body.appendChild(pv);
+        });
+      });
+      updateBulkBtnState();
+
+      // 返回顶部按钮显示逻辑：根据实际可滚动容器（masonry 或 content）
+      const backTopBtnLocal = document.getElementById('hb-history-back-top');
+      const masonryEl = document.querySelector('.hb-history-masonry');
+      const contentEl = document.getElementById('hb-history-content') || content;
+      const scrollEl = (masonryEl && masonryEl.scrollHeight > masonryEl.clientHeight) ? masonryEl : contentEl;
+      const onScrollShowBackTop = ()=>{
+        try {
+          const canScroll = scrollEl.scrollHeight > scrollEl.clientHeight;
+          const show = canScroll && scrollEl.scrollTop > 10;
+          if (backTopBtnLocal) {
+            backTopBtnLocal.style.opacity = show ? '1' : '0';
+            backTopBtnLocal.style.pointerEvents = show ? 'auto' : 'none';
+          }
+        } catch(_){}
+      };
+      if (!scrollEl.dataset.backTopBound) {
+        scrollEl.addEventListener('scroll', onScrollShowBackTop);
+        scrollEl.addEventListener('wheel', onScrollShowBackTop, { passive: true });
+        scrollEl.addEventListener('touchmove', onScrollShowBackTop, { passive: true });
+        scrollEl.dataset.backTopBound = '1';
+      }
+      onScrollShowBackTop();
+      if (backTopBtnLocal) {
+        backTopBtnLocal.onclick = ()=>{
+          try { scrollEl.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) { scrollEl.scrollTop = 0; }
+        };
+      }
+    }
+    render();
+    // 动态加载拼音库（如未存在），加载后重新渲染
+    if (typeof window.pinyinPro === 'undefined' || typeof window.pinyinPro.pinyin !== 'function') {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/pinyin-pro';
+      s.onload = () => {
+        try {
+          const gw = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
+          if ((typeof window.pinyinPro === 'undefined' || typeof window.pinyinPro.pinyin !== 'function')) {
+            if (gw.pinyinPro && typeof gw.pinyinPro.pinyin === 'function') {
+              window.pinyinPro = { pinyin: gw.pinyinPro.pinyin };
+            } else if (typeof gw.pinyin === 'function') {
+              window.pinyinPro = { pinyin: gw.pinyin };
+            }
+          }
+          render();
+        } catch(e) { try { render(); } catch(_){} }
+      };
+      document.head.appendChild(s);
+    }
+    let hbSearchTimer;
+    const triggerSearch = ()=>{ try { clearTimeout(hbSearchTimer); hbSearchTimer = setTimeout(()=>{ try { render(); } catch(_){} }, 400); } catch(_){} };
+    const triggerSearchImmediate = ()=>{ try { clearTimeout(hbSearchTimer); render(); } catch(_){} };
+    searchInput.addEventListener('input', triggerSearch);
+    searchInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') { e.preventDefault(); triggerSearchImmediate(); } });
+    sortSelect.addEventListener('change', render);
+    officialOnly.querySelector('input').addEventListener('change', render);
+    clearBtn.addEventListener('click', ()=>{
+      try {
+        const ok = window.confirm('确定清空历史下载列表吗？此操作不可恢复');
+        if (!ok) return;
+        clearDownloadHistory();
+        render();
+        const original = clearBtn.textContent;
+        clearBtn.textContent = '已清空';
+        setTimeout(()=> clearBtn.textContent = original, 1000);
+      } catch (e) {
+        clearDownloadHistory();
+        render();
+      }
+    });
+    closeBtn.addEventListener('click', ()=>{ overlay.remove(); });
+    overlay.addEventListener('click', (e)=>{ if (e.target === overlay) overlay.remove(); });
   }
 
   // 显示Twikoo聊天模块
@@ -2058,18 +2912,29 @@
     }
   }
 
+  // 在配置界面创建完成后添加历史下载链接的事件监听
+  function addDownloadHistoryListener() {
+    const link = document.getElementById('downloadHistoryLink');
+    if (link) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        showDownloadHistory();
+      });
+    }
+  }
+
   // 修改createConfigUI函数，在创建完成后添加使用说明链接的事件监听
   const originalCreateConfigUI = createConfigUI;
   createConfigUI = function () {
     originalCreateConfigUI();
     // 延迟一点时间确保DOM已渲染
-    setTimeout(addUsageGuideListener, 100);
+    setTimeout(() => {
+      addUsageGuideListener();
+      addDownloadHistoryListener();
+    }, 100);
   };
 
   // 启动脚本
   init();
-
-  // console.log('花瓣"去"水印 v${getScriptVersion()} 已加载');
-  // console.log('功能：花瓣网背景色自定义+官网素材去水印（完美修复版）');
-  // console.log('特点：支持开关状态实时切换，自动恢复原始URL');
+  
 })();
