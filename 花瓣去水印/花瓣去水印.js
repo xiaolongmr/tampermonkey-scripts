@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         花瓣"去"水印
-// @version      2.75
+// @version      2.76
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -98,6 +98,11 @@
                 ${config.enableCustom ? 'background-image:none!important;' : ''}
             }
 
+            /* 历史下载素材名称hover样式 */
+            .hb-history-item a:hover {
+                opacity: 0.7;
+            }
+
             
             /* 隐藏指定元素 */
             // .CdxAiT3A {
@@ -143,72 +148,7 @@
     document.head.appendChild(style);
   }
 
-  // 历史图片缓存：使用 GM_setValue 存储 dataURL（持久化，含简单 LRU）
-  function getImageCache() {
-    try {
-      const map = GM_getValue('hb_img_cache', {});
-      return map && typeof map === 'object' ? map : {};
-    } catch (e) { return {}; }
-  }
-  function setImageCache(map) {
-    try { GM_setValue('hb_img_cache', map); } catch (e) {}
-  }
-  function getCacheSettings() {
-    try {
-      const ttl = GM_getValue('hb_img_cache_ttl_ms', 7 * 24 * 60 * 60 * 1000);
-      const max = GM_getValue('hb_img_cache_max', 500);
-      return { ttl: typeof ttl === 'number' ? ttl : 7 * 24 * 60 * 60 * 1000, max: typeof max === 'number' ? max : 500 };
-    } catch (e) { return { ttl: 7 * 24 * 60 * 60 * 1000, max: 500 }; }
-  }
-  function cacheGet(url) {
-    try {
-      const map = getImageCache();
-      const rec = map[url];
-      if (rec && rec.data) {
-        const { ttl } = getCacheSettings();
-        if (typeof rec.ts === 'number' && (Date.now() - rec.ts) > ttl) { delete map[url]; setImageCache(map); return null; }
-        rec.ts = Date.now(); setImageCache(map); return rec.data;
-      }
-      return null;
-    } catch (e) { return null; }
-  }
-  function cachePut(url, dataUrl) {
-    try {
-      const map = getImageCache();
-      map[url] = { data: dataUrl, ts: Date.now() };
-      const { max, ttl } = getCacheSettings();
-      // 先移除过期项
-      const keys = Object.keys(map);
-      for (const k of keys) { if ((Date.now() - (map[k].ts||0)) > ttl) delete map[k]; }
-      // 限制最多缓存 max 张，按时间淘汰最旧
-      const keys2 = Object.keys(map);
-      if (keys2.length > max) {
-        keys2.sort((a,b)=> (map[a].ts||0) - (map[b].ts||0));
-        const removeCount = keys2.length - max;
-        for (let i=0; i<removeCount; i++) delete map[keys2[i]];
-      }
-      setImageCache(map);
-    } catch (e) {}
-  }
-  function fetchImageAsDataURL(url, cb) {
-    try {
-      if (typeof GM_xmlhttpRequest !== 'function') { cb(null); return; }
-      GM_xmlhttpRequest({
-        method: 'GET',
-        url,
-        responseType: 'blob',
-        onload: function(res){
-          try {
-            const blob = res.response;
-            const reader = new FileReader();
-            reader.onloadend = function(){ cb(reader.result || null); };
-            reader.readAsDataURL(blob);
-          } catch (e) { cb(null); }
-        },
-        onerror: function(){ cb(null); }
-      });
-    } catch (e) { cb(null); }
-  }
+
 
   // 保存原始URL到图片元素的dataset中
   function saveOriginalUrl(img) {
@@ -273,7 +213,7 @@
 
   // 保障：加载并桥接 pinyin-pro 到沙箱上下文
   function ensurePinyinLib(onReady) {
-    const ready = () => { try { typeof onReady === 'function' && onReady(); } catch (e) {} };
+    const ready = () => { try { typeof onReady === 'function' && onReady(); } catch (e) { } };
     try {
       const has = (typeof window.pinyinPro !== 'undefined' && typeof window.pinyinPro.pinyin === 'function');
       if (has) return ready();
@@ -289,7 +229,7 @@
               window.pinyinPro = { pinyin: gw.pinyin };
             }
           }
-        } catch (e) {}
+        } catch (e) { }
         ready();
       };
       document.head.appendChild(s);
@@ -314,7 +254,7 @@
     const list = getDownloadHistory();
     // 预生成拼音字段（若库未就绪，后续 hydratePinyinForHistory 会补齐）
     let pyInfo = { py: '', ac: '' };
-    try { pyInfo = makePinyinForName(item.fileName); } catch (e) {}
+    try { pyInfo = makePinyinForName(item.fileName); } catch (e) { }
     const record = {
       id: Date.now() + Math.random().toString(16).slice(2),
       fileName: item.fileName,
@@ -353,7 +293,7 @@
         }
       }
       if (changed) saveDownloadHistory(list);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   function removeDownloadHistoryItem(id) {
@@ -457,7 +397,7 @@
           if (watermarkRegex.test(originalSrc) && !originalSrc.includes('/small/')) {
             const newSrc = originalSrc.replace(watermarkRegex, '$1/small/$2');
             debugLog('检查新图片URL是否有效:', newSrc);
-            
+
             // 检查新链接是否有效
             const isValid = await checkImageUrl(newSrc);
             if (isValid) {
@@ -473,7 +413,7 @@
           if (img.srcset && watermarkRegex.test(img.srcset) && !img.srcset.includes('/small/')) {
             const newSrcset = img.srcset.replace(watermarkRegex, '$1/small/$2');
             debugLog('检查新图片srcset是否有效:', newSrcset);
-            
+
             // 检查新链接是否有效
             const isValid = await checkImageUrl(newSrcset.split(' ')[0]); // 取第一个URL检查
             if (isValid) {
@@ -808,7 +748,7 @@
           // 检查拖拽下载功能是否启用
           const config = getConfig();
           if (!config.enableDragDownload) {
-          debugLog('拖拽下载功能已禁用，跳过处理');
+            debugLog('拖拽下载功能已禁用，跳过处理');
             return;
           }
 
@@ -824,14 +764,17 @@
             e.dataTransfer.setData('text/plain', cleanUrl);
 
             // 设置文件名：优先使用alt属性，如果没有则使用URL生成的文件名
-            const fileName = getFileNameFromAlt(img, cleanUrl);
+            const fileName = getFileNameFromAlt(img);
             e.dataTransfer.setData('DownloadURL', `image/png:${fileName}:${cleanUrl}`);
             // 记录拖拽事件到历史（浏览器无法判断是否最终完成保存，但可作为“拖拽尝试”记录）
             try {
               const w = (img && img.naturalWidth) || 0;
               const h = (img && img.naturalHeight) || 0;
+              // 判断是否为图片详情页，是的话使用当前页面URL作为originHref
+              // 根据花瓣网实际URL结构，使用'pins'识别图片详情页
+              const isDetailPage = window.location.pathname.includes('/pins/');
               const pa = img.closest('a');
-              const originHref = pa ? pa.href : '';
+              const originHref = isDetailPage ? window.location.href : (pa ? pa.href : '');
               addDownloadHistoryItem({
                 fileName,
                 url: cleanUrl,
@@ -843,7 +786,7 @@
                 action: 'drag'
               });
               // 后台缓存原图，提升后续历史视图命中率
-              try { fetchImageAsDataURL(cleanUrl, (dataUrl)=>{ if (dataUrl) cachePut(cleanUrl, dataUrl); }); } catch(_){}
+              try { fetchImageAsDataURL(cleanUrl, (dataUrl) => { if (dataUrl) cachePut(cleanUrl, dataUrl); }); } catch (_) { }
             } catch (err) {
               console.error('记录拖拽历史失败:', err);
             }
@@ -866,7 +809,7 @@
           // 检查右键下载功能是否启用
           const config = getConfig();
           if (!config.enableRightClickDownload) {
-          debugLog('右键下载功能已禁用，跳过处理');
+            debugLog('右键下载功能已禁用，跳过处理');
             return;
           }
 
@@ -885,7 +828,7 @@
             setTimeout(() => {
               try {
                 // 使用alt属性作为文件名，如果没有alt则使用默认文件名
-                const fileName = getFileNameFromAlt(img, cleanUrl);
+                const fileName = getFileNameFromAlt(img) + '.png';
 
                 // 使用GM_download下载图片
                 // 注意：GM_download会弹出下载确认对话框
@@ -897,10 +840,13 @@
                     try {
                       const w = (img && img.naturalWidth) || 0;
                       const h = (img && img.naturalHeight) || 0;
+                      // 判断是否为图片详情页，是的话使用当前页面URL作为originHref
+                      // 根据花瓣网实际URL结构，使用'pins'识别图片详情页
+                      const isDetailPage = window.location.pathname.includes('/pins/');
                       const pa = img.closest('a');
-                      const originHref = pa ? pa.href : '';
+                      const originHref = isDetailPage ? window.location.href : (pa ? pa.href : '');
                       addDownloadHistoryItem({
-                        fileName,
+                        fileName: getFileNameFromAlt(img),
                         url: cleanUrl,
                         pageUrl: location.href,
                         originHref,
@@ -910,7 +856,7 @@
                         action: 'download'
                       });
                       // 下载完成后立即缓存原图
-                      try { fetchImageAsDataURL(cleanUrl, (dataUrl)=>{ if (dataUrl) cachePut(cleanUrl, dataUrl); }); } catch(_){}
+                      try { fetchImageAsDataURL(cleanUrl, (dataUrl) => { if (dataUrl) cachePut(cleanUrl, dataUrl); }); } catch (_) { }
                     } catch (e) {
                       console.error('记录下载历史失败:', e);
                     }
@@ -924,7 +870,7 @@
               } catch (error) {
                 console.error('GM_download调用失败:', error);
                 // 备用下载方案
-                fallbackDownload(cleanUrl, getFileNameFromAlt(img, cleanUrl), img);
+                fallbackDownload(cleanUrl, getFileNameFromAlt(img) + '.png', img);
               }
             }, 100);
           }
@@ -949,7 +895,7 @@
           const pa = img ? img.closest('a') : null;
           const originHref = pa ? pa.href : '';
           addDownloadHistoryItem({
-            fileName,
+            fileName: getFileNameFromAlt(img),
             url,
             pageUrl: location.href,
             originHref,
@@ -959,7 +905,7 @@
             action: 'download'
           });
           // 备用下载后也进行缓存
-          try { fetchImageAsDataURL(url, (dataUrl)=>{ if (dataUrl) cachePut(url, dataUrl); }); } catch(_){}
+          try { fetchImageAsDataURL(url, (dataUrl) => { if (dataUrl) cachePut(url, dataUrl); }); } catch (_) { }
         } catch (e) {
           console.error('记录下载历史失败:', e);
         }
@@ -974,52 +920,10 @@
   }
 
   // 获取清理后的文件名（移除后缀参数，使用PNG扩展名）
-  function getCleanFileName(url) {
-    // 从URL中提取文件名
-    const urlParts = url.split('/');
-    let fileName = urlParts[urlParts.length - 1];
-
-    // 移除后缀参数
-    fileName = fileName.replace(/(_fw\d+webp)(\.webp)?$/i, '');
-
-    // 确保使用PNG扩展名
-    if (!fileName.includes('.')) {
-      fileName += '.png';
-    } else {
-      fileName = fileName.replace(/\.(jpg|jpeg|webp)$/i, '.png');
-    }
-
-    return fileName;
-  }
 
   // 根据alt属性或span标签生成文件名，如果没有则使用默认文件名
-  function getFileNameFromAlt(img, url) {
-    // 首先检查是否为预览图片（a标签内的img标签，且有隐藏的span）
-    const parentA = img.closest('a');
-    if (parentA) {
-      const hiddenSpan = parentA.querySelector('span[style*="display: none"]');
-      if (hiddenSpan && hiddenSpan.textContent) {
-        // 使用span的文本内容作为文件名
-        let spanText = hiddenSpan.textContent.trim();
-        if (spanText) {
-          // 清理文本，移除特殊字符，只保留字母、数字、中文和空格
-          let cleanText = spanText.replace(/[^\w\u4e00-\u9fa5\s]/g, '').trim();
-
-          // 如果清理后的文本不为空，则使用span文本作为文件名
-          if (cleanText) {
-            // 限制文件名长度，避免过长
-            if (cleanText.length > 50) {
-              cleanText = cleanText.substring(0, 50);
-            }
-
-            // 添加.png扩展名
-            return cleanText + '.png';
-          }
-        }
-      }
-    }
-
-    // 获取alt属性值
+  function getFileNameFromAlt(img) {
+    // 仅使用alt属性生成文件名
     const altText = img.alt || '';
 
     // 如果alt属性有内容且不是默认的"查看图片"，则使用alt作为文件名
@@ -1030,17 +934,17 @@
       // 如果清理后的文本不为空，则使用alt作为文件名
       if (cleanAlt) {
         // 限制文件名长度，避免过长
-        if (cleanAlt.length > 50) {
-          cleanAlt = cleanAlt.substring(0, 50);
+        if (cleanAlt.length > 40) {
+          cleanAlt = cleanAlt.substring(0, 40);
         }
 
         // 添加.png扩展名
-        return cleanAlt + '.png';
+        return cleanAlt;
       }
     }
 
-    // 如果没有有效的alt属性或span文本，则使用默认的文件名生成逻辑
-    return getCleanFileName(url);
+    // 如果alt属性无效，返回默认名称
+    return '未命名';
   }
 
   // 创建配置界面
@@ -1091,7 +995,7 @@
             background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
         `;
 
-  header.innerHTML = `
+    header.innerHTML = `
             <div style="display: flex;gap: 10px;align-items: center;justify-content: space-between; padding: 0 15px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
@@ -1678,9 +1582,9 @@
     const resetBtn = document.getElementById('resetBtn');
     const historyLoadingSelect = document.getElementById('historyLoadingSelect');
     if (historyLoadingSelect) {
-      try { historyLoadingSelect.value = (typeof GM_getValue === 'function') ? GM_getValue('historyLoadingStyle', 'spinner') : 'spinner'; } catch(_) {}
-      historyLoadingSelect.addEventListener('change', ()=>{
-        try { GM_setValue('historyLoadingStyle', historyLoadingSelect.value); } catch(_) {}
+      try { historyLoadingSelect.value = (typeof GM_getValue === 'function') ? GM_getValue('historyLoadingStyle', 'spinner') : 'spinner'; } catch (_) { }
+      historyLoadingSelect.addEventListener('change', () => {
+        try { GM_setValue('historyLoadingStyle', historyLoadingSelect.value); } catch (_) { }
       });
     }
 
@@ -1796,14 +1700,14 @@
         enableRightClickDownload: enableRightClickSwitch.checked,
         materialColor: materialColor,
         userColor: userColor,
-        historyLoadingStyle: historyLoadingSelect ? historyLoadingSelect.value : (GM_getValue('historyLoadingStyle','spinner'))
+        historyLoadingStyle: historyLoadingSelect ? historyLoadingSelect.value : (GM_getValue('historyLoadingStyle', 'spinner'))
       };
 
       saveConfig(newConfig);
       applyStyles();
 
       // 根据去水印开关状态处理图片
-    debugLog('保存设置后，处理所有图片');
+      debugLog('保存设置后，处理所有图片');
       setTimeout(() => {
         processWatermark(true); // force=true
       }, 200);
@@ -1855,7 +1759,7 @@
 
         // 应用设置
         applyStyles();
-      debugLog('恢复默认后，处理所有图片');
+        debugLog('恢复默认后，处理所有图片');
         setTimeout(() => {
           processWatermark(true); // force=true
         }, 200);
@@ -1891,7 +1795,7 @@
   function init() {
     // 提前加载拼音库，保障后续下载历史写入时可生成拼音字段
     ensurePinyinLib(() => {
-      try { hydratePinyinForHistory(); } catch (e) {}
+      try { hydratePinyinForHistory(); } catch (e) { }
     });
 
 
@@ -1903,7 +1807,7 @@
     // 应用样式（包含动画效果）
     applyStyles();
 
-    
+
 
     // 页面加载完成后执行水印处理
     window.addEventListener('load', () => {
@@ -1943,7 +1847,7 @@
     });
 
     // 使用动态版本号输出日志（样式化控制台信息）
-    (function(){
+    (function () {
       const v = getScriptVersion();
       const s1 = 'padding: 2px 6px; border-radius: 3px 0 0 3px; color: #fff; background: #FF6699; font-weight: bold;';
       const s2 = 'padding: 2px 6px; border-radius: 0 3px 3px 0; color: #fff; background: #FF9999; font-weight: bold;';
@@ -2365,13 +2269,13 @@
     tools.appendChild(closeBtn);
     // 将本地引用赋值到闭包变量
     // 绑定交互
-    selectBtn.addEventListener('click', ()=>{
+    selectBtn.addEventListener('click', () => {
       selectionMode = !selectionMode;
       selectBtn.textContent = selectionMode ? '退出选择' : '选择';
       if (!selectionMode) { selectedIds.clear(); }
       render();
     });
-    bulkDelBtnLocal.addEventListener('click', ()=>{
+    bulkDelBtnLocal.addEventListener('click', () => {
       if (selectedIds.size === 0) return;
       const ok = window.confirm(`确定删除选中的 ${selectedIds.size} 条记录吗？`);
       if (!ok) return;
@@ -2442,24 +2346,24 @@
         } catch (e) { return ''; }
       };
       const isSubseq = (q, t) => {
-        let i=0; for (let c of q) { i = t.indexOf(c, i); if (i===-1) return false; i++; } return true;
+        let i = 0; for (let c of q) { i = t.indexOf(c, i); if (i === -1) return false; i++; } return true;
       };
       document.getElementById('historyCount').textContent = `${list.length} 条`;
       const q = searchInput.value.trim().toLowerCase();
       if (q) {
-        const qFlat = q.replace(/\s+/g,'');
+        const qFlat = q.replace(/\s+/g, '');
         list = list.filter(x => {
-          const name = String(x.fileName||'').toLowerCase();
-          let pyFlat = String(x.name_py||'').toLowerCase().replace(/\s+/g,'');
-          let ac = String(x.name_py_acronym||'').toLowerCase();
+          const name = String(x.fileName || '').toLowerCase();
+          let pyFlat = String(x.name_py || '').toLowerCase().replace(/\s+/g, '');
+          let ac = String(x.name_py_acronym || '').toLowerCase();
           // 对旧记录缺失字段的兜底：动态计算一次
           if ((!pyFlat || !ac) && pinyinFn) {
             try {
-              const pyDyn = String(pinyinFn(String(x.fileName||''), { toneType: 'none', type: 'string' }));
-              pyFlat = pyFlat || pyDyn.replace(/\s+/g,'');
-              const arrDyn = pinyinFn(String(x.fileName||''), { toneType: 'none', type: 'array' }) || [];
-              ac = ac || arrDyn.map(t => (typeof t === 'string' && t.length>0) ? t[0] : '').join('').toLowerCase();
-            } catch (e) {}
+              const pyDyn = String(pinyinFn(String(x.fileName || ''), { toneType: 'none', type: 'string' }));
+              pyFlat = pyFlat || pyDyn.replace(/\s+/g, '');
+              const arrDyn = pinyinFn(String(x.fileName || ''), { toneType: 'none', type: 'array' }) || [];
+              ac = ac || arrDyn.map(t => (typeof t === 'string' && t.length > 0) ? t[0] : '').join('').toLowerCase();
+            } catch (e) { }
           }
           return (
             name.includes(q) ||
@@ -2472,10 +2376,10 @@
       const only = officialOnly.querySelector('input').checked;
       if (only) list = list.filter(x => x.official);
       const sort = sortSelect.value;
-      if (sort === 'time_desc') list.sort((a,b)=>b.time-a.time);
-      if (sort === 'time_asc') list.sort((a,b)=>a.time-b.time);
-      if (sort === 'name_asc') list.sort((a,b)=>String(a.fileName).localeCompare(String(b.fileName)));
-      if (sort === 'name_desc') list.sort((a,b)=>String(b.fileName).localeCompare(String(a.fileName)));
+      if (sort === 'time_desc') list.sort((a, b) => b.time - a.time);
+      if (sort === 'time_asc') list.sort((a, b) => a.time - b.time);
+      if (sort === 'name_asc') list.sort((a, b) => String(a.fileName).localeCompare(String(b.fileName)));
+      if (sort === 'name_desc') list.sort((a, b) => String(b.fileName).localeCompare(String(a.fileName)));
       masonry.innerHTML = '';
       list.forEach(item => {
         const box = document.createElement('div');
@@ -2489,7 +2393,8 @@
                 background: #f8fafc; position: relative; ${item.width && item.height ? `aspect-ratio:${item.width} / ${item.height};` : ''} overflow:hidden;
             `;
         const img = document.createElement('img');
-        img.setAttribute('loading', 'lazy');
+        // 移除原生懒加载属性，避免与自定义加载逻辑冲突
+        // img.setAttribute('loading', 'lazy');
         img.dataset.src = item.url;
         img.alt = item.fileName || '预览';
         img.style.cssText = `width: 100%; height: 100%; object-fit: contain; display: block; opacity:0; transition: opacity .2s ease, filter .25s ease;`
@@ -2505,7 +2410,7 @@
             img.style.filter = 'blur(0px)';
             delete img.dataset.src;
           }
-        } catch(_) {}
+        } catch (_) { }
         // 根据用户选择的加载样式：spinner 或 blur，仅在未命中缓存时启用
         try {
           if (!cached0) {
@@ -2521,70 +2426,95 @@
               img.style.filter = 'blur(12px)';
             }
           }
-        } catch (_) {}
+        } catch (_) { }
         // 懒加载：可见时替换为真实地址
         try {
           if (!io && 'IntersectionObserver' in window) {
-            const rootEl = document.querySelector('.hb-history-masonry') || document.getElementById('hb-history-content') || content;
-            io = new IntersectionObserver((entries)=>{
+            // 使用视口作为根容器并增大触发区域
+            io = new IntersectionObserver((entries) => {
               entries.forEach(en => {
                 if (en.isIntersecting) {
                   const el = en.target;
                   const ds = el.dataset && el.dataset.src;
                   if (ds) {
-                    el.addEventListener('load', ()=>{ try { el.style.opacity = '1'; const l = el.parentElement && el.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); el.style.filter = 'blur(0px)'; } catch(_){} });
-                    el.addEventListener('error', ()=>{ try { el.style.opacity = '1'; const l = el.parentElement && el.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); el.style.filter = 'blur(0px)'; } catch(_){} });
-                    const cached = cacheGet(ds);
-                    if (cached) {
-                      el.src = cached; delete el.dataset.src;
-                    } else {
-                      fetchImageAsDataURL(ds, (dataUrl)=>{
-                        try {
-                          if (dataUrl) { cachePut(ds, dataUrl); el.src = dataUrl; }
-                          else { el.src = ds; }
-                          delete el.dataset.src;
-                        } catch(_){}
-                      });
+                    // 先附加事件监听器，再设置src
+                    // 增强版加载完成处理
+                    el.addEventListener('load', () => {
+                      try {
+                        el.style.opacity = '1';
+                        el.style.filter = 'blur(0px)';
+                        const loader = el.parentElement.querySelector('.hb-history-loader');
+                        if (loader) {
+                          loader.remove();
+                          // 加载动画已移除
+                        } else {
+                          // 未找到加载动画元素
+                        }
+                      } catch (e) { console.error('图片加载成功处理失败:', e); }
+                    });
+                    // 增强版加载失败处理
+                    // 错误事件监听
+                    el.addEventListener('error', () => {
+                      try {
+                        console.error('图片加载失败:', ds);
+                        const loader = el.parentElement.querySelector('.hb-history-loader');
+                        if (loader) loader.remove();
+                        el.src = 'https://api.cxr.cool/bg/?size=200x200&bgc=573b48ff&text=加载失败';
+                        Object.assign(el.style, { backgroundColor: '#573b48ff', opacity: '1', filter: 'blur(0px)' });
+                        el.dataset.originalSrc = ds;
+                      } catch (e) { console.error('图片加载失败处理错误:', e); }
+                    });
+
+                    // 验证URL格式
+                    if (!ds || typeof ds !== 'string' || !ds.startsWith('http')) {
+                      console.error('无效的图片URL:', ds);
+                      const loader = el.parentElement.querySelector('.hb-history-loader');
+                      if (loader) loader.remove();
+                      el.src = 'https://api.cxr.cool/bg/?size=200x200&bgc=573b48ff&text=无效URL';
+                      Object.assign(el.style, { backgroundColor: '#573b48ff', opacity: '1' });
+                    }
+                    // 直接加载图片，不使用缓存
+                    el.src = ds;
+                    delete el.dataset.src;
+
+                    // 处理缓存图片立即加载完成的情况
+                    if (el.complete) {
+                      try {
+                        el.style.opacity = '1';
+                        el.style.filter = 'blur(0px)';
+                        const loader = el.parentElement.querySelector('.hb-history-loader');
+                        if (loader) loader.remove();
+                      } catch (e) { console.error('缓存图片加载处理失败:', e); }
                     }
                   }
                   io.unobserve(el);
                 }
               });
-            }, { root: rootEl, rootMargin: '100px', threshold: 0.01 });
+            }, { rootMargin: '500px 0px', threshold: 0.01 });
           }
           if (io) {
             // 只有在尚未设置真实地址时才进行懒加载观察
             if (img.dataset.src) io.observe(img);
           } else {
             // 兼容无 IO 的环境
-            setTimeout(()=>{
+            setTimeout(() => {
               if (img.dataset.src) {
-                img.addEventListener('load', ()=>{ try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); img.style.filter = 'blur(0px)'; } catch(_){} });
-                img.addEventListener('error', ()=>{ try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); img.style.filter = 'blur(0px)'; } catch(_){} });
+                img.addEventListener('load', () => { try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); img.style.filter = 'blur(0px)'; } catch (_) { } });
+                img.addEventListener('error', () => { try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); img.style.filter = 'blur(0px)'; } catch (_) { } });
                 const ds = img.dataset.src;
-                const cached = cacheGet(ds);
-                if (cached) { img.src = cached; delete img.dataset.src; }
-                else {
-                  fetchImageAsDataURL(ds, (dataUrl)=>{
-                    try {
-                      if (dataUrl) { cachePut(ds, dataUrl); img.src = dataUrl; }
-                      else { img.src = ds; }
-                      delete img.dataset.src;
-                    } catch(_){}
-                  });
-                }
+                img.src = ds;
+                delete img.dataset.src;
               }
             }, 0);
           }
-        } catch(_) {
-          setTimeout(()=>{
+        } catch (_) {
+          setTimeout(() => {
             if (img.dataset.src) {
-              img.addEventListener('load', ()=>{ try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); } catch(_){} });
-              img.addEventListener('error', ()=>{ try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); } catch(_){} });
+              img.addEventListener('load', () => { try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); } catch (_) { } });
+              img.addEventListener('error', () => { try { img.style.opacity = '1'; const l = img.parentElement && img.parentElement.querySelector('.hb-history-loader'); if (l) l.remove(); } catch (_) { } });
               const ds2 = img.dataset.src;
-              const cached2 = cacheGet(ds2);
-              if (cached2) { img.src = cached2; delete img.dataset.src; }
-              else { img.src = ds2; delete img.dataset.src; }
+              img.src = ds2;
+              delete img.dataset.src;
             }
           }, 0);
         }
@@ -2594,8 +2524,8 @@
         selectBox.type = 'checkbox';
         selectBox.style.cssText = `position:absolute;top:8px;left:8px;width:20px;height:20px;transform:scale(1.3);border:1px solid #e2e8f0;border-radius:4px;opacity:${selectionMode ? '1' : '0'};pointer-events:${selectionMode ? 'auto' : 'none'};transition:opacity .2s ease;cursor:pointer;background:#ffffff;`;
         selectBox.checked = selectedIds.has(item.id);
-        selectBox.addEventListener('click', (ev)=> ev.stopPropagation());
-        selectBox.addEventListener('change', ()=>{
+        selectBox.addEventListener('click', (ev) => ev.stopPropagation());
+        selectBox.addEventListener('change', () => {
           if (selectBox.checked) selectedIds.add(item.id); else selectedIds.delete(item.id);
           updateBulkBtnState();
         });
@@ -2626,35 +2556,35 @@
         const redl = document.createElement('button');
         redl.textContent = '重新下载';
         redl.style.cssText = `height:28px;width:50%;padding:0 10px;border:1px solid #3b82f6;color:#ffffff;background:#3b82f6;border-radius:6px;font-size:12px;cursor:pointer;`
-        redl.addEventListener('click', ()=>{
+        redl.addEventListener('click', () => {
           try {
-            GM_download({ url: item.url, name: item.fileName, onload: function(){ try { fetchImageAsDataURL(item.url, (dataUrl)=>{ if (dataUrl) cachePut(item.url, dataUrl); }); } catch(_){} } });
+            GM_download({ url: item.url, name: item.fileName, onload: function () { try { fetchImageAsDataURL(item.url, (dataUrl) => { if (dataUrl) cachePut(item.url, dataUrl); }); } catch (_) { } } });
           } catch (e) {
             const a = document.createElement('a');
-            a.href = item.url; a.download = item.fileName; a.style.display='none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            try { fetchImageAsDataURL(item.url, (dataUrl)=>{ if (dataUrl) cachePut(item.url, dataUrl); }); } catch(_){ }
+            a.href = item.url; a.download = item.fileName; a.style.display = 'none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            try { fetchImageAsDataURL(item.url, (dataUrl) => { if (dataUrl) cachePut(item.url, dataUrl); }); } catch (_) { }
           }
         });
         const copy = document.createElement('button');
         copy.textContent = '复制链接';
         copy.style.cssText = `height:28px;width:50%;padding:0 10px;border:1px solid #e2e8f0;color:#334155;background:#f8fafc;border-radius:6px;font-size:12px;cursor:pointer;`
-        copy.addEventListener('click', ()=>{
+        copy.addEventListener('click', () => {
           navigator.clipboard && navigator.clipboard.writeText(item.url);
         });
         // 悬浮删除图标按钮（图片右上角显示）
         const delIcon = document.createElement('button');
         delIcon.style.cssText = `position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:18px;background:#ffffff;border:1px solid #e2e8f0;box-shadow:0 2px 6px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease;cursor:pointer;`;
         delIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
-        delIcon.addEventListener('click', (ev)=>{
+        delIcon.addEventListener('click', (ev) => {
           ev.stopPropagation();
           removeDownloadHistoryItem(item.id);
           render();
         });
-        imgWrap.addEventListener('mouseenter', ()=>{
+        imgWrap.addEventListener('mouseenter', () => {
           delIcon.style.opacity = '1';
           delIcon.style.pointerEvents = 'auto';
         });
-        imgWrap.addEventListener('mouseleave', ()=>{
+        imgWrap.addEventListener('mouseleave', () => {
           delIcon.style.opacity = '0';
           delIcon.style.pointerEvents = 'none';
         });
@@ -2667,14 +2597,14 @@
         box.appendChild(imgWrap);
         box.appendChild(info);
         masonry.appendChild(box);
-        img.addEventListener('click', ()=>{
+        img.addEventListener('click', () => {
           const pv = document.createElement('div');
           pv.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:10001;`;
           const img2 = document.createElement('img');
           img2.src = item.url; img2.alt = item.fileName; img2.style.cssText = `max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.3);`;
           pv.appendChild(img2);
-          pv.addEventListener('click', ()=> document.body.removeChild(pv));
-        document.body.appendChild(pv);
+          pv.addEventListener('click', () => document.body.removeChild(pv));
+          document.body.appendChild(pv);
         });
       });
       updateBulkBtnState();
@@ -2684,7 +2614,7 @@
       const masonryEl = document.querySelector('.hb-history-masonry');
       const contentEl = document.getElementById('hb-history-content') || content;
       const scrollEl = (masonryEl && masonryEl.scrollHeight > masonryEl.clientHeight) ? masonryEl : contentEl;
-      const onScrollShowBackTop = ()=>{
+      const onScrollShowBackTop = () => {
         try {
           const canScroll = scrollEl.scrollHeight > scrollEl.clientHeight;
           const show = canScroll && scrollEl.scrollTop > 10;
@@ -2692,7 +2622,7 @@
             backTopBtnLocal.style.opacity = show ? '1' : '0';
             backTopBtnLocal.style.pointerEvents = show ? 'auto' : 'none';
           }
-        } catch(_){}
+        } catch (_) { }
       };
       if (!scrollEl.dataset.backTopBound) {
         scrollEl.addEventListener('scroll', onScrollShowBackTop);
@@ -2702,8 +2632,8 @@
       }
       onScrollShowBackTop();
       if (backTopBtnLocal) {
-        backTopBtnLocal.onclick = ()=>{
-          try { scrollEl.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) { scrollEl.scrollTop = 0; }
+        backTopBtnLocal.onclick = () => {
+          try { scrollEl.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { scrollEl.scrollTop = 0; }
         };
       }
     }
@@ -2723,18 +2653,18 @@
             }
           }
           render();
-        } catch(e) { try { render(); } catch(_){} }
+        } catch (e) { try { render(); } catch (_) { } }
       };
       document.head.appendChild(s);
     }
     let hbSearchTimer;
-    const triggerSearch = ()=>{ try { clearTimeout(hbSearchTimer); hbSearchTimer = setTimeout(()=>{ try { render(); } catch(_){} }, 400); } catch(_){} };
-    const triggerSearchImmediate = ()=>{ try { clearTimeout(hbSearchTimer); render(); } catch(_){} };
+    const triggerSearch = () => { try { clearTimeout(hbSearchTimer); hbSearchTimer = setTimeout(() => { try { render(); } catch (_) { } }, 400); } catch (_) { } };
+    const triggerSearchImmediate = () => { try { clearTimeout(hbSearchTimer); render(); } catch (_) { } };
     searchInput.addEventListener('input', triggerSearch);
-    searchInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') { e.preventDefault(); triggerSearchImmediate(); } });
+    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); triggerSearchImmediate(); } });
     sortSelect.addEventListener('change', render);
     officialOnly.querySelector('input').addEventListener('change', render);
-    clearBtn.addEventListener('click', ()=>{
+    clearBtn.addEventListener('click', () => {
       try {
         const ok = window.confirm('确定清空历史下载列表吗？此操作不可恢复');
         if (!ok) return;
@@ -2742,14 +2672,14 @@
         render();
         const original = clearBtn.textContent;
         clearBtn.textContent = '已清空';
-        setTimeout(()=> clearBtn.textContent = original, 1000);
+        setTimeout(() => clearBtn.textContent = original, 1000);
       } catch (e) {
         clearDownloadHistory();
         render();
       }
     });
-    closeBtn.addEventListener('click', ()=>{ overlay.remove(); });
-    overlay.addEventListener('click', (e)=>{ if (e.target === overlay) overlay.remove(); });
+    closeBtn.addEventListener('click', () => { overlay.remove(); });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   }
 
   // 显示Twikoo聊天模块
@@ -2889,7 +2819,7 @@
     document.head.appendChild(twikooCss);
     const twikooScript = document.createElement('script');
     twikooScript.src = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.nocss.js';
-    twikooScript.onload = function() {
+    twikooScript.onload = function () {
       if (typeof twikoo !== 'undefined') {
         twikoo.init({
           envId: 'https://twikookaishu.z-l.top',
@@ -2936,5 +2866,5 @@
 
   // 启动脚本
   init();
-  
+
 })();
