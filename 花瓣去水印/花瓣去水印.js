@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         花瓣"去"水印
-// @version      2.76
+// @version      2.77
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -102,48 +102,43 @@
             .hb-history-item a:hover {
                 opacity: 0.7;
             }
-
             
-            /* 隐藏指定元素 */
-            // .CdxAiT3A {
-            //     display: none;
-            // }
 
-            /* antd弹出层样式宽度，花瓣采集框 */
-    .ant-popover {
-        min-width: 540px!important;
-    }
-/* 下面是：花瓣添加到花瓣，画板列表元素 */
-    .z8_k0U12 .JYXx0SF7 .__0nq08tOH {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0px, 1fr));
-        height: auto!important;
-        max-height: 300px;
-    }
-
-    /* 历史下载窗口滚动条弱化（容器与瀑布流均处理，覆盖多浏览器） */
-    #huabanDownloadHistory .hb-history-content,
-    #huabanDownloadHistory .hb-history-masonry {
-        scrollbar-width: thin; /* Firefox */
-        scrollbar-color: #e8e8e8 transparent; /* Firefox */
-    }
-    #huabanDownloadHistory .hb-history-content::-webkit-scrollbar,
-    #huabanDownloadHistory .hb-history-masonry::-webkit-scrollbar {
-        width: 6px; /* Chrome/Safari */
-    }
-    #huabanDownloadHistory .hb-history-content::-webkit-scrollbar-track,
-    #huabanDownloadHistory .hb-history-masonry::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    #huabanDownloadHistory .hb-history-content::-webkit-scrollbar-thumb,
-    #huabanDownloadHistory .hb-history-masonry::-webkit-scrollbar-thumb {
-        background-color: #cbd5e1; /* slate-300 */
-        border-radius: 8px;
-    }
-    #huabanDownloadHistory .hb-history-content:hover::-webkit-scrollbar-thumb,
-    #huabanDownloadHistory .hb-history-masonry:hover::-webkit-scrollbar-thumb {
-        background-color: #fce1e1ff; /* slate-400，悬浮时略加深 */
-    }
+          /* antd弹出层样式宽度，花瓣采集框 */
+           .ant-popover {
+             min-width: 540px!important;
+             }
+          /* 下面是：花瓣添加到花瓣，画板列表元素 */
+          .z8_k0U12 .JYXx0SF7 .__0nq08tOH {
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0px, 1fr));
+              height: auto!important;
+              max-height: 300px;
+          }
+      
+          /* 历史下载窗口滚动条弱化（容器与瀑布流均处理，覆盖多浏览器） */
+          #huabanDownloadHistory .hb-history-content,
+          #huabanDownloadHistory .hb-history-masonry {
+              scrollbar-width: thin; /* Firefox */
+              scrollbar-color: #e8e8e8 transparent; /* Firefox */
+          }
+          #huabanDownloadHistory .hb-history-content::-webkit-scrollbar,
+          #huabanDownloadHistory .hb-history-masonry::-webkit-scrollbar {
+              width: 6px; /* Chrome/Safari */
+          }
+          #huabanDownloadHistory .hb-history-content::-webkit-scrollbar-track,
+          #huabanDownloadHistory .hb-history-masonry::-webkit-scrollbar-track {
+              background: transparent;
+          }
+          #huabanDownloadHistory .hb-history-content::-webkit-scrollbar-thumb,
+          #huabanDownloadHistory .hb-history-masonry::-webkit-scrollbar-thumb {
+              background-color: #cbd5e1; /* slate-300 */
+              border-radius: 8px;
+          }
+          #huabanDownloadHistory .hb-history-content:hover::-webkit-scrollbar-thumb,
+          #huabanDownloadHistory .hb-history-masonry:hover::-webkit-scrollbar-thumb {
+              background-color: #fce1e1ff; /* slate-400，悬浮时略加深 */
+          }
         `;
     document.head.appendChild(style);
   }
@@ -947,78 +942,187 @@
     return '未命名';
   }
 
-  // 创建配置界面
-  function createConfigUI() {
+    // 创建配置界面（左侧导航 / 右侧内容）
+    function createConfigUI() {
     const config = getConfig();
 
     // 检查是否已存在配置面板
     const existingPanel = document.getElementById('huabanConfig');
-    if (existingPanel) {
-      existingPanel.remove();
-      return;
-    }
+    if (existingPanel) { existingPanel.remove(); return; }
 
     // 创建主容器
     const container = document.createElement('div');
     container.id = 'huabanConfig';
-    container.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        `;
+    container.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter: blur(4px);';
 
-    // 创建卡片
+    // 创建卡片（更宽以容纳侧边栏）
     const card = document.createElement('div');
-    card.style.cssText = `
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            width: 520px;
-            max-width: 95vw;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        `;
+    // 固定高度布局，确保左侧导航与右侧内容高度一致
+    card.style.cssText = 'background: white; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,.15); width: 900px; height: 680px; max-width: 96vw; display:flex; flex-direction:column; overflow:hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;';
 
-    // 卡片头部
-    const header = document.createElement('div');
-    header.style.cssText = `
-            padding: 16px;
-            border-bottom: 1px solid #e2e8f0;
-            text-align: center;
-            background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
-        `;
+    // 顶部标题条 已移除（界面改为侧边栏标题与底部版本信息）
 
-    header.innerHTML = `
-            <div style="display: flex;gap: 10px;align-items: center;justify-content: space-between; padding: 0 15px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
-                        花瓣 - 设置首选项
-                    </h3>
-                    <sup style="font-size: 10px; color: #94a3b8; font-weight: 400;">
-                        v${getScriptVersion()}
-                    </sup>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <a href="#" id="thanksListLink" style="font-size: 12px; color: #64748b; text-decoration: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;">
-                        致谢名单
-                    </a>
-                    <a href="#" id="usageGuideLink" style="font-size: 12px; color: #64748b; text-decoration: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s;">
-                        使用说明
-                    </a>
-                    <a href="#" id="downloadHistoryLink" style="font-size: 12px; color: #334155; text-decoration: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: all 0.2s; background: #f1f5f9; border: 1px solid #e2e8f0;">
-                        历史下载
-                    </a>
-                </div>
-            </div>`;
+    // 侧边栏与主内容容器
+    const bodyWrap = document.createElement('div');
+    bodyWrap.style.cssText = 'display:flex; flex:1; min-height:0;';
 
-    // 显示致谢名单函数
+    const sidebar = document.createElement('div');
+    // 侧栏采用纵向布局，底部显示版本号
+    sidebar.style.cssText = 'width:150px; padding:12px; background: #f7f9fa; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;';
+
+    // 左侧导航按钮
+    const makeNavBtn = (id, text) => {
+      const b = document.createElement('button');
+      b.id = id;
+      b.textContent = text;
+      // 简约按钮样式：基础布局 + 简单过渡
+      b.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 12px;margin-bottom:8px;border-radius:6px;background:transparent;cursor:pointer;color:#334155;font-size:14px;transition: all .15s ease;border:none;';
+      // 简约hover效果
+      b.addEventListener('mouseenter', () => { if (!b.dataset.active) b.style.background = '#f8fafc'; });
+      b.addEventListener('mouseleave', () => { if (!b.dataset.active) b.style.background = 'transparent'; });
+      return b;
+    };
+
+    // 切换激活态样式
+    function setActive(activeId) {
+      const btns = sidebar.querySelectorAll('button[id^="cfg-tab-"]');
+      btns.forEach(b => {
+        if (b.id === activeId) {
+          b.dataset.active = '1';
+          // 极简选中状态：仅保留背景色和文字颜色
+          b.style.background = '#ffffffff';
+          b.style.color = '#ff284b';
+        } else {
+          delete b.dataset.active;
+          b.style.background = 'transparent';
+          b.style.color = '#334155';
+        }
+      });
+    }
+
+    const navSettings = makeNavBtn('cfg-tab-settings', '⚙️ 设置选项');
+    const navUsage = makeNavBtn('cfg-tab-usage', '📖 使用说明');
+    const navTwikoo = makeNavBtn('cfg-tab-twikoo', '🤝 网友互助');
+    const navHistory = makeNavBtn('cfg-tab-history', '📦 历史下载');
+    const navThanks = makeNavBtn('cfg-tab-thanks', '🙏 致谢名单');
+
+    const navTop = document.createElement('div');
+    navTop.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+    navTop.appendChild(navSettings);
+    navTop.appendChild(navUsage);
+    navTop.appendChild(navTwikoo);
+    navTop.appendChild(navHistory);
+    navTop.appendChild(navThanks);
+    sidebar.appendChild(navTop);
+
+    // 版本信息放在侧栏底部，参考示例布局
+    const versionEl = document.createElement('div');
+    versionEl.style.cssText = 'font-size:12px;color:#94a3b8;padding:12px 6px;';
+    versionEl.textContent = `版本 v${getScriptVersion()}`;
+    sidebar.appendChild(versionEl);
+
+    const main = document.createElement('div');
+    main.id = 'hb-config-main';
+    // 主区使用滚动容器以适配内嵌大型面板（如历史、聊天）
+    main.style.cssText = 'flex:1; padding:16px; overflow:auto; min-height:0; box-sizing:border-box;';
+
+    bodyWrap.appendChild(sidebar);
+    bodyWrap.appendChild(main);
+
+    // 监听嵌入历史面板关闭事件，恢复侧栏选中为设置
+    main.addEventListener('hb:historyClosed', () => { try { setActive('cfg-tab-settings'); renderSettings(); } catch (e) { } });
+
+    // 添加到卡片（不再渲染顶部 header）
+    card.appendChild(bodyWrap);
+    container.appendChild(card);
+
+    // 添加到页面
+    document.body.appendChild(container);
+
+    // 导航交互：渲染不同的面板
+    function renderSettings() {
+      // 将原来的 content 区域内容渲染到 main
+      main.innerHTML = '';
+      // switchesSection, colorSettings, actions 会被插入后
+      main.appendChild(switchesSection);
+      main.innerHTML += colorSettings;
+      main.appendChild(actions);
+    }
+
+    // 使用说明在主区域嵌入 Feishu（iframe），若无法显示提供外链
+    function renderUsage() {
+      main.innerHTML = '';
+      const feishuUrl = 'https://ai-chimo.feishu.cn/wiki/E9SEwhoMmiv2CkkC1VgcAbRTnW3';
+      const iframe = document.createElement('iframe');
+      iframe.src = feishuUrl;
+      iframe.style.cssText = 'width:100%;height:100%;min-height:480px;border:0;border-radius:8px;';
+      iframe.allow = 'fullscreen; clipboard-write';
+      const fallback = document.createElement('div');
+      fallback.style.cssText = 'margin-top:8px;font-size:13px;color:#64748b;text-align:center;';
+      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" style="color:#3b82f6;text-decoration:none;">在新标签页打开使用说明（飞书文档）</a>`;
+      main.appendChild(iframe);
+      main.appendChild(fallback);
+    }
+
+    // 导航按钮事件（同时设置激活态）
+    navSettings.addEventListener('click', () => { setActive('cfg-tab-settings'); renderSettings(); });
+    navUsage.addEventListener('click', () => { setActive('cfg-tab-usage'); renderUsage(); });
+
+    // 在主区域渲染致谢名单（iframe）
+    function renderThanksPanel() {
+      main.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.src = 'https://xiaolongmr.github.io/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%87%B4%E8%B0%A2%E5%90%8D%E5%8D%95.html';
+      iframe.style.cssText = 'width:100%;height:520px;border:0;border-radius:8px;';
+      main.appendChild(iframe);
+    }
+
+    // 在主区域渲染网友互助区（Twikoo）
+    function renderTwikooPanel() {
+      main.innerHTML = '';
+      const title = document.createElement('div');
+      title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
+      title.innerHTML = `<h3 style="margin:0;font-size:16px;color:#334155;">网友互助区</h3><div style="font-size:12px;color:#64748b;">通过 Twikoo 聊天与其他用户交流</div>`;
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'flex:1; display:flex; flex-direction:column; gap:12px; height:100%; min-height:0;';
+      const commentWrap = document.createElement('div');
+      commentWrap.id = 'tcomment';
+      commentWrap.style.cssText = 'flex:1; min-height:0; overflow:auto; background: #fff; border-radius:8px; padding:12px; box-sizing:border-box;';
+      wrapper.appendChild(commentWrap);
+      main.appendChild(title);
+      main.appendChild(wrapper);
+
+      // 动态加载Twikoo并初始化（若未加载）
+      try {
+        if (!document.querySelector('link[href*="twikoo"]')) {
+          const twikooCss = document.createElement('link');
+          twikooCss.rel = 'stylesheet';
+          twikooCss.href = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.css';
+          document.head.appendChild(twikooCss);
+        }
+        if (typeof twikoo === 'undefined') {
+          const twikooScript = document.createElement('script');
+          twikooScript.src = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.nocss.js';
+          twikooScript.onload = function () {
+            try {
+              if (typeof twikoo !== 'undefined') {
+                twikoo.init({ envId: 'https://twikookaishu.z-l.top', el: '#tcomment', path: '/huaban-helper-all' });
+              }
+            } catch (e) { console.error(e); }
+          };
+          document.head.appendChild(twikooScript);
+        } else {
+          try { twikoo.init({ envId: 'https://twikookaishu.z-l.top', el: '#tcomment', path: '/huaban-helper-all' }); } catch (e) { }
+        }
+      } catch (e) { console.error('初始化 Twikoo 失败', e); }
+    }
+
+    navTwikoo.addEventListener('click', (e) => { e.preventDefault(); setActive('cfg-tab-twikoo'); renderTwikooPanel(); });
+    navHistory.addEventListener('click', (e) => { e.preventDefault(); setActive('cfg-tab-history'); showDownloadHistory(main); });
+    navThanks.addEventListener('click', (e) => { e.preventDefault(); setActive('cfg-tab-thanks'); renderThanksPanel(); });
+
+    // 初始显示设置面板并设置激活态
+    // NOTE: moved below after switchesSection/colorSettings/actions are created
     const showThanksList = () => {
       try {
         // 创建模态框
@@ -1138,11 +1242,7 @@
     }, 0);
 
     // 卡片内容
-    const content = document.createElement('div');
-    content.id = 'hb-history-content';
-    content.style.cssText = `
-            padding: 16px;
-        `;
+    const content = main;
 
     // 启用开关区域
     const switchesSection = document.createElement('div');
@@ -1446,7 +1546,7 @@
                     "></span>
                     花瓣官方素材背景色
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;    align-items: stretch;">
                     <div style="
                         width: 36px;
                         height: 36px;
@@ -1555,13 +1655,11 @@
     content.innerHTML += colorSettings;
     content.appendChild(actions);
 
-    // 组装卡片
-    card.appendChild(header);
-    card.appendChild(content);
-    container.appendChild(card);
+    // 初始显示设置面板并设置激活态（放在这里以确保所有元素已创建）
+    setActive('cfg-tab-settings');
+    renderSettings();
 
-    // 添加到页面
-    document.body.appendChild(container);
+    // 卡片已在前面组装并添加到页面，后续只需填充 `content`（即 main）
 
     // 获取元素
     const enableCustomSwitch = document.getElementById('enableCustomSwitch');
@@ -1801,8 +1899,7 @@
 
     // 注册油猴菜单命令
     GM_registerMenuCommand('⚙️ 设置首选项', createConfigUI);
-    GM_registerMenuCommand('🤝 网友互助区', showTwikooChat);
-    GM_registerMenuCommand('📦 历史下载', showDownloadHistory);
+
 
     // 应用样式（包含动画效果）
     applyStyles();
@@ -1855,306 +1952,71 @@
     })();
   }
 
-  // 显示使用说明弹窗
+  // 显示使用说明弹窗（改为嵌入飞书文档）
   function showUsageGuide() {
-    // 检查是否已存在使用说明弹窗
-    const existingGuide = document.getElementById('huabanUsageGuide');
-    if (existingGuide) {
-      existingGuide.remove();
-      return;
-    }
+    const existing = document.getElementById('huabanUsageGuide');
+    if (existing) { existing.remove(); return; }
 
-    // 创建主容器
     const container = document.createElement('div');
     container.id = 'huabanUsageGuide';
-    container.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        `;
+    container.style.cssText = `position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);`;
 
-    // 创建卡片
     const card = document.createElement('div');
-    card.style.cssText = `
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            width: 800px;
-            max-width: 95vw;
-            max-height: 80vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            display: flex;
-            flex-direction: column;
-        `;
+    card.style.cssText = `background: white; border-radius: 24px; box-shadow: 0 8px 25px rgba(0,0,0,.15); width: 1000px; height: 820px; max-width: 96vw; max-height: 86vh; display:flex; flex-direction:column; overflow: hidden;`;
 
-    // 卡片头部
     const header = document.createElement('div');
-    header.style.cssText = `
-            padding: 16px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
-            border-radius: 24px 24px 0 0;
-        `;
-    header.innerHTML = `
-            <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
-                使用说明
-            </h3>
-            <button id="closeUsageGuide" style="
-                background: none;
-                border: none;
-                cursor: pointer;
-                padding: 4px;
-                border-radius: 4px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            ">
-                <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="#64748b">
-                    <path d="M198.1 267.7l75.4-75.4 576.3 576.3-75.4 75.4-576.3-576.3zm576.4-69.3l75.4 75.4-580.7 580.8-75.4-75.4 580.7-580.8z"/>
-                </svg>
-            </button>
-        `;
+    header.style.cssText = `padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));`;
+    header.innerHTML = `<h3 style="margin:0; font-size:16px; color:#334155; font-weight:600;">使用说明</h3><button id="closeUsageGuide" style="background:none;border:none;cursor:pointer;padding:4px;border-radius:4px;display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="#64748b"><path d="M198.1 267.7l75.4-75.4 576.3 576.3-75.4 75.4-576.3-576.3zm576.4-69.3l75.4 75.4-580.7 580.8-75.4-75.4 580.7-580.8z"/></svg></button>`;
 
-    // 卡片内容
     const content = document.createElement('div');
-    content.style.cssText = `
-        padding: 20px;
-        overflow-y: auto;
-        flex: 1;
-    `;
+    content.style.cssText = `flex:1; overflow:auto; padding:0; display:flex; align-items:stretch; justify-content:stretch;`;
 
+    // Feishu doc URL (嵌入为 iframe)，并提供外链作为回退
+    const feishuUrl = 'https://ai-chimo.feishu.cn/wiki/E9SEwhoMmiv2CkkC1VgcAbRTnW3';
 
-    // 组装卡片
+    const iframeWrap = document.createElement('div');
+    iframeWrap.style.cssText = `flex:1; min-height:0;`;
+
+    const iframe = document.createElement('iframe');
+    iframe.src = feishuUrl;
+    iframe.style.cssText = `width:100%; height:100%; border:0; min-height: 400px;`;
+    iframe.allow = 'fullscreen; clipboard-write';
+
+    // 说明与外链回退
+    const fallback = document.createElement('div');
+    fallback.style.cssText = `padding:12px; font-size:13px; color:#64748b; background:#fff7ed; border-top:1px solid #f1e7d6; text-align:center;`;
+    fallback.innerHTML = `若嵌入内容无法显示，请点击此处在新标签页打开： <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" style="color:#3b82f6;text-decoration:none;">打开使用说明（飞书文档）</a>`;
+
+    iframeWrap.appendChild(iframe);
+    content.appendChild(iframeWrap);
+
     card.appendChild(header);
     card.appendChild(content);
+    card.appendChild(fallback);
     container.appendChild(card);
     document.body.appendChild(container);
 
+    const closeBtn = header.querySelector('#closeUsageGuide');
+    closeBtn.addEventListener('click', () => container.remove());
 
-    // 从markdown的YAML front matter中提取所有键值对
-    function extractFrontMatter(markdown) {
-      // 匹配YAML front matter部分
-      const frontMatterMatch = markdown.match(/^---\s*([\s\S]*?)\s*---\s*/);
-      const frontMatter = {};
+    container.addEventListener('click', (e) => { if (e.target === container) container.remove(); });
 
-      if (frontMatterMatch && frontMatterMatch[1]) {
-        // 解析每一行的键值对
-        const lines = frontMatterMatch[1].split('\n');
-
-        lines.forEach(line => {
-          // 跳过空行
-          if (!line.trim()) return;
-
-          // 匹配键值对格式
-          const match = line.match(/^\s*([\w-]+)\s*:\s*(.+?)\s*$/);
-          if (match) {
-            const key = match[1];
-            let value = match[2];
-
-            // 移除可能的引号
-            if ((value.startsWith('"') && value.endsWith('"')) ||
-              (value.startsWith('\'') && value.endsWith('\''))) {
-              value = value.slice(1, -1);
-            }
-
-            frontMatter[key] = value;
-          }
-        });
-      }
-
-      return {
-        frontMatter,
-        // 返回移除front matter后的markdown内容
-        content: frontMatterMatch ? markdown.replace(frontMatterMatch[0], '') : markdown
-      };
-    }
-
-
-
-
-    // 加载外部markdown内容
-    const markdownUrl = 'https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@master/花瓣去水印/花瓣脚本使用说明.md';
-    fetch(markdownUrl)
-      .then(response => response.text())
-      .then(markdown => {
-        // 从markdown中提取YAML front matter和内容
-        const { frontMatter, content: markdownContent } = extractFrontMatter(markdown);
-
-        // 保存front matter中的评论配置
-        const commentConfig = frontMatter.comments || null;
-        debugLog('解析到的YAML Front Matter:', { comments: commentConfig });
-
-        // 动态加载fancybox灯箱库
-        const fancyboxCSS = document.createElement('link');
-        fancyboxCSS.rel = 'stylesheet';
-        fancyboxCSS.href = 'https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css';
-        document.head.appendChild(fancyboxCSS);
-
-        const fancyboxScript = document.createElement('script');
-        fancyboxScript.src = 'https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js';
-
-        // 动态加载轻量级markdown解析库 - Marked.js
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js';
-
-        // 等待所有脚本加载完成
-        Promise.all([
-          new Promise(resolve => fancyboxScript.onload = resolve),
-          new Promise(resolve => script.onload = resolve)
-        ]).then(() => {
-          // 处理相对路径，转换为完整URL
-          const baseUrl = markdownUrl.substring(0, markdownUrl.lastIndexOf('/') + 1);
-
-          // 替换图片的相对路径
-          let processedMarkdown = markdownContent.replace(/!\[(.*?)\]\((.*?)\)/g, (match, altText, imgPath) => {
-            // 如果已经是完整URL，则不处理
-            if (imgPath.startsWith('http')) {
-              return match;
-            }
-            // 如果是相对路径，转换为完整URL
-            return `![${altText}](${baseUrl}${imgPath})`;
-          });
-
-          // 替换链接的相对路径
-          processedMarkdown = processedMarkdown.replace(/\[(.*?)\]\((.*?)\)/g, (match, linkText, linkPath) => {
-            // 如果已经是完整URL，则不处理
-            if (linkPath.startsWith('http')) {
-              return match;
-            }
-            // 如果是相对路径，转换为完整URL
-            return `[${linkText}](${baseUrl}${linkPath})`;
-          });
-
-          // 使用marked.js解析markdown（只解析去除front matter后的内容）
-          content.innerHTML = marked.parse(processedMarkdown);
-
-          // 添加基本样式
-          content.style.cssText += `
-                  font-size: 14px;
-                  line-height: 1.6;
-                  color: #334155;
-              `;
-
-          // 限制图片宽度不超过容器并添加灯箱功能
-          const images = content.querySelectorAll('img');
-          images.forEach(img => {
-            img.style.maxWidth = '100%';
-            img.style.height = 'auto';
-            img.style.cursor = 'pointer';
-            img.style.borderRadius = '8px';
-
-            // 添加fancybox属性
-            img.setAttribute('data-fancybox', 'gallery');
-            img.setAttribute('data-src', img.src);
-          });
-
-          // 为标题添加样式
-          const headings = content.querySelectorAll('h1, h2, h3, h4, h5, h6');
-          headings.forEach(heading => {
-            heading.style.marginTop = '20px';
-            heading.style.marginBottom = '10px';
-            heading.style.color = '#1e293b';
-          });
-
-          // 为代码块添加样式
-          const codeBlocks = content.querySelectorAll('code, pre');
-          codeBlocks.forEach(code => {
-            code.style.backgroundColor = '#f1f5f9';
-            code.style.padding = '2px 4px';
-            code.style.borderRadius = '4px';
-            code.style.fontFamily = 'monospace';
-          });
-
-          // 为链接添加样式
-          const links = content.querySelectorAll('a');
-          links.forEach(link => {
-            link.style.color = '#3b82f6';
-            link.style.textDecoration = 'none';
-            link.target = '_blank';
-          });
-
-          // 初始化fancybox灯箱
-          if (typeof Fancybox !== 'undefined') {
-            // 先解绑可能存在的绑定
-            Fancybox.unbind('[data-fancybox]');
-
-            // 重新绑定灯箱，让浏览器自动处理层级关系
-            Fancybox.bind('[data-fancybox]', {
-              // 灯箱配置选项
-              Thumbs: false,
-              Toolbar: false,
-              infinite: false,
-              // 确保灯箱显示在最顶层
-              parentEl: document.body
-            });
-          }
-        });
-
-        // 将脚本添加到页面
-        document.head.appendChild(fancyboxScript);
-        document.head.appendChild(script);
-
-        script.onerror = () => {
-          // 如果加载失败，使用简单的文本显示
-          content.innerHTML = `
-                    <div style="white-space: pre-wrap; font-family: monospace; font-size: 14px; line-height: 1.5;">
-                        ${markdown.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
-                    </div>
-                `;
-        };
-        document.head.appendChild(script);
-      })
-      .catch(error => {
-        content.innerHTML = `
-                <div style="text-align: center; color: #ef4444;">
-                    <div style="font-size: 14px;">加载使用说明失败</div>
-                    <div style="font-size: 12px; margin-top: 8px;">${error.message}</div>
-                </div>
-            `;
-      });
-
-    // 关闭按钮事件
-    const closeButton = header.querySelector('#closeUsageGuide');
-    closeButton.addEventListener('click', () => {
-      container.remove();
-    });
-
-    // 点击外部关闭
-    container.addEventListener('click', (e) => {
-      if (e.target === container) container.remove();
-    });
-
-    // ESC键关闭
-    const escHandler = (e) => {
-      if (e.key === 'Escape') container.remove();
-    };
+    const escHandler = (e) => { if (e.key === 'Escape') container.remove(); };
     document.addEventListener('keydown', escHandler);
-
-    // 清理事件监听器
-    container.addEventListener('remove', () => {
-      document.removeEventListener('keydown', escHandler);
-    });
+    container.addEventListener('remove', () => { document.removeEventListener('keydown', escHandler); });
   }
 
-  function showDownloadHistory() {
+  function showDownloadHistory(embedTarget) {
+    const isEmbed = !!embedTarget;
     const existing = document.getElementById('huabanDownloadHistory');
-    if (existing) {
+    if (existing && !isEmbed) {
       existing.remove();
     }
-    const overlay = document.createElement('div');
-    overlay.id = 'huabanDownloadHistory';
-    overlay.style.cssText = `
+    let overlay;
+    if (!isEmbed) {
+      overlay = document.createElement('div');
+      overlay.id = 'huabanDownloadHistory';
+      overlay.style.cssText = `
             position: fixed;
             top: 0;
             left: 0;
@@ -2167,6 +2029,7 @@
             z-index: 10000;
             backdrop-filter: blur(4px);
         `;
+    }
     const card = document.createElement('div');
     card.style.cssText = `
             background: #ffffff;
@@ -2177,15 +2040,20 @@
             max-height: 88vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
             position: relative;
             font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
         `;
+    // 如果以嵌入方式渲染在右侧面板，调整样式以填满容器并弱化浮层风格
+    if (isEmbed) {
+      card.style.width = '100%';
+      card.style.height = '100%';
+      card.style.maxWidth = '100%';
+      card.style.maxHeight = '100%';
+      card.style.borderRadius = '12px';
+      card.style.boxShadow = 'none';
+    }
     const header = document.createElement('div');
     header.style.cssText = `
-            padding: 16px;
-            border-bottom: 1px solid #e2e8f0;
-            background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
             display: flex;
             align-items: center;
             gap: 12px;
@@ -2195,21 +2063,17 @@
     tools.style.cssText = `
             display: flex;
             gap: 8px;
-            align-items: center;
+            align-items: stretch;
         `;
     const title = document.createElement('div');
     title.innerHTML = `
-            <div style="display:flex;align-items:center;gap:8px;">
-              <h3 style="margin:0;color:#334155;font-size:16px;font-weight:600;">历史下载</h3>
-              <span id="historyCount" style="font-size:12px;color:#64748b;">0 条</span>
-            </div>
+            <span id="historyCount" style="font-size:12px;color:#64748b;">共1条</span>
         `;
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
     searchInput.placeholder = '支持拼音模糊搜索';
     searchInput.style.cssText = `
             height: 32px;
-            padding: 0 10px;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             font-size: 13px;
@@ -2241,14 +2105,9 @@
             <input type="checkbox" id="officialOnlyCheckbox" style="cursor:pointer;"> 仅官方自营
         `;
     const clearBtn = document.createElement('button');
-    clearBtn.textContent = '清空列表';
+    clearBtn.textContent = '清空';
     clearBtn.style.cssText = `
             height: 32px; padding: 0 12px; border: 1px solid #ef4444; color: #ef4444; background: #fff1f2; border-radius: 8px; font-size: 13px; cursor: pointer;
-        `;
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '关闭';
-    closeBtn.style.cssText = `
-            height: 32px; padding: 0 12px; border: 1px solid #e2e8f0; color: #64748b; background: #f8fafc; border-radius: 8px; font-size: 13px; cursor: pointer;
         `;
     tools.appendChild(searchInput);
     tools.appendChild(sortSelect);
@@ -2260,13 +2119,12 @@
     // 批量删除按钮
     const bulkDelBtnLocal = document.createElement('button');
     bulkDelBtnLocal.id = 'hb-bulk-delete-btn';
-    bulkDelBtnLocal.textContent = '删除已选';
+    bulkDelBtnLocal.textContent = '删除';
     bulkDelBtnLocal.style.cssText = `height: 32px; padding: 0 12px; border: 1px solid #ef4444; color: #ef4444; background: #fff1f2; border-radius: 8px; font-size: 13px; cursor: pointer;`;
     bulkDelBtnLocal.disabled = true;
     tools.appendChild(selectBtn);
     tools.appendChild(bulkDelBtnLocal);
     tools.appendChild(clearBtn);
-    tools.appendChild(closeBtn);
     // 将本地引用赋值到闭包变量
     // 绑定交互
     selectBtn.addEventListener('click', () => {
@@ -2291,20 +2149,21 @@
     const content = document.createElement('div');
     content.id = 'hb-history-content';
     content.className = 'hb-history-content';
-    content.style.cssText = `
-            padding: 16px 6px 16px 16px; overflow-y: auto; flex: 1; background: #ffffff;
-        `;
+    content.style.cssText = `padding-top: 10px; overflow-y: auto; flex: 1; background: #ffffff;`;
     const masonry = document.createElement('div');
     masonry.className = 'hb-history-masonry';
-    masonry.style.cssText = `
-            column-count: 4;
-            column-gap: 16px;
-        `;
+    masonry.style.cssText = `column-count: 4; column-gap: 6px;`;
     content.appendChild(masonry);
     card.appendChild(header);
     card.appendChild(content);
-    overlay.appendChild(card);
-    document.body.appendChild(overlay);
+    if (isEmbed) {
+      // embed into provided target element
+      embedTarget.innerHTML = '';
+      embedTarget.appendChild(card);
+    } else {
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+    }
 
     // 返回顶部按钮（在历史下载滚动时显示，固定在窗口区域右下角）
     const backTopBtn = document.createElement('button');
@@ -2348,7 +2207,8 @@
       const isSubseq = (q, t) => {
         let i = 0; for (let c of q) { i = t.indexOf(c, i); if (i === -1) return false; i++; } return true;
       };
-      document.getElementById('historyCount').textContent = `${list.length} 条`;
+      const historyCountEl = document.getElementById('historyCount');
+      if (historyCountEl) historyCountEl.textContent = `共${list.length}条`;
       const q = searchInput.value.trim().toLowerCase();
       if (q) {
         const qFlat = q.replace(/\s+/g, '');
@@ -2552,10 +2412,19 @@
         const wh = item.width && item.height ? `${item.width}×${item.height}` : '';
         metaLine.textContent = `${formatDateTime(item.time)} · ${tag} · ${act}${wh ? ' · ' + wh : ''}`;
         const actions = document.createElement('div');
-        actions.style.cssText = `display:flex; gap:10px;`
+        actions.style.cssText = `display:flex; gap:12px; position:absolute; bottom:10px; left:50%; transform:translateX(-50%); opacity:0; pointer-events:none; transition:opacity .2s ease;`
         const redl = document.createElement('button');
-        redl.textContent = '重新下载';
-        redl.style.cssText = `height:28px;width:50%;padding:0 10px;border:1px solid #3b82f6;color:#ffffff;background:#3b82f6;border-radius:6px;font-size:12px;cursor:pointer;`
+        redl.className = 'hb-redownload-btn';
+        redl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+        redl.style.cssText = `height:36px;width:36px;border:none;color:#ffffff;background:#3b82f6;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(59, 130, 246, 0.4);transition:all 0.2s ease;`
+        redl.addEventListener('mouseenter', () => {
+          redl.style.transform = 'scale(1.1)';
+          redl.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.5)';
+        });
+        redl.addEventListener('mouseleave', () => {
+          redl.style.transform = 'scale(1)';
+          redl.style.boxShadow = '0 2px 6px rgba(59, 130, 246, 0.4)';
+        });
         redl.addEventListener('click', () => {
           try {
             GM_download({ url: item.url, name: item.fileName, onload: function () { try { fetchImageAsDataURL(item.url, (dataUrl) => { if (dataUrl) cachePut(item.url, dataUrl); }); } catch (_) { } } });
@@ -2566,8 +2435,17 @@
           }
         });
         const copy = document.createElement('button');
-        copy.textContent = '复制链接';
-        copy.style.cssText = `height:28px;width:50%;padding:0 10px;border:1px solid #e2e8f0;color:#334155;background:#f8fafc;border-radius:6px;font-size:12px;cursor:pointer;`
+        copy.className = 'hb-copy-btn';
+        copy.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        copy.style.cssText = `height:36px;width:36px;border:none;color:#334155;background:#f8fafc;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0, 0, 0, 0.1);transition:all 0.2s ease;`
+        copy.addEventListener('mouseenter', () => {
+          copy.style.transform = 'scale(1.1)';
+          copy.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+        });
+        copy.addEventListener('mouseleave', () => {
+          copy.style.transform = 'scale(1)';
+          copy.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.1)';
+        });
         copy.addEventListener('click', () => {
           navigator.clipboard && navigator.clipboard.writeText(item.url);
         });
@@ -2583,17 +2461,21 @@
         imgWrap.addEventListener('mouseenter', () => {
           delIcon.style.opacity = '1';
           delIcon.style.pointerEvents = 'auto';
+          actions.style.opacity = '1';
+          actions.style.pointerEvents = 'auto';
         });
         imgWrap.addEventListener('mouseleave', () => {
           delIcon.style.opacity = '0';
           delIcon.style.pointerEvents = 'none';
+          actions.style.opacity = '0';
+          actions.style.pointerEvents = 'none';
         });
         imgWrap.appendChild(delIcon);
         actions.appendChild(redl);
         actions.appendChild(copy);
         info.appendChild(nameLine);
         info.appendChild(metaLine);
-        info.appendChild(actions);
+        imgWrap.appendChild(actions);
         box.appendChild(imgWrap);
         box.appendChild(info);
         masonry.appendChild(box);
@@ -2611,8 +2493,8 @@
 
       // 返回顶部按钮显示逻辑：根据实际可滚动容器（masonry 或 content）
       const backTopBtnLocal = document.getElementById('hb-history-back-top');
-      const masonryEl = document.querySelector('.hb-history-masonry');
-      const contentEl = document.getElementById('hb-history-content') || content;
+      const masonryEl = (isEmbed ? embedTarget.querySelector('.hb-history-masonry') : document.querySelector('.hb-history-masonry'));
+      const contentEl = (isEmbed ? embedTarget.querySelector('#hb-history-content') : document.getElementById('hb-history-content')) || content;
       const scrollEl = (masonryEl && masonryEl.scrollHeight > masonryEl.clientHeight) ? masonryEl : contentEl;
       const onScrollShowBackTop = () => {
         try {
@@ -2678,158 +2560,9 @@
         render();
       }
     });
-    closeBtn.addEventListener('click', () => { overlay.remove(); });
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   }
 
-  // 显示Twikoo聊天模块
-  function showTwikooChat() {
-    // 检查是否已存在聊天弹窗
-    const existingChat = document.getElementById('huabanTwikooChat');
-    if (existingChat) {
-      existingChat.remove();
-      return;
-    }
 
-    // 创建主容器
-    const container = document.createElement('div');
-    container.id = 'huabanTwikooChat';
-    container.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
-        `;
-
-    // 创建卡片
-    const card = document.createElement('div');
-    card.style.cssText = `
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            width: 600px;
-            max-width: 95vw;
-            max-height: 80vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            display: flex;
-            flex-direction: column;
-        `;
-
-    // 卡片头部
-    const header = document.createElement('div');
-    header.style.cssText = `
-            padding: 16px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));
-            border-radius: 24px 24px 0 0;
-        `;
-    header.innerHTML = `
-            <h3 style="margin: 0; color: #334155; font-size: 16px; font-weight: 600;">
-                网友互助区 💬
-            </h3>
-            <button id="closeTwikooChat" style="
-                background: none;
-                border: none;
-                cursor: pointer;
-                padding: 4px;
-                border-radius: 4px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            ">
-                <svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="#64748b">
-                    <path d="M198.1 267.7l75.4-75.4 576.3 576.3-75.4 75.4-576.3-576.3zm576.4-69.3l75.4 75.4-580.7 580.8-75.4-75.4 580.7-580.8z"/>
-                </svg>
-            </button>
-        `;
-
-    // 卡片内容
-    const content = document.createElement('div');
-    content.style.cssText = `
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-        `;
-    content.innerHTML = `
-            <div style="margin-bottom: 15px; padding: 12px; background: linear-gradient(135deg, #fff0f5 0%, #f0f9ff 100%); border-radius: 12px; border: 1px solid #ffd6e7; position: relative; overflow: hidden;">
-              <div style="position: absolute;top: 4px;right: 3px;font-size: 24px;transform: rotate(0deg);opacity: 0.6;"><img class="hb-image" alt="花瓣网" title="" src="https://grocery-cdn.huaban.com/file/hb_logo.svg"></div>
-                <div style="font-weight: 600; color: #ff6b9c; margin-bottom: 8px; font-size: 15px; display: flex; align-items: center;">
-                    <span>✨ 互助区使用说明</span>
-                </div>
-                <div style="font-size: 14px; color: #334155; line-height: 1.6;">
-                    <div style="display: flex; align-items: center; margin-bottom: 6px;">
-                        <span style="margin-right: 6px;">💡</span>
-                        <span>在这里可以与其他花瓣用户交流互助</span>
-                    </div>
-                    <div style="display: flex; align-items: center; margin-bottom: 6px;">
-                        <span style="margin-right: 6px;">❓</span>
-                        <span>可以提问问题、分享使用经验或提供帮助</span>
-                    </div>
-                    <div style="display: flex; align-items: center; margin-bottom: 6px;">
-                        <span style="margin-right: 6px;">😊</span>
-                        <span>请保持友善，做文明设计师，祝大家升职加薪</span>
-                    </div>
-                </div>
-            </div>
-            <div id="tcomment"></div>
-        `;
-
-    // 组装卡片
-    card.appendChild(header);
-    card.appendChild(content);
-    container.appendChild(card);
-    document.body.appendChild(container);
-
-    // 关闭按钮事件
-    const closeButton = header.querySelector('#closeTwikooChat');
-    closeButton.addEventListener('click', () => {
-      container.remove();
-    });
-
-    // 点击外部关闭
-    container.addEventListener('click', (e) => {
-      if (e.target === container) container.remove();
-    });
-
-    // ESC键关闭
-    const escHandler = (e) => {
-      if (e.key === 'Escape') container.remove();
-    };
-    document.addEventListener('keydown', escHandler);
-
-    // 清理事件监听器
-    container.addEventListener('remove', () => {
-      document.removeEventListener('keydown', escHandler);
-    });
-
-    // 动态加载Twikoo并初始化
-    const twikooCss = document.createElement('link');
-    twikooCss.rel = 'stylesheet';
-    twikooCss.href = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.css';
-    document.head.appendChild(twikooCss);
-    const twikooScript = document.createElement('script');
-    twikooScript.src = 'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.nocss.js';
-    twikooScript.onload = function () {
-      if (typeof twikoo !== 'undefined') {
-        twikoo.init({
-          envId: 'https://twikookaishu.z-l.top',
-          el: '#tcomment',
-          path: '/huaban-helper-all', // 固定路径，使所有页面显示相同评论
-        });
-      }
-    };
-    document.head.appendChild(twikooScript);
-  }
 
   // 在配置界面创建完成后添加使用说明链接的事件监听
   function addUsageGuideListener() {
