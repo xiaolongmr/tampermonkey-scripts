@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         花瓣"去"水印
-// @version      2.77
+// @version      2.78
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -175,17 +175,19 @@
 
   // 去除图片后缀参数，让图片保存为PNG格式
   function removeImageSuffixParams(url) {
+    // 先移除查询参数
+    const urlWithoutQuery = url.split('?')[0];
     // 匹配花瓣图片URL中的后缀参数，如 _fw658webp
     const suffixRegex = /(_fw\d+webp)(\.webp)?$/i;
 
-    if (suffixRegex.test(url)) {
+    if (suffixRegex.test(urlWithoutQuery)) {
       // 去除后缀参数，保留图片ID和扩展名
-      const cleanUrl = url.replace(suffixRegex, '');
-      debugLog('去除图片后缀参数:', url, '→', cleanUrl);
+      const cleanUrl = urlWithoutQuery.replace(suffixRegex, '');
+      debugLog('去除图片后缀参数和查询参数:', url, '→', cleanUrl);
       return cleanUrl;
     }
 
-    return url;
+    return urlWithoutQuery;
   }
 
   // 下载历史存储与操作
@@ -372,7 +374,7 @@
         saveOriginalUrl(img);
 
         // 去水印规则：在域名后添加/small/
-        const watermarkRegex = /(https?:\/\/gd-hbimg\.huaban\.com)\/([^\/]+)/;
+        const watermarkRegex = /(https?:\/\/gd-hbimg-edge\.huabanimg\.com)\/([^\/?]+)/;
 
         // 检查图片链接是否有效
         function checkImageUrl(url) {
@@ -445,15 +447,15 @@
     // 使用更精准的选择器，基于你提供的HTML元素
     const selectors = [
       // 缩略图：使用 data-button-name="查看大图" 属性
-      'img[data-button-name="查看大图"][src*="gd-hbimg.huaban.com"]',
+      'img[data-button-name="查看大图"][src*="gd-hbimg-edge.huabanimg.com"]',
       // 大图查看器中的图片 - 优先级高，确保能捕获所有大图模式下的图片
-      '#imageViewerWrapper img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg.huaban.com"]',
+      '#imageViewerWrapper img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huabanimg.com"]',
       // 大图：使用 class="vYzIMzy2" 类名 + alt="查看图片" 属性
-      'img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg.huaban.com"]',
+      'img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huabanimg.com"]',
       // 备用：花瓣素材图片
-      '[data-material-type="套系素材"] img[src*="gd-hbimg.huaban.com"]',
+      '[data-material-type="套系素材"] img[src*="gd-hbimg-edge.huabanimg.com"]',
       // 备用：素材采集类型图片
-      'img[src*="gd-hbimg.huaban.com"][data-content-type="素材采集"]'
+      'img[src*="gd-hbimg-edge.huabanimg.com"][data-content-type="素材采集"]'
     ];
 
     return document.querySelectorAll(selectors.join(', '));
@@ -682,7 +684,7 @@
 
       // 精准匹配：使用 data-button-name="查看大图" 属性
       const img = e.target.closest('img[data-button-name="查看大图"]');
-      if (img && img.src.includes('gd-hbimg.huaban.com')) {
+      if (img && img.src.includes('gd-hbimg-edge.huabanimg.com')) {
         // 检查是否为官方自营素材（新增 title 选择器，满足任一条件即判定）
         const isOfficialMaterial =
           // 原有条件：.fgsjNg46 元素包含“官方自营”文本
@@ -701,10 +703,10 @@
             saveOriginalUrl(img);
 
             // 预生成大图URL
-            const watermarkRegex = /(https?:\/\/gd-hbimg\.huaban\.com)\/([^\/]+)/;
+            const watermarkRegex = /(https?:\/\/gd-hbimg-edge\.huabanimg\.com)\/([^\/?]+)/;
             if (watermarkRegex.test(img.src) && !img.src.includes('/small/')) {
               const baseImageKey = img.src.match(watermarkRegex)[2].split('_')[0];
-              const largeImageUrl = `https://gd-hbimg.huaban.com/small/${baseImageKey}`;
+              const largeImageUrl = `https://gd-hbimg-edge.huabanimg.com/small/${baseImageKey}`;
               debugLog('预生成VIP大图URL:', largeImageUrl);
             }
           } else {
@@ -732,7 +734,7 @@
     // 监听拖拽开始事件
     document.addEventListener('dragstart', function (e) {
       const img = e.target;
-      if (img.tagName === 'IMG' && img.src.includes('gd-hbimg.huaban.com')) {
+      if (img.tagName === 'IMG' && img.src.includes('gd-hbimg-edge.huabanimg.com')) {
         // 检查是否为需要处理的图片类型
         if (img.matches('img[data-button-name="查看大图"]') ||
           img.closest('#imageViewerWrapper') ||
@@ -793,7 +795,7 @@
     // 监听右键菜单事件 - 使用GM_download API直接下载
     document.addEventListener('contextmenu', function (e) {
       const img = e.target;
-      if (img.tagName === 'IMG' && img.src.includes('gd-hbimg.huaban.com')) {
+      if (img.tagName === 'IMG' && img.src.includes('gd-hbimg-edge.huabanimg.com')) {
         // 检查是否为需要处理的图片类型
         if (img.matches('img[data-button-name="查看大图"]') ||
           img.closest('#imageViewerWrapper') ||
@@ -2181,7 +2183,7 @@
       if (!btn) return;
       const count = selectedIds.size;
       btn.disabled = count === 0;
-      btn.textContent = count > 0 ? `删除已选(${count})` : '删除已选';
+      btn.textContent = count > 0 ? `删除(${count})` : '删除'; // 动态更新删除按钮文本
     }
 
     function render() {

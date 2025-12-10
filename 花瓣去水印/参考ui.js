@@ -218,7 +218,7 @@
                 if (!isOfficial) return;
 
                 saveOriginalUrl(img);
-                const watermarkRegex = /(https?:\/\/gd-hbimg\.huaban\.com)\/([^\/]+)/;
+                const watermarkRegex = /(https?:\/\/gd-hbimg-edge\.huabanimg\.com)\/([^\/?]+)/;
 
                 function checkImageUrl(url) {
                     return new Promise((resolve) => {
@@ -245,11 +245,11 @@
 
     function getMaterialImages() {
         const selectors = [
-            'img[data-button-name="查看大图"][src*="gd-hbimg.huaban.com"]',
-            '#imageViewerWrapper img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg.huaban.com"]',
-            'img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg.huaban.com"]',
-            '[data-material-type="套系素材"] img[src*="gd-hbimg.huaban.com"]',
-            'img[src*="gd-hbimg.huaban.com"][data-content-type="素材采集"]'
+            'img[data-button-name="查看大图"][src*="gd-hbimg-edge.huabanimg.com"]',
+            '#imageViewerWrapper img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huabanimg.com"]',
+            'img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huabanimg.com"]',
+            '[data-material-type="套系素材"] img[src*="gd-hbimg-edge.huabanimg.com"]',
+            'img[src*="gd-hbimg-edge.huabanimg.com"][data-content-type="素材采集"]'
         ];
         return document.querySelectorAll(selectors.join(', '));
     }
@@ -331,11 +331,11 @@
     function interceptImageClicks() {
         document.addEventListener('click', function (e) {
             const img = e.target.closest('img[data-button-name="查看大图"]');
-            if (img && img.src.includes('gd-hbimg.huaban.com')) {
+            if (img && img.src.includes('gd-hbimg-edge.huabanimg.com')) {
                 const isOfficial = Array.from(document.querySelectorAll('.fgsjNg46')).some(el => el.textContent && el.textContent.includes('官方自营')) || document.querySelectorAll('[title="来自官方自营"]').length > 0;
                 if (isOfficial && getConfig().enableRemoveWatermark) {
                     saveOriginalUrl(img);
-                    const regex = /(https?:\/\/gd-hbimg\.huaban\.com)\/([^\/]+)/;
+                    const regex = /(https?:\/\/gd-hbimg-edge\.huabanimg\.com)\/([^\/?]+)/;
                     if (regex.test(img.src)) {
                         const key = img.src.match(regex)[2].split('_')[0];
                         // 预生成大图链接
@@ -358,7 +358,7 @@
     function interceptDragAndDownload() {
         document.addEventListener('dragstart', function (e) {
             const img = e.target;
-            if (img.tagName === 'IMG' && img.src.includes('gd-hbimg.huaban.com')) {
+            if (img.tagName === 'IMG' && img.src.includes('gd-hbimg-edge.huabanimg.com')) {
                 const config = getConfig();
                 if (!config.enableDragDownload) return;
                 const cleanUrl = removeImageSuffixParams(img.src);
@@ -381,7 +381,7 @@
 
         document.addEventListener('contextmenu', function (e) {
             const img = e.target;
-            if (img.tagName === 'IMG' && img.src.includes('gd-hbimg.huaban.com') &&
+            if (img.tagName === 'IMG' && img.src.includes('gd-hbimg-edge.huabanimg.com') &&
                 (img.matches('img[data-button-name="查看大图"]') || img.closest('#imageViewerWrapper') || img.matches('img.vYzIMzy2[alt="查看图片"]'))) {
                 const config = getConfig();
                 if (!config.enableRightClickDownload) return;
