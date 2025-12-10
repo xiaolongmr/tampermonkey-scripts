@@ -139,6 +139,20 @@
           #huabanDownloadHistory .hb-history-masonry:hover::-webkit-scrollbar-thumb {
               background-color: #fce1e1ff; /* slate-400，悬浮时略加深 */
           }
+
+          /* 个人信息面板样式 */
+          .user-profile { max-width: 800px; margin: 0 auto; }
+          .profile-header { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+          .avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .profile-info h3 { margin: 0 0 10px; font-size: 24px; color: #333; }
+          .profile-info .job { color: #666; margin: 0 0 5px; }
+          .profile-info .joined { color: #999; font-size: 14px; }
+          .profile-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
+          .stat-item { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+          .stat-value { display: block; font-size: 28px; font-weight: bold; color: #333; margin-bottom: 5px; }
+          .stat-label { color: #666; font-size: 14px; }
+          .loading { text-align: center; padding: 40px 0; color: #666; }
+          .error-message { color: #dc3545; padding: 20px; text-align: center; background: #f8d7da; border-radius: 4px; }
         `;
     document.head.appendChild(style);
   }
@@ -1004,17 +1018,21 @@
 
     const navSettings = makeNavBtn('cfg-tab-settings', '⚙️ 设置选项');
     const navUsage = makeNavBtn('cfg-tab-usage', '📖 使用说明');
+    const navUpdate = makeNavBtn('cfg-tab-update', '📝 更新记录');
     const navTwikoo = makeNavBtn('cfg-tab-twikoo', '🤝 网友互助');
     const navHistory = makeNavBtn('cfg-tab-history', '📦 历史下载');
     const navThanks = makeNavBtn('cfg-tab-thanks', '🙏 致谢名单');
+const navUserProfile = makeNavBtn('cfg-tab-user', '👤 个人信息');
 
     const navTop = document.createElement('div');
     navTop.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
     navTop.appendChild(navSettings);
     navTop.appendChild(navUsage);
+    navTop.appendChild(navUpdate);
     navTop.appendChild(navTwikoo);
     navTop.appendChild(navHistory);
     navTop.appendChild(navThanks);
+navTop.appendChild(navUserProfile);
     sidebar.appendChild(navTop);
 
     // 版本信息放在侧栏底部，参考示例布局
@@ -1026,7 +1044,7 @@
     const main = document.createElement('div');
     main.id = 'hb-config-main';
     // 主区使用滚动容器以适配内嵌大型面板（如历史、聊天）
-    main.style.cssText = 'flex:1; padding:16px; overflow:auto; min-height:0; box-sizing:border-box;';
+    main.style.cssText = 'flex:1; padding:16px; overflow:hidden; min-height:0; box-sizing:border-box;';
 
     bodyWrap.appendChild(sidebar);
     bodyWrap.appendChild(main);
@@ -1043,6 +1061,8 @@
 
     // 导航交互：渲染不同的面板
     function renderSettings() {
+      main.style.padding = '16px';
+      main.innerHTML = '';
       // 将原来的 content 区域内容渲染到 main
       main.innerHTML = '';
       // switchesSection, colorSettings, actions 会被插入后
@@ -1051,17 +1071,38 @@
       main.appendChild(actions);
     }
 
-    // 使用说明在主区域嵌入 Feishu（iframe），若无法显示提供外链
-    function renderUsage() {
+    // 更新记录在主区域嵌入 Feishu（iframe），若无法显示提供外链
+function renderUpdate() {
       main.innerHTML = '';
+      main.style.padding = '0';
+    const configMain = document.getElementById('hb-config-main');
+    if (configMain) configMain.style.position = 'relative';
+      const feishuUrl = 'https://ai-chimo.feishu.cn/wiki/EcTAwKw2bifqGjku9pzccaVcnId';
+      const iframe = document.createElement('iframe');
+      iframe.src = feishuUrl;
+      iframe.style.cssText = 'width:100%;height:100%;min-height:480px;border:0;border-radius:8px;';
+      iframe.allow = 'fullscreen; clipboard-write';
+      const fallback = document.createElement('div');
+      fallback.style.cssText = 'font-size: 13px;text-align: center;position: absolute;width: 100%;bottom: 0px;left: 50%;transform: translateX(-50%);text-decoration: none;background: rgb(255, 255, 255);padding: 8px 16px;border-radius: 4px;box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 10px;';
+      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6;">在新标签页打开更新记录</a>（飞书文档）`;
+      main.appendChild(iframe);
+      main.appendChild(fallback);
+    }
+
+    // 使用说明在主区域嵌入 Feishu（iframe），若无法显示提供外链
+function renderUsage() {
+      main.innerHTML = '';
+      main.style.padding = '0';
+    const configMain = document.getElementById('hb-config-main');
+    if (configMain) configMain.style.position = 'relative';
       const feishuUrl = 'https://ai-chimo.feishu.cn/wiki/E9SEwhoMmiv2CkkC1VgcAbRTnW3';
       const iframe = document.createElement('iframe');
       iframe.src = feishuUrl;
       iframe.style.cssText = 'width:100%;height:100%;min-height:480px;border:0;border-radius:8px;';
       iframe.allow = 'fullscreen; clipboard-write';
       const fallback = document.createElement('div');
-      fallback.style.cssText = 'margin-top:8px;font-size:13px;color:#64748b;text-align:center;';
-      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" style="color:#3b82f6;text-decoration:none;">在新标签页打开使用说明（飞书文档）</a>`;
+      fallback.style.cssText = 'font-size: 13px;text-align: center;position: absolute;width: 100%;bottom: 0px;left: 50%;transform: translateX(-50%);text-decoration: none;background: rgb(255, 255, 255);padding: 8px 16px;border-radius: 4px;box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 10px;';
+      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6;">在新标签页打开使用说明</a>（飞书文档）`;
       main.appendChild(iframe);
       main.appendChild(fallback);
     }
@@ -1069,18 +1110,70 @@
     // 导航按钮事件（同时设置激活态）
     navSettings.addEventListener('click', () => { setActive('cfg-tab-settings'); renderSettings(); });
     navUsage.addEventListener('click', () => { setActive('cfg-tab-usage'); renderUsage(); });
+    navUpdate.addEventListener('click', () => { setActive('cfg-tab-update'); renderUpdate(); });
 
     // 在主区域渲染致谢名单（iframe）
-    function renderThanksPanel() {
+    function renderUserProfile() {
+    const main = document.getElementById('hb-config-main');
+    main.innerHTML = '<div class="loading"><i class="fa fa-spinner fa-spin"></i> 加载个人信息中...</div>';
+    main.style.padding = '16px';
+    main.style.position = 'relative';
+
+    fetch('https://huaban.com/v3/users/me')
+        .then(response => response.json())
+        .then(data => {
+            const createdAt = new Date(data.created_at * 1000).toLocaleDateString();
+            main.innerHTML = `
+                <div class="user-profile">
+                    <div class="profile-header">
+                        <img src="${data.avatar.url}" alt="${data.username}" class="avatar">
+                        <div class="profile-info">
+                            <h3>${data.username}</h3>
+                            <p class="job">${data.profile.job || '未填写职业信息'}</p>
+                            <p class="joined">注册时间: ${createdAt}</p>
+                        </div>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">${data.board_count}</span>
+                            <span class="stat-label">画板</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">${data.pin_count}</span>
+                            <span class="stat-label">采集</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">${data.follower_count}</span>
+                            <span class="stat-label">粉丝</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">${data.following_count}</span>
+                            <span class="stat-label">关注</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            main.innerHTML = '<div class="error-message"><i class="fa fa-exclamation-circle"></i> 获取个人信息失败，请稍后重试</div>';
+            console.error('获取花瓣用户信息失败:', error);
+        });
+}
+
+function renderThanksPanel() {
+      main.style.padding = '16px';
+      main.innerHTML = '';
       main.innerHTML = '';
       const iframe = document.createElement('iframe');
       iframe.src = 'https://xiaolongmr.github.io/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%87%B4%E8%B0%A2%E5%90%8D%E5%8D%95.html';
-      iframe.style.cssText = 'width:100%;height:520px;border:0;border-radius:8px;';
+      iframe.style.cssText = 'display: block;margin: 0px auto;width: 420px;height: 585px;border: 0px;border-radius: 8px;';
       main.appendChild(iframe);
     }
 
     // 在主区域渲染网友互助区（Twikoo）
     function renderTwikooPanel() {
+      main.style.padding = '16px';
+      main.innerHTML = '';
       main.innerHTML = '';
       const title = document.createElement('div');
       title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
@@ -1122,6 +1215,7 @@
     navTwikoo.addEventListener('click', (e) => { e.preventDefault(); setActive('cfg-tab-twikoo'); renderTwikooPanel(); });
     navHistory.addEventListener('click', (e) => { e.preventDefault(); setActive('cfg-tab-history'); showDownloadHistory(main); });
     navThanks.addEventListener('click', (e) => { e.preventDefault(); setActive('cfg-tab-thanks'); renderThanksPanel(); });
+navUserProfile.addEventListener('click', () => { setActive('cfg-tab-user'); renderUserProfile(); });
 
     // 初始显示设置面板并设置激活态
     // NOTE: moved below after switchesSection/colorSettings/actions are created
