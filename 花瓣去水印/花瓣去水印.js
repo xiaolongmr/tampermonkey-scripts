@@ -1109,25 +1109,24 @@
     // 创建主容器
     const container = document.createElement("div");
     container.id = "huabanConfig";
-    container.style.cssText =
-      "position: fixed; inset: 0; background: rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter: blur(4px);";
+    // 使用 Tailwind 工具类替代常规样式
+    container.className = "fixed inset-0 bg-black/30 flex items-center justify-center z-[1000] backdrop-blur-sm";
 
     // 创建卡片（更宽以容纳侧边栏）
     const card = document.createElement("div");
     // 固定高度布局，确保左侧导航与右侧内容高度一致
-    card.style.cssText =
-      'background: white; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,.15); width: 900px; height: 680px; max-width: 96vw; display:flex; flex-direction:column; overflow:hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;';
+    card.className = "bg-white rounded-xl shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[900px] h-[680px] max-w-[96vw] flex flex-col overflow-hidden";
+    card.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
     // 顶部标题条 已移除（界面改为侧边栏标题与底部版本信息）
 
     // 侧边栏与主内容容器
     const bodyWrap = document.createElement("div");
-    bodyWrap.style.cssText = "display:flex; flex:1; min-height:0;";
+    bodyWrap.className = "flex flex-1 min-h-0";
 
     const sidebar = document.createElement("div");
     // 侧栏采用纵向布局，底部显示版本号
-    sidebar.style.cssText =
-      "width:150px; padding:12px; background: #f7f9fa; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;";
+    sidebar.className = "w-[150px] p-3 bg-slate-50 box-border flex flex-col justify-between overflow-hidden";
 
     // 左侧导航按钮
     const makeNavBtn = (id, text) => {
@@ -1135,14 +1134,13 @@
       b.id = id;
       b.textContent = text;
       // 简约按钮样式：基础布局 + 简单过渡
-      b.style.cssText =
-        "display:block;width:100%;text-align:left;padding:10px 12px;margin-bottom:8px;border-radius:6px;background:transparent;cursor:pointer;color:#334155;font-size:14px;transition: all .15s ease;border:none;";
+      b.className = "block w-full text-left p-3 mb-2 rounded-lg bg-transparent cursor-pointer text-slate-700 text-sm transition-all duration-150 border-none";
       // 简约hover效果
       b.addEventListener("mouseenter", () => {
-        if (!b.dataset.active) b.style.background = "#f8fafc";
+        if (!b.dataset.active) b.style.backgroundColor = "rgb(248, 250, 252)";
       });
       b.addEventListener("mouseleave", () => {
-        if (!b.dataset.active) b.style.background = "transparent";
+        if (!b.dataset.active) b.style.backgroundColor = "transparent";
       });
       return b;
     };
@@ -1154,12 +1152,12 @@
         if (b.id === activeId) {
           b.dataset.active = "1";
           // 极简选中状态：仅保留背景色和文字颜色
-          b.style.background = "#ffffffff";
-          b.style.color = "#ff284b";
+          b.style.backgroundColor = "rgb(255, 255, 255)";
+          b.style.color = "rgb(255, 40, 75)";
         } else {
           delete b.dataset.active;
-          b.style.background = "transparent";
-          b.style.color = "#334155";
+          b.style.backgroundColor = "transparent";
+          b.style.color = "rgb(51, 65, 85)";
         }
       });
     }
@@ -1173,7 +1171,7 @@
     const navUserProfile = makeNavBtn("cfg-tab-user", "👤 个人信息");
 
     const navTop = document.createElement("div");
-    navTop.style.cssText = "display:flex;flex-direction:column;gap:10px;";
+    navTop.className = "flex flex-col gap-2";
     navTop.appendChild(navSettings);
     navTop.appendChild(navUsage);
     navTop.appendChild(navUpdate);
@@ -1185,15 +1183,14 @@
 
     // 版本信息放在侧栏底部，参考示例布局
     const versionEl = document.createElement("div");
-    versionEl.style.cssText = "font-size:12px;color:#94a3b8;padding:12px 6px;";
+    versionEl.className = "text-xs text-slate-400 p-3";
     versionEl.textContent = `版本 v${getScriptVersion()}`;
     sidebar.appendChild(versionEl);
 
     const main = document.createElement("div");
     main.id = "hb-config-main";
     // 主区使用滚动容器以适配内嵌大型面板（如历史、聊天）
-    main.style.cssText =
-      "flex:1; padding:16px; overflow:hidden; min-height:0; box-sizing:border-box;";
+    main.className = "flex-1 p-4 overflow-hidden min-h-0 box-border";
 
     bodyWrap.appendChild(sidebar);
     bodyWrap.appendChild(main);
@@ -1235,13 +1232,11 @@
         "https://ai-chimo.feishu.cn/wiki/EcTAwKw2bifqGjku9pzccaVcnId";
       const iframe = document.createElement("iframe");
       iframe.src = feishuUrl;
-      iframe.style.cssText =
-        "width:100%;height:100%;min-height:480px;border:0;border-radius:8px;";
+      iframe.className = "w-full h-full min-h-[480px] border-0 rounded-lg";
       iframe.allow = "fullscreen; clipboard-write";
       const fallback = document.createElement("div");
-      fallback.style.cssText =
-        "font-size: 13px;text-align: center;position: absolute;width: 100%;bottom: 0px;left: 50%;transform: translateX(-50%);text-decoration: none;background: rgb(255, 255, 255);padding: 8px 16px;border-radius: 4px;box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 10px;";
-      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6;">在新标签页打开更新记录</a>（飞书文档）`;
+      fallback.className = "text-sm text-center absolute w-full bottom-0 left-1/2 -translate-x-1/2 no-underline bg-white px-4 py-2 rounded shadow-md";
+      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-500">在新标签页打开更新记录</a>（飞书文档）`;
       main.appendChild(iframe);
       main.appendChild(fallback);
     }
@@ -1256,13 +1251,11 @@
         "https://ai-chimo.feishu.cn/wiki/E9SEwhoMmiv2CkkC1VgcAbRTnW3";
       const iframe = document.createElement("iframe");
       iframe.src = feishuUrl;
-      iframe.style.cssText =
-        "width:100%;height:100%;min-height:480px;border:0;border-radius:8px;";
+      iframe.className = "w-full h-full min-h-[480px] border-0 rounded-lg";
       iframe.allow = "fullscreen; clipboard-write";
       const fallback = document.createElement("div");
-      fallback.style.cssText =
-        "font-size: 13px;text-align: center;position: absolute;width: 100%;bottom: 0px;left: 50%;transform: translateX(-50%);text-decoration: none;background: rgb(255, 255, 255);padding: 8px 16px;border-radius: 4px;box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 10px;";
-      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6;">在新标签页打开使用说明</a>（飞书文档）`;
+      fallback.className = "text-sm text-center absolute w-full bottom-0 left-1/2 -translate-x-1/2 no-underline bg-white px-4 py-2 rounded shadow-md";
+      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-500">在新标签页打开使用说明</a>（飞书文档）`;
       main.appendChild(iframe);
       main.appendChild(fallback);
     }
@@ -1348,8 +1341,7 @@
       const iframe = document.createElement("iframe");
       iframe.src =
         "https://xiaolongmr.github.io/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%87%B4%E8%B0%A2%E5%90%8D%E5%8D%95.html";
-      iframe.style.cssText =
-        "display: block;margin: 0px auto;width: 420px;height: 585px;border: 0px;border-radius: 8px;";
+      iframe.className = "block mx-auto w-[420px] h-[585px] border-0 rounded-lg";
       main.appendChild(iframe);
     }
 
@@ -1359,16 +1351,13 @@
       main.innerHTML = "";
       main.innerHTML = "";
       const title = document.createElement("div");
-      title.style.cssText =
-        "display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;";
-      title.innerHTML = `<h3 style="margin:0;font-size:16px;color:#334155;">网友互助区</h3><div style="font-size:12px;color:#64748b;">通过 Twikoo 聊天与其他用户交流</div>`;
+      title.className = "flex items-center justify-between mb-3";
+      title.innerHTML = `<h3 class="m-0 text-base text-slate-700">网友互助区</h3><div class="text-xs text-slate-400">通过 Twikoo 聊天与其他用户交流</div>`;
       const wrapper = document.createElement("div");
-      wrapper.style.cssText =
-        "flex:1; display:flex; flex-direction:column; gap:12px; height:100%; min-height:0;";
+      wrapper.className = "flex-1 flex flex-col gap-3 h-full min-h-0";
       const commentWrap = document.createElement("div");
       commentWrap.id = "tcomment";
-      commentWrap.style.cssText =
-        "flex:1; min-height:0; overflow:auto; background: #fff; border-radius:8px; padding:12px; box-sizing:border-box;";
+      commentWrap.className = "flex-1 min-h-0 overflow-auto bg-white rounded-lg p-3 box-border";
       wrapper.appendChild(commentWrap);
       main.appendChild(title);
       main.appendChild(wrapper);
@@ -1440,64 +1429,23 @@
       try {
         // 创建模态框
         const modal = document.createElement("div");
-        modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.3);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 9999;
-                backdrop-filter: blur(4px);
-            `;
+        modal.className = "fixed inset-0 bg-black/30 flex items-center justify-center z-[9999] backdrop-blur-sm";
 
         // 创建容器
         const container = document.createElement("div");
-        container.style.cssText = `
-                position: relative;
-                width: 420px;
-                height: 585px;
-                max-width: 95vw;
-                max-height: 90vh;
-                overflow: hidden;
-            `;
+        container.className = "relative w-[420px] h-[585px] max-w-[95vw] max-h-[90vh] overflow-hidden";
 
         // 创建iframe嵌套致谢名单HTML文件
         const iframe = document.createElement("iframe");
         iframe.src =
           "https://xiaolongmr.github.io/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%87%B4%E8%B0%A2%E5%90%8D%E5%8D%95.html";
-        iframe.style.cssText = `
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                border: none;
-                outline: none;
-            `;
+        iframe.className = "absolute inset-0 w-full h-full border-0 outline-none";
         iframe.allow = "autoplay; clipboard-write";
         iframe.frameBorder = "0";
 
         // 创建关闭按钮
         const closeButton = document.createElement("div");
-        closeButton.style.cssText = `
-                position: absolute;
-                right: 10px;
-                top: 10px;
-                width: 30px;
-                height: 30px;
-                background-color: rgba(0, 0, 0, 0.1);
-                border-radius: 50%;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                user-select: none;
-                z-index: 10;
-            `;
+        closeButton.className = "absolute right-2.5 top-2.5 w-7 h-7 bg-black/10 rounded-full flex items-center justify-center select-none z-10 cursor-pointer";
         // 创建SVG关闭图标
         const closeIcon = document.createElementNS(
           "http://www.w3.org/2000/svg",
@@ -1568,22 +1516,11 @@
 
     // 启用开关区域
     const switchesSection = document.createElement("div");
-    switchesSection.style.cssText = `
-            margin-bottom: 16px;
-        `;
+    switchesSection.className = "mb-4";
 
     // 自定义背景色开关
     const enableCustomSection = document.createElement("div");
-    enableCustomSection.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-        `;
+    enableCustomSection.className = "flex items-center justify-between mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200";
 
     const enableCustomHTML = `
             <span style="
@@ -1633,16 +1570,7 @@
 
     // 去水印功能开关
     const enableWatermarkSection = document.createElement("div");
-    enableWatermarkSection.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-        `;
+    enableWatermarkSection.className = "flex items-center justify-between mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200";
 
     const enableWatermarkHTML = `
             <span style="
@@ -1696,16 +1624,7 @@
 
     // 拖拽下载功能开关
     const enableDragSection = document.createElement("div");
-    enableDragSection.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-        `;
+    enableDragSection.className = "flex items-center justify-between mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200";
 
     const enableDragHTML = `
             <span style="
@@ -1758,16 +1677,7 @@
 
     // 右键下载功能开关
     const enableRightClickSection = document.createElement("div");
-    enableRightClickSection.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-        `;
+    enableRightClickSection.className = "flex items-center justify-between mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200";
 
     const enableRightClickHTML = `
             <span style="
@@ -1826,16 +1736,7 @@
 
     // 历史图片加载效果选择
     const loadingStyleSection = document.createElement("div");
-    loadingStyleSection.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-        `;
+    loadingStyleSection.className = "flex items-center justify-between mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200";
     const currentLoadingStyle =
       typeof GM_getValue === "function"
         ? GM_getValue("historyLoadingStyle", "spinner")
@@ -1955,10 +1856,7 @@
 
     // 操作按钮
     const actions = document.createElement("div");
-    actions.style.cssText = `
-            display: flex;
-            gap: 8px;
-        `;
+    actions.className = "flex gap-2";
     actions.innerHTML = `
             <button id="resetBtn" style="
                 flex: 1;
@@ -2045,7 +1943,7 @@
     enableCustomSwitch.addEventListener("change", function () {
       const isChecked = this.checked;
       const switchBg = enableCustomContainer.querySelector("span:nth-child(2)");
-      switchBg.style.background = isChecked ? "#4ade80" : "#e2e8f0";
+      switchBg.style.backgroundColor = isChecked ? "#4ade80" : "#e2e8f0";
       enableCustomThumb.style.left = isChecked ? "22px" : "2px";
       applyStyles(); // 重新应用样式
     });
@@ -2055,7 +1953,7 @@
       const isChecked = this.checked;
       const switchBg =
         enableWatermarkContainer.querySelector("span:nth-child(2)");
-      switchBg.style.background = isChecked ? "#ff6b6b" : "#e2e8f0";
+      switchBg.style.backgroundColor = isChecked ? "#ff6b6b" : "#e2e8f0";
       enableWatermarkThumb.style.left = isChecked ? "22px" : "2px";
 
       // 立即应用水印处理（根据开关状态决定是去水印还是恢复）
@@ -2083,7 +1981,7 @@
     enableDragSwitch.addEventListener("change", function () {
       const isChecked = this.checked;
       const switchBg = enableDragContainer.querySelector("span:nth-child(2)");
-      switchBg.style.background = isChecked ? "#3b82f6" : "#e2e8f0";
+      switchBg.style.backgroundColor = isChecked ? "#3b82f6" : "#e2e8f0";
       enableDragThumb.style.left = isChecked ? "22px" : "2px";
 
       // 立即更新拖拽下载功能状态
@@ -2096,7 +1994,7 @@
       const isChecked = this.checked;
       const switchBg =
         enableRightClickContainer.querySelector("span:nth-child(2)");
-      switchBg.style.background = isChecked ? "#8b5cf6" : "#e2e8f0";
+      switchBg.style.backgroundColor = isChecked ? "#8b5cf6" : "#e2e8f0";
       enableRightClickThumb.style.left = isChecked ? "22px" : "2px";
 
       // 立即更新右键下载功能状态
@@ -2118,17 +2016,17 @@
 
     materialPicker.addEventListener("input", (e) => {
       materialInput.value = e.target.value;
-      materialPreview.style.background = e.target.value;
+      materialPreview.style.backgroundColor = e.target.value;
     });
 
     userPicker.addEventListener("input", (e) => {
       userInput.value = e.target.value;
-      userPreview.style.background = e.target.value;
+      userPreview.style.backgroundColor = e.target.value;
     });
 
     materialInput.addEventListener("input", (e) => {
       if (isValidColor(e.target.value)) {
-        materialPreview.style.background = e.target.value;
+        materialPreview.style.backgroundColor = e.target.value;
         if (e.target.value.startsWith("#")) {
           materialPicker.value = e.target.value;
         }
@@ -2137,7 +2035,7 @@
 
     userInput.addEventListener("input", (e) => {
       if (isValidColor(e.target.value)) {
-        userPreview.style.background = e.target.value;
+        userPreview.style.backgroundColor = e.target.value;
         if (e.target.value.startsWith("#")) {
           userPicker.value = e.target.value;
         }
@@ -2191,7 +2089,7 @@
         enableCustomSwitch.checked = DEFAULT_CONFIG.enableCustom;
         const customSwitchBg =
           enableCustomContainer.querySelector("span:nth-child(2)");
-        customSwitchBg.style.background = DEFAULT_CONFIG.enableCustom
+        customSwitchBg.style.backgroundColor = DEFAULT_CONFIG.enableCustom
           ? "#4ade80"
           : "#e2e8f0";
         enableCustomThumb.style.left = DEFAULT_CONFIG.enableCustom
@@ -2202,7 +2100,7 @@
         enableWatermarkSwitch.checked = DEFAULT_CONFIG.enableRemoveWatermark;
         const watermarkSwitchBg =
           enableWatermarkContainer.querySelector("span:nth-child(2)");
-        watermarkSwitchBg.style.background =
+        watermarkSwitchBg.style.backgroundColor =
           DEFAULT_CONFIG.enableRemoveWatermark ? "#ff6b6b" : "#e2e8f0";
         enableWatermarkThumb.style.left = DEFAULT_CONFIG.enableRemoveWatermark
           ? "22px"
@@ -2212,7 +2110,7 @@
         enableDragSwitch.checked = DEFAULT_CONFIG.enableDragDownload;
         const dragSwitchBg =
           enableDragContainer.querySelector("span:nth-child(2)");
-        dragSwitchBg.style.background = DEFAULT_CONFIG.enableDragDownload
+        dragSwitchBg.style.backgroundColor = DEFAULT_CONFIG.enableDragDownload
           ? "#3b82f6"
           : "#e2e8f0";
         enableDragThumb.style.left = DEFAULT_CONFIG.enableDragDownload
@@ -2224,17 +2122,17 @@
           DEFAULT_CONFIG.enableRightClickDownload;
         const rightClickSwitchBg =
           enableRightClickContainer.querySelector("span:nth-child(2)");
-        rightClickSwitchBg.style.background =
+        rightClickSwitchBg.style.backgroundColor =
           DEFAULT_CONFIG.enableRightClickDownload ? "#8b5cf6" : "#e2e8f0";
         enableRightClickThumb.style.left =
           DEFAULT_CONFIG.enableRightClickDownload ? "22px" : "2px";
 
         // 恢复颜色设置
         materialInput.value = DEFAULT_CONFIG.materialColor;
-        materialPreview.style.background = DEFAULT_CONFIG.materialColor;
+        materialPreview.style.backgroundColor = DEFAULT_CONFIG.materialColor;
         materialPicker.value = DEFAULT_CONFIG.materialColor;
         userInput.value = DEFAULT_CONFIG.userColor;
-        userPreview.style.background = DEFAULT_CONFIG.userColor;
+        userPreview.style.backgroundColor = DEFAULT_CONFIG.userColor;
         userPicker.value = DEFAULT_CONFIG.userColor;
 
         // 应用设置
@@ -2340,33 +2238,33 @@
 
     const container = document.createElement("div");
     container.id = "huabanUsageGuide";
-    container.style.cssText = `position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);`;
+    container.className = "fixed inset-0 bg-black/30 flex items-center justify-center z-[1000] backdrop-blur-sm";
 
     const card = document.createElement("div");
-    card.style.cssText = `background: white; border-radius: 24px; box-shadow: 0 8px 25px rgba(0,0,0,.15); width: 1000px; height: 820px; max-width: 96vw; max-height: 86vh; display:flex; flex-direction:column; overflow: hidden;`;
+    card.className = "bg-white rounded-[24px] shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[1000px] h-[820px] max-w-[96vw] max-h-[86vh] flex flex-col overflow-hidden";
 
     const header = document.createElement("div");
-    header.style.cssText = `padding: 12px 16px; border-bottom: 1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; background-color: var(--background-color-secondary-regular,rgb(248, 250, 252));`;
+    header.className = "px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-[rgb(248,250,252)]";
     header.innerHTML = `<h3 style="margin:0; font-size:16px; color:#334155; font-weight:600;">使用说明</h3><button id="closeUsageGuide" style="background:none;border:none;cursor:pointer;padding:4px;border-radius:4px;display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="#64748b"><path d="M198.1 267.7l75.4-75.4 576.3 576.3-75.4 75.4-576.3-576.3zm576.4-69.3l75.4 75.4-580.7 580.8-75.4-75.4 580.7-580.8z"/></svg></button>`;
 
     const content = document.createElement("div");
-    content.style.cssText = `flex:1; overflow:auto; padding:0; display:flex; align-items:stretch; justify-content:stretch;`;
+    content.className = "flex-1 overflow-auto p-0 flex items-stretch justify-stretch";
 
     // Feishu doc URL (嵌入为 iframe)，并提供外链作为回退
     const feishuUrl =
       "https://ai-chimo.feishu.cn/wiki/E9SEwhoMmiv2CkkC1VgcAbRTnW3";
 
     const iframeWrap = document.createElement("div");
-    iframeWrap.style.cssText = `flex:1; min-height:0;`;
+    iframeWrap.className = "flex-1 min-h-0";
 
     const iframe = document.createElement("iframe");
     iframe.src = feishuUrl;
-    iframe.style.cssText = `width:100%; height:100%; border:0; min-height: 400px;`;
+    iframe.className = "w-full h-full border-0 min-h-[400px]";
     iframe.allow = "fullscreen; clipboard-write";
 
     // 说明与外链回退
     const fallback = document.createElement("div");
-    fallback.style.cssText = `padding:12px; font-size:13px; color:#64748b; background:#fff7ed; border-top:1px solid #f1e7d6; text-align:center;`;
+    fallback.className = "p-3 text-sm text-slate-400 bg-amber-50 border-t border-amber-100 text-center";
     fallback.innerHTML = `若嵌入内容无法显示，请点击此处在新标签页打开： <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" style="color:#3b82f6;text-decoration:none;">打开使用说明（飞书文档）</a>`;
 
     iframeWrap.appendChild(iframe);
@@ -2404,33 +2302,11 @@
     if (!isEmbed) {
       overlay = document.createElement("div");
       overlay.id = "huabanDownloadHistory";
-      overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            backdrop-filter: blur(4px);
-        `;
+      overlay.className = "fixed inset-0 bg-black/40 flex items-center justify-center z-[10000] backdrop-blur-sm";
     }
     const card = document.createElement("div");
-    card.style.cssText = `
-            background: #ffffff;
-            border-radius: 24px;
-            box-shadow: 0 8px 25px rgba(0,0,0,.15);
-            width: 1200px;
-            max-width: 95vw;
-            max-height: 88vh;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-        `;
+    card.className = "bg-white rounded-[24px] shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[1200px] max-w-[95vw] max-h-[88vh] flex flex-col relative";
+    card.style.fontFamily = "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
     // 如果以嵌入方式渲染在右侧面板，调整样式以填满容器并弱化浮层风格
     if (isEmbed) {
       card.style.width = "100%";
@@ -2441,44 +2317,19 @@
       card.style.boxShadow = "none";
     }
     const header = document.createElement("div");
-    header.style.cssText = `
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            justify-content: space-between;
-        `;
+    header.className = "flex items-center gap-3 justify-between px-4 py-3";
     const tools = document.createElement("div");
-    tools.style.cssText = `
-            display: flex;
-            gap: 8px;
-            align-items: stretch;
-        `;
+    tools.className = "flex gap-2 items-stretch";
     const title = document.createElement("div");
     title.innerHTML = `
-            <span id="historyCount" style="font-size:12px;color:#64748b;">共1条</span>
+            <span id="historyCount" class="text-xs text-slate-400">共1条</span>
         `;
     const searchInput = document.createElement("input");
     searchInput.type = "text";
     searchInput.placeholder = "支持拼音模糊搜索";
-    searchInput.style.cssText = `
-            height: 32px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #334155;
-            width: 220px;
-            background: #ffffff;
-        `;
+    searchInput.className = "h-8 border border-slate-200 rounded-md text-sm text-slate-700 w-[220px] bg-white px-2";
     const sortSelect = document.createElement("select");
-    sortSelect.style.cssText = `
-            height: 32px;
-            padding: 0 10px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #334155;
-            background: #ffffff;
-        `;
+    sortSelect.className = "h-8 px-2 border border-slate-200 rounded-md text-sm text-slate-700 bg-white";
     sortSelect.innerHTML = `
             <option value="time_desc">最新优先</option>
             <option value="time_asc">最旧优先</option>
@@ -2486,29 +2337,25 @@
             <option value="name_desc">名称降序</option>
         `;
     const officialOnly = document.createElement("label");
-    officialOnly.style.cssText = `
-            display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;padding:6px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;
-        `;
+    officialOnly.className = "flex items-center gap-1 text-sm text-slate-600 px-2 py-1 bg-slate-50 border border-slate-200 rounded-md cursor-pointer";
     officialOnly.innerHTML = `
-            <input type="checkbox" id="officialOnlyCheckbox" style="cursor:pointer;"> 仅官方自营
+            <input type="checkbox" id="officialOnlyCheckbox" class="cursor-pointer"> 仅官方自营
         `;
     const clearBtn = document.createElement("button");
     clearBtn.textContent = "清空";
-    clearBtn.style.cssText = `
-            height: 32px; padding: 0 12px; border: 1px solid #ef4444; color: #ef4444; background: #fff1f2; border-radius: 8px; font-size: 13px; cursor: pointer;
-        `;
+    clearBtn.className = "h-8 px-3 border border-rose-500 text-rose-500 bg-rose-50 rounded-md text-sm cursor-pointer";
     tools.appendChild(searchInput);
     tools.appendChild(sortSelect);
     tools.appendChild(officialOnly);
     // 选择模式开关
     const selectBtn = document.createElement("button");
     selectBtn.textContent = "选择";
-    selectBtn.style.cssText = `height: 32px; padding: 0 12px; border: 1px solid #e2e8f0; color: #334155; background: #ffffff; border-radius: 8px; font-size: 13px; cursor: pointer;`;
+    selectBtn.className = "h-8 px-3 border border-slate-200 text-slate-700 bg-white rounded-md text-sm cursor-pointer";
     // 批量删除按钮
     const bulkDelBtnLocal = document.createElement("button");
     bulkDelBtnLocal.id = "hb-bulk-delete-btn";
     bulkDelBtnLocal.textContent = "删除";
-    bulkDelBtnLocal.style.cssText = `height: 32px; padding: 0 12px; border: 1px solid #ef4444; color: #ef4444; background: #fff1f2; border-radius: 8px; font-size: 13px; cursor: pointer;`;
+    bulkDelBtnLocal.className = "h-8 px-3 border border-rose-500 text-rose-500 bg-rose-50 rounded-md text-sm cursor-pointer";
     bulkDelBtnLocal.disabled = true;
     tools.appendChild(selectBtn);
     tools.appendChild(bulkDelBtnLocal);
@@ -2541,10 +2388,12 @@
     const content = document.createElement("div");
     content.id = "hb-history-content";
     content.className = "hb-history-content";
-    content.style.cssText = `padding-top: 10px; overflow-y: auto; flex: 1; background: #ffffff;`;
+    content.className = "pt-2 overflow-y-auto flex-1 bg-white";
     const masonry = document.createElement("div");
     masonry.className = "hb-history-masonry";
-    masonry.style.cssText = `column-count: 4; column-gap: 6px;`;
+    masonry.className = "hb-history-masonry";
+    masonry.style.columnCount = 4;
+    masonry.style.columnGap = '6px';
     content.appendChild(masonry);
     card.appendChild(header);
     card.appendChild(content);
@@ -2560,7 +2409,7 @@
     // 返回顶部按钮（在历史下载滚动时显示，固定在窗口区域右下角）
     const backTopBtn = document.createElement("button");
     backTopBtn.id = "hb-history-back-top";
-    backTopBtn.style.cssText = `position: absolute; right: 16px; bottom: 16px; width: 40px; height: 40px; border-radius: 20px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s ease; cursor: pointer; z-index: 100;`;
+    backTopBtn.className = "absolute right-4 bottom-4 w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200 cursor-pointer z-50";
     backTopBtn.innerHTML =
       '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>';
     card.appendChild(backTopBtn);
@@ -2684,25 +2533,18 @@
       masonry.innerHTML = "";
       list.forEach((item) => {
         const box = document.createElement("div");
-        box.className = "hb-history-item";
-        box.style.cssText = `
-                break-inside: avoid; margin-bottom: 16px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.06);
-            `;
+        box.className = "hb-history-item break-inside-avoid mb-4 border border-slate-200 rounded-xl overflow-hidden shadow-sm";
         const imgWrap = document.createElement("div");
-        imgWrap.className = "hb-history-img-wrap";
-        imgWrap.style.cssText = `
-                background: #f8fafc; position: relative; ${
-                  item.width && item.height
-                    ? `aspect-ratio:${item.width} / ${item.height};`
-                    : ""
-                } overflow:hidden;
-            `;
+        imgWrap.className = "hb-history-img-wrap bg-slate-50 relative overflow-hidden";
+        if (item.width && item.height) {
+          imgWrap.style.aspectRatio = `${item.width} / ${item.height}`;
+        }
         const img = document.createElement("img");
         // 移除原生懒加载属性，避免与自定义加载逻辑冲突
         // img.setAttribute('loading', 'lazy');
         img.dataset.src = item.url;
         img.alt = item.fileName || "预览";
-        img.style.cssText = `width: 100%; height: 100%; object-fit: contain; display: block; opacity:0; transition: opacity .2s ease, filter .25s ease;`;
+        img.className = "w-full h-full object-contain block opacity-0 transition-all duration-200";
         imgWrap.appendChild(img);
         // 立即命中缓存则直接使用，避免再次请求
         let loader = null;
@@ -2726,8 +2568,7 @@
             if (mode === "spinner") {
               loader = document.createElement("img");
               loader.src = "https://butterfly.js.org/img/loading.gif";
-              loader.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:60%;height:auto;pointer-events:none;`;
-              loader.className = "hb-history-loader";
+              loader.className = "hb-history-loader absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/5 h-auto pointer-events-none";
               imgWrap.appendChild(loader);
             } else {
               img.style.opacity = "1";
@@ -2896,11 +2737,9 @@
         // 批量选择复选框（选择模式下显示）
         const selectBox = document.createElement("input");
         selectBox.type = "checkbox";
-        selectBox.style.cssText = `position:absolute;top:8px;left:8px;width:20px;height:20px;transform:scale(1.3);border:1px solid #e2e8f0;border-radius:4px;opacity:${
-          selectionMode ? "1" : "0"
-        };pointer-events:${
-          selectionMode ? "auto" : "none"
-        };transition:opacity .2s ease;cursor:pointer;background:#ffffff;`;
+        selectBox.className = `absolute top-2 left-2 w-5 h-5 scale-130 border border-slate-200 rounded transition-opacity duration-200 cursor-pointer bg-white`;
+        selectBox.style.opacity = selectionMode ? "1" : "0";
+        selectBox.style.pointerEvents = selectionMode ? "auto" : "none";
         selectBox.checked = selectedIds.has(item.id);
         selectBox.addEventListener("click", (ev) => ev.stopPropagation());
         selectBox.addEventListener("change", () => {
@@ -2910,22 +2749,22 @@
         });
         imgWrap.appendChild(selectBox);
         const info = document.createElement("div");
-        info.style.cssText = `padding: 10px; display: flex; flex-direction: column; gap: 6px;`;
+        info.className = "p-2 flex flex-col gap-1";
         const nameLine = document.createElement("div");
-        nameLine.style.cssText = `font-size: 13px; color: #334155; font-weight: 600;`;
+        nameLine.className = "text-sm text-slate-800 font-semibold";
         if (item.originHref) {
           const link = document.createElement("a");
           link.href = item.originHref;
           link.target = "_blank";
           link.rel = "noopener noreferrer";
           link.textContent = item.fileName;
-          link.style.cssText = `color:#1f2937;text-decoration:none;`;
+          link.className = "text-gray-800 no-underline";
           nameLine.appendChild(link);
         } else {
           nameLine.textContent = item.fileName;
         }
         const metaLine = document.createElement("div");
-        metaLine.style.cssText = `font-size: 12px; color: #64748b;`;
+        metaLine.className = "text-xs text-slate-400";
         const tag = item.official ? "官方自营" : "用户素材";
         const act = item.action === "drag" ? "拖拽" : "下载";
         const wh =
@@ -2934,12 +2773,11 @@
           wh ? " · " + wh : ""
         }`;
         const actions = document.createElement("div");
-        actions.style.cssText = `display:flex; gap:12px; position:absolute; bottom:10px; left:50%; transform:translateX(-50%); opacity:0; pointer-events:none; transition:opacity .2s ease;`;
+        actions.className = "flex gap-3 absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 pointer-events-none transition-opacity duration-200";
         const redl = document.createElement("button");
-        redl.className = "hb-redownload-btn";
+        redl.className = "hb-redownload-btn h-9 w-9 border-0 text-white bg-blue-500 rounded-full text-xs cursor-pointer flex items-center justify-center shadow-md transition-all duration-200 hover:scale-110 hover:shadow-lg";
         redl.innerHTML =
           '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-        redl.style.cssText = `height:36px;width:36px;border:none;color:#ffffff;background:#3b82f6;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(59, 130, 246, 0.4);transition:all 0.2s ease;`;
         redl.addEventListener("mouseenter", () => {
           redl.style.transform = "scale(1.1)";
           redl.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.5)";
@@ -2965,7 +2803,7 @@
             const a = document.createElement("a");
             a.href = item.url;
             a.download = item.fileName;
-            a.style.display = "none";
+            a.className = "hidden";
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -2977,10 +2815,9 @@
           }
         });
         const copy = document.createElement("button");
-        copy.className = "hb-copy-btn";
+        copy.className = "hb-copy-btn h-9 w-9 border-0 text-slate-700 bg-slate-50 rounded-full text-xs cursor-pointer flex items-center justify-center shadow-sm transition-all duration-200 hover:scale-110 hover:shadow-md";
         copy.innerHTML =
           '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-        copy.style.cssText = `height:36px;width:36px;border:none;color:#334155;background:#f8fafc;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0, 0, 0, 0.1);transition:all 0.2s ease;`;
         copy.addEventListener("mouseenter", () => {
           copy.style.transform = "scale(1.1)";
           copy.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
@@ -2994,7 +2831,7 @@
         });
         // 悬浮删除图标按钮（图片右上角显示）
         const delIcon = document.createElement("button");
-        delIcon.style.cssText = `position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:18px;background:#ffffff;border:1px solid #e2e8f0;box-shadow:0 2px 6px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s ease;cursor:pointer;`;
+        delIcon.className = "absolute top-2 right-2 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200 cursor-pointer";
         delIcon.innerHTML =
           '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
         delIcon.addEventListener("click", (ev) => {
@@ -3025,11 +2862,11 @@
         masonry.appendChild(box);
         img.addEventListener("click", () => {
           const pv = document.createElement("div");
-          pv.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:10001;`;
+          pv.className = "fixed inset-0 bg-black/70 flex items-center justify-center z-[10001]";
           const img2 = document.createElement("img");
           img2.src = item.url;
           img2.alt = item.fileName;
-          img2.style.cssText = `max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.3);`;
+          img2.className = "max-w-[90vw] max-h-[90vh] rounded-lg shadow-2xl";
           pv.appendChild(img2);
           pv.addEventListener("click", () => document.body.removeChild(pv));
           document.body.appendChild(pv);
