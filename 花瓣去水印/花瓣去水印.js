@@ -51,6 +51,9 @@
     minProcessInterval: 500, // 最小处理间隔
     switchTransition: 1000, // 开关状态变化反馈时长
   };
+  
+  // 状态变量：跟踪Ctrl+V/Cmd+V的使用状态
+  let isImageSearchMode = false;
 
   // DOM 选择器
   const SELECTORS = {
@@ -144,6 +147,11 @@
             /* 历史下载素材名称hover样式 */
             .hb-history-item a:hover {
                 opacity: 0.7;
+            }
+            
+            /* 搜索框聚焦时的样式 - 仅在使用快捷键时触发 */
+            [data-button-name="搜索框"].hb-search-focused:before {
+                background: #ffb4b4ff !important;
             }
             
 
@@ -2281,6 +2289,70 @@
     // 清理函数
     window.addEventListener("beforeunload", () => {
       observer.disconnect();
+    });
+    
+    // 添加快捷键处理
+    document.addEventListener("keydown", (e) => {
+      // 检查是否按下了Ctrl+K或Cmd+K组合键（快速定位到搜索框）
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        // 阻止默认行为
+        e.preventDefault();
+        // 查找搜索框并聚焦
+        const searchInput = document.getElementById("hb_search_input");
+        if (searchInput) {
+          searchInput.focus();
+          // 选中搜索框内容，方便直接输入新内容
+          searchInput.select();
+          
+          // 查找data-button-name="搜索框"的元素并修改其:before伪元素背景色
+          const searchButton = document.querySelector('[data-button-name="搜索框"]');
+          if (searchButton) {
+            // 添加类名以便修改伪元素样式
+            searchButton.classList.add('hb-search-focused');
+            
+            // 8秒后移除类名，恢复原来的样式
+            setTimeout(() => {
+              searchButton.classList.remove('hb-search-focused');
+            }, 8000);
+          }
+        }
+      }
+      
+      // 检查是否按下了Ctrl+V或Cmd+V组合键
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
+        // 查找以图搜索按钮
+        const imageSearchButton = document.querySelector('[data-button-name="以图搜索按钮"]');
+        
+        if (imageSearchButton) {
+          // 如果是第一次按下Ctrl+V/Cmd+V
+          if (!isImageSearchMode) {
+            // 阻止默认的粘贴行为
+            e.preventDefault();
+            // 模拟点击以图搜索按钮
+            imageSearchButton.click();
+            // 设置状态为true，表示已进入图片搜索模式
+            isImageSearchMode = true;
+            
+            // 3秒后自动重置状态（如果用户没有进行第二次操作）
+            setTimeout(() => {
+              isImageSearchMode = false;
+            }, 3000);
+          } else {
+            // 如果是第二次按下Ctrl+V/Cmd+V，恢复正常粘贴功能
+            // 不阻止默认行为，让用户可以粘贴图片
+            // 重置状态，以便下次使用
+            isImageSearchMode = false;
+          }
+        }
+      }
+      
+      // 检查是否按下了Ctrl+,或Cmd+,组合键（打开设置首选项）
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === ",") {
+        // 阻止默认行为
+        e.preventDefault();
+        // 调用设置首选项函数
+        createConfigUI();
+      }
     });
 
     // 使用动态版本号输出日志（样式化控制台信息）
