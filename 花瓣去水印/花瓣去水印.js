@@ -35,6 +35,31 @@
     }
   };
 
+  // ==================== 常量定义 ====================
+  // UI 配色方案
+  const COLORS = {
+    switchCustom: { on: "#4ade80", off: "#e2e8f0" },
+    switchWatermark: { on: "#ff6b6b", off: "#e2e8f0" },
+    switchDrag: { on: "#3b82f6", off: "#e2e8f0" },
+    switchRightClick: { on: "#8b5cf6", off: "#e2e8f0" },
+  };
+
+  // 时间配置（毫秒）
+  const TIMING = {
+    debounceWatermark: 200,          // 去水印操作的防抖延迟
+    watermarkCheckInterval: 2000,     // 水印检测间隔
+    minProcessInterval: 500,          // 最小处理间隔
+    switchTransition: 1000,           // 开关状态变化反馈时长
+  };
+
+  // DOM 选择器
+  const SELECTORS = {
+    imageButton: 'img[data-button-name="查看大图"][src*="gd-hbimg-edge.huabanimg.com"]',
+    imageViewer: 'img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huabanimg.com"]',
+    imageViewerContainer: '#imageViewerWrapper img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huabanimg.com"]',
+    imageViewerSimple: 'img.vYzIMzy2[alt="查看图片"]',
+  };
+
   // 默认配置
   const DEFAULT_CONFIG = {
     materialColor: "#ffe0e0",
@@ -51,39 +76,33 @@
     // 启用右键下载功能
   };
 
-  // 获取配置
+  // 配置字段映射（简化 getConfig/saveConfig）
+  const CONFIG_KEYS = [
+    "materialColor",
+    "userColor",
+    "enableCustom",
+    "enableRemoveWatermark",
+    "enableDragDownload",
+    "enableRightClickDownload",
+    "historyLoadingStyle",
+  ];
+
+  // 获取配置 - 使用配置字段映射简化代码
   function getConfig() {
-    return {
-      materialColor: GM_getValue("materialColor", DEFAULT_CONFIG.materialColor),
-      userColor: GM_getValue("userColor", DEFAULT_CONFIG.userColor),
-      enableCustom: GM_getValue("enableCustom", DEFAULT_CONFIG.enableCustom),
-      enableRemoveWatermark: GM_getValue(
-        "enableRemoveWatermark",
-        DEFAULT_CONFIG.enableRemoveWatermark
-      ),
-      enableDragDownload: GM_getValue(
-        "enableDragDownload",
-        DEFAULT_CONFIG.enableDragDownload
-      ),
-      enableRightClickDownload: GM_getValue(
-        "enableRightClickDownload",
-        DEFAULT_CONFIG.enableRightClickDownload
-      ),
-    };
+    const result = {};
+    CONFIG_KEYS.forEach((key) => {
+      result[key] = GM_getValue(key, DEFAULT_CONFIG[key]);
+    });
+    return result;
   }
 
-  // 保存配置
+  // 保存配置 - 使用配置字段映射简化代码
   function saveConfig(config) {
-    GM_setValue("materialColor", config.materialColor);
-    GM_setValue("userColor", config.userColor);
-    GM_setValue("enableCustom", config.enableCustom);
-    GM_setValue("enableRemoveWatermark", config.enableRemoveWatermark);
-    GM_setValue("enableDragDownload", config.enableDragDownload);
-    GM_setValue("enableRightClickDownload", config.enableRightClickDownload);
-    // 历史图片加载效果：spinner 或 blur
-    if (typeof config.historyLoadingStyle === "string") {
-      GM_setValue("historyLoadingStyle", config.historyLoadingStyle);
-    }
+    CONFIG_KEYS.forEach((key) => {
+      if (key in config) {
+        GM_setValue(key, config[key]);
+      }
+    });
   }
 
   // 应用样式
@@ -512,11 +531,11 @@
     // 使用更精准的选择器，基于你提供的HTML元素
     const selectors = [
       // 缩略图：使用 data-button-name="查看大图" 属性
-      'img[data-button-name="查看大图"][src*="gd-hbimg-edge.huabanimg.com"]',
+      SELECTORS.imageButton,
       // 大图查看器中的图片 - 优先级高，确保能捕获所有大图模式下的图片
-      '#imageViewerWrapper img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huabanimg.com"]',
+      SELECTORS.imageViewerContainer,
       // 大图：使用 class="vYzIMzy2" 类名 + alt="查看图片" 属性
-      'img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huabanimg.com"]',
+      SELECTORS.imageViewer,
       // 备用：花瓣素材图片
       '[data-material-type="套系素材"] img[src*="gd-hbimg-edge.huabanimg.com"]',
       // 备用：素材采集类型图片
@@ -543,7 +562,7 @@
       const imageViewer = document.querySelector("#imageViewerWrapper");
       if (imageViewer) {
         const viewerImage = imageViewer.querySelector(
-          'img.vYzIMzy2[alt="查看图片"]'
+          SELECTORS.imageViewerSimple
         );
         if (viewerImage) {
           // 检查图片是否已加载完成
@@ -578,7 +597,7 @@
               // 检查是否是大图模态框
               if (
                 node.querySelector("#imageViewerWrapper") ||
-                node.querySelector('img.vYzIMzy2[alt="查看图片"]')
+                node.querySelector(SELECTORS.imageViewerSimple)
               ) {
                 debugLog("检测到大图模态框打开");
 
@@ -615,7 +634,7 @@
           mutation.target.tagName === "IMG"
         ) {
           if (
-            mutation.target.matches('img.vYzIMzy2[alt="查看图片"]') &&
+            mutation.target.matches(SELECTORS.imageViewerSimple) &&
             mutation.target.closest("#imageViewerWrapper")
           ) {
             debugLog("大图查看器：图片src属性发生变化，重新处理");
@@ -657,10 +676,10 @@
               // 检查是否包含需要处理的图片
               if (
                 node.matches(
-                  'img[data-button-name="查看大图"], img.vYzIMzy2[alt="查看图片"]'
+                  SELECTORS.imageButton + ', ' + SELECTORS.imageViewerSimple
                 ) ||
                 node.querySelector(
-                  'img[data-button-name="查看大图"], img.vYzIMzy2[alt="查看图片"]'
+                  SELECTORS.imageButton + ', ' + SELECTORS.imageViewerSimple
                 ) ||
                 node.id === "imageViewerWrapper"
               ) {
@@ -675,7 +694,7 @@
           // 图片属性变化时也需要处理
           if (
             mutation.target.matches(
-              'img[data-button-name="查看大图"], img.vYzIMzy2[alt="查看图片"]'
+              SELECTORS.imageButton + ', ' + SELECTORS.imageViewerSimple
             )
           ) {
             needProcess = true;
@@ -788,7 +807,7 @@
         const config = getConfig();
 
         // 精准匹配：使用 data-button-name="查看大图" 属性
-        const img = e.target.closest('img[data-button-name="查看大图"]');
+        const img = e.target.closest(SELECTORS.imageButton.split('[src*')[0] + ']');
         if (img && img.src.includes("gd-hbimg-edge.huabanimg.com")) {
           // 检查是否为官方自营素材（新增 title 选择器，满足任一条件即判定）
           const isOfficialMaterial =
@@ -853,9 +872,9 @@
       ) {
         // 检查是否为需要处理的图片类型
         if (
-          img.matches('img[data-button-name="查看大图"]') ||
+          img.matches(SELECTORS.imageButton.split('[src*')[0] + ']') ||
           img.closest("#imageViewerWrapper") ||
-          img.matches('img.vYzIMzy2[alt="查看图片"]') ||
+          img.matches(SELECTORS.imageViewerSimple) ||
           // 新增：支持预览图片（a标签内的img标签）
           (img.closest("a") &&
             img.closest("a").querySelector('span[style*="display: none"]'))
@@ -1939,68 +1958,73 @@
       });
     }
 
+    // 开关事件处理器工厂函数 - 消除重复代码
+    const createSwitchHandler = (switchElement, thumbElement, containerElement, colorMap, callback) => {
+      return function () {
+        const isChecked = this.checked;
+        const switchBg = containerElement.querySelector("span:nth-child(2)");
+        switchBg.style.backgroundColor = isChecked ? colorMap.on : colorMap.off;
+        thumbElement.style.left = isChecked ? "22px" : "2px";
+        if (typeof callback === "function") callback(isChecked);
+      };
+    };
+
     // 修复自定义背景色开关功能
-    enableCustomSwitch.addEventListener("change", function () {
-      const isChecked = this.checked;
-      const switchBg = enableCustomContainer.querySelector("span:nth-child(2)");
-      switchBg.style.backgroundColor = isChecked ? "#4ade80" : "#e2e8f0";
-      enableCustomThumb.style.left = isChecked ? "22px" : "2px";
-      applyStyles(); // 重新应用样式
-    });
+    enableCustomSwitch.addEventListener(
+      "change",
+      createSwitchHandler(
+        enableCustomSwitch,
+        enableCustomThumb,
+        enableCustomContainer,
+        COLORS.switchCustom,
+        () => applyStyles()
+      )
+    );
 
     // 修复去水印开关功能
-    enableWatermarkSwitch.addEventListener("change", function () {
-      const isChecked = this.checked;
-      const switchBg =
-        enableWatermarkContainer.querySelector("span:nth-child(2)");
-      switchBg.style.backgroundColor = isChecked ? "#ff6b6b" : "#e2e8f0";
-      enableWatermarkThumb.style.left = isChecked ? "22px" : "2px";
-
-      // 立即应用水印处理（根据开关状态决定是去水印还是恢复）
-      debugLog("去水印开关状态变化，立即处理所有图片");
-      setTimeout(() => {
-        processWatermark(true); // force=true，强制重新处理
-      }, 200);
-    });
-
-    // 获取拖拽下载和右键下载开关元素
-    const enableDragSwitch = document.getElementById("enableDragSwitch");
-    const enableDragThumb = document.getElementById("enableDragThumb");
-    const enableDragContainer = document.getElementById("enableDragContainer");
-    const enableRightClickSwitch = document.getElementById(
-      "enableRightClickSwitch"
-    );
-    const enableRightClickThumb = document.getElementById(
-      "enableRightClickThumb"
-    );
-    const enableRightClickContainer = document.getElementById(
-      "enableRightClickContainer"
+    enableWatermarkSwitch.addEventListener(
+      "change",
+      createSwitchHandler(
+        enableWatermarkSwitch,
+        enableWatermarkThumb,
+        enableWatermarkContainer,
+        COLORS.switchWatermark,
+        (isChecked) => {
+          debugLog("去水印开关状态变化，立即处理所有图片");
+          setTimeout(() => {
+            processWatermark(true);
+          }, TIMING.debounceWatermark);
+        }
+      )
     );
 
     // 拖拽下载开关功能
-    enableDragSwitch.addEventListener("change", function () {
-      const isChecked = this.checked;
-      const switchBg = enableDragContainer.querySelector("span:nth-child(2)");
-      switchBg.style.backgroundColor = isChecked ? "#3b82f6" : "#e2e8f0";
-      enableDragThumb.style.left = isChecked ? "22px" : "2px";
-
-      // 立即更新拖拽下载功能状态
-      debugLog("拖拽下载开关状态变化:", isChecked);
-      // 拖拽功能会在下次页面加载时生效，因为事件监听器是基于配置动态添加的
-    });
+    enableDragSwitch.addEventListener(
+      "change",
+      createSwitchHandler(
+        enableDragSwitch,
+        enableDragThumb,
+        enableDragContainer,
+        COLORS.switchDrag,
+        (isChecked) => {
+          debugLog("拖拽下载开关状态变化:", isChecked);
+        }
+      )
+    );
 
     // 右键下载开关功能
-    enableRightClickSwitch.addEventListener("change", function () {
-      const isChecked = this.checked;
-      const switchBg =
-        enableRightClickContainer.querySelector("span:nth-child(2)");
-      switchBg.style.backgroundColor = isChecked ? "#8b5cf6" : "#e2e8f0";
-      enableRightClickThumb.style.left = isChecked ? "22px" : "2px";
-
-      // 立即更新右键下载功能状态
-      debugLog("右键下载开关状态变化:", isChecked);
-      // 右键功能会在下次页面加载时生效，因为事件监听器是基于配置动态添加的
-    });
+    enableRightClickSwitch.addEventListener(
+      "change",
+      createSwitchHandler(
+        enableRightClickSwitch,
+        enableRightClickThumb,
+        enableRightClickContainer,
+        COLORS.switchRightClick,
+        (isChecked) => {
+          debugLog("右键下载开关状态变化:", isChecked);
+        }
+      )
+    );
 
     // 颜色验证
     function isValidColor(color) {
@@ -2010,37 +2034,34 @@
       return hexRegex.test(color) || rgbRegex.test(color);
     }
 
-    // 事件监听
-    materialPreview.addEventListener("click", () => materialPicker.click());
-    userPreview.addEventListener("click", () => userPicker.click());
+    // 颜色选择器工厂函数 - 消除重复代码
+    const createColorPickerHandler = (inputElement, pickerElement, previewElement) => {
+      // 预览元素点击打开拾色器
+      previewElement.addEventListener("click", () => pickerElement.click());
 
-    materialPicker.addEventListener("input", (e) => {
-      materialInput.value = e.target.value;
-      materialPreview.style.backgroundColor = e.target.value;
-    });
+      // 拾色器输入事件
+      pickerElement.addEventListener("input", (e) => {
+        inputElement.value = e.target.value;
+        previewElement.style.backgroundColor = e.target.value;
+      });
 
-    userPicker.addEventListener("input", (e) => {
-      userInput.value = e.target.value;
-      userPreview.style.backgroundColor = e.target.value;
-    });
-
-    materialInput.addEventListener("input", (e) => {
-      if (isValidColor(e.target.value)) {
-        materialPreview.style.backgroundColor = e.target.value;
-        if (e.target.value.startsWith("#")) {
-          materialPicker.value = e.target.value;
+      // 文本输入事件
+      inputElement.addEventListener("input", (e) => {
+        const color = e.target.value;
+        if (isValidColor(color)) {
+          previewElement.style.backgroundColor = color;
+          if (color.startsWith("#")) {
+            pickerElement.value = color;
+          }
         }
-      }
-    });
+      });
+    };
 
-    userInput.addEventListener("input", (e) => {
-      if (isValidColor(e.target.value)) {
-        userPreview.style.backgroundColor = e.target.value;
-        if (e.target.value.startsWith("#")) {
-          userPicker.value = e.target.value;
-        }
-      }
-    });
+    // 绑定材料水印颜色选择器
+    createColorPickerHandler(materialInput, materialPicker, materialPreview);
+
+    // 绑定用户水印颜色选择器
+    createColorPickerHandler(userInput, userPicker, userPreview);
 
     // 保存配置
     saveBtn.addEventListener("click", () => {
@@ -2071,13 +2092,13 @@
       debugLog("保存设置后，处理所有图片");
       setTimeout(() => {
         processWatermark(true); // force=true
-      }, 200);
+      }, TIMING.debounceWatermark);
 
       const originalText = saveBtn.textContent;
       saveBtn.textContent = "已保存！";
-      setTimeout(() => (saveBtn.textContent = originalText), 1000);
+      setTimeout(() => (saveBtn.textContent = originalText), TIMING.switchTransition);
 
-      setTimeout(closeConfig, 1200);
+      setTimeout(closeConfig, TIMING.switchTransition + 200);
     });
 
     // 恢复默认
@@ -2085,47 +2106,23 @@
       if (confirm("确定恢复默认设置吗？")) {
         saveConfig(DEFAULT_CONFIG);
 
-        // 恢复自定义背景色开关
-        enableCustomSwitch.checked = DEFAULT_CONFIG.enableCustom;
-        const customSwitchBg =
-          enableCustomContainer.querySelector("span:nth-child(2)");
-        customSwitchBg.style.backgroundColor = DEFAULT_CONFIG.enableCustom
-          ? "#4ade80"
-          : "#e2e8f0";
-        enableCustomThumb.style.left = DEFAULT_CONFIG.enableCustom
-          ? "22px"
-          : "2px";
+        // 恢复所有开关状态的工厂函数
+        const restoreSwitchState = (switchEl, thumbEl, containerEl, colorMap, isEnabled) => {
+          switchEl.checked = isEnabled;
+          const switchBg = containerEl.querySelector("span:nth-child(2)");
+          switchBg.style.backgroundColor = isEnabled ? colorMap.on : colorMap.off;
+          thumbEl.style.left = isEnabled ? "22px" : "2px";
+        };
 
-        // 恢复去水印开关
-        enableWatermarkSwitch.checked = DEFAULT_CONFIG.enableRemoveWatermark;
-        const watermarkSwitchBg =
-          enableWatermarkContainer.querySelector("span:nth-child(2)");
-        watermarkSwitchBg.style.backgroundColor =
-          DEFAULT_CONFIG.enableRemoveWatermark ? "#ff6b6b" : "#e2e8f0";
-        enableWatermarkThumb.style.left = DEFAULT_CONFIG.enableRemoveWatermark
-          ? "22px"
-          : "2px";
-
-        // 恢复拖拽下载开关
-        enableDragSwitch.checked = DEFAULT_CONFIG.enableDragDownload;
-        const dragSwitchBg =
-          enableDragContainer.querySelector("span:nth-child(2)");
-        dragSwitchBg.style.backgroundColor = DEFAULT_CONFIG.enableDragDownload
-          ? "#3b82f6"
-          : "#e2e8f0";
-        enableDragThumb.style.left = DEFAULT_CONFIG.enableDragDownload
-          ? "22px"
-          : "2px";
-
-        // 恢复右键下载开关
-        enableRightClickSwitch.checked =
-          DEFAULT_CONFIG.enableRightClickDownload;
-        const rightClickSwitchBg =
-          enableRightClickContainer.querySelector("span:nth-child(2)");
-        rightClickSwitchBg.style.backgroundColor =
-          DEFAULT_CONFIG.enableRightClickDownload ? "#8b5cf6" : "#e2e8f0";
-        enableRightClickThumb.style.left =
-          DEFAULT_CONFIG.enableRightClickDownload ? "22px" : "2px";
+        // 恢复所有开关状态
+        restoreSwitchState(enableCustomSwitch, enableCustomThumb, enableCustomContainer, 
+          COLORS.switchCustom, DEFAULT_CONFIG.enableCustom);
+        restoreSwitchState(enableWatermarkSwitch, enableWatermarkThumb, enableWatermarkContainer, 
+          COLORS.switchWatermark, DEFAULT_CONFIG.enableRemoveWatermark);
+        restoreSwitchState(enableDragSwitch, enableDragThumb, enableDragContainer, 
+          COLORS.switchDrag, DEFAULT_CONFIG.enableDragDownload);
+        restoreSwitchState(enableRightClickSwitch, enableRightClickThumb, enableRightClickContainer, 
+          COLORS.switchRightClick, DEFAULT_CONFIG.enableRightClickDownload);
 
         // 恢复颜色设置
         materialInput.value = DEFAULT_CONFIG.materialColor;
@@ -2140,11 +2137,11 @@
         debugLog("恢复默认后，处理所有图片");
         setTimeout(() => {
           processWatermark(true); // force=true
-        }, 200);
+        }, TIMING.debounceWatermark);
 
         const originalText = resetBtn.textContent;
         resetBtn.textContent = "已恢复！";
-        setTimeout(() => (resetBtn.textContent = originalText), 1000);
+        setTimeout(() => (resetBtn.textContent = originalText), TIMING.switchTransition);
       }
     });
 
