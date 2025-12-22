@@ -14,7 +14,7 @@
 // @connect      *
 // @grant        GM_download
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
-// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@c5419dffbdf6d69877ba441ba68f4d37d005c73e/花瓣去水印/花瓣“去”水印更新提示脚本.js
+// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@c5419dffbdf6d69877ba441ba68f4d37d005c73e/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
 // @require      https://cdn.tailwindcss.com
 // ==/UserScript==
 
