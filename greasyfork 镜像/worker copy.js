@@ -1,10 +1,5 @@
 /**
- * Greasy Fork 反代镜像站 - 稳定修复版 (解决 1101 错误)
- * 
- * 修复重点：
- * 1. 完善响应流克隆机制，确保缓存写入不阻塞主页面加载。
- * 2. 增强后台异步任务的健壮性，捕获所有潜在异常。
- * 3. 保持所有原有的 HTML 结构、UA 列表和广告植入。
+ * Greasy Fork 反代镜像站 - 最终修复版 (已修正中国时区)
  */
 
 const TARGET_DOMAIN = 'greasyfork.org';
@@ -61,7 +56,19 @@ class CacheNoticeInjector {
         if (!CUSTOM_CONFIG.CACHE_OPTIONS.show_notice || !this.cacheTime) return;
         const cacheDate = new Date(this.cacheTime);
         const nextUpdateDate = new Date(cacheDate.getTime() + CUSTOM_CONFIG.CACHE_OPTIONS.ttl * 1000);
-        const timeFormat = { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        
+        // 🔥 关键修改：添加 timeZone: 'Asia/Shanghai' 以显示中国时间
+        const timeFormat = { 
+            timeZone: 'Asia/Shanghai',
+            hour12: false, 
+            year: 'numeric',
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        };
+
         const curStr = cacheDate.toLocaleString('zh-CN', timeFormat);
         const nextStr = nextUpdateDate.toLocaleString('zh-CN', timeFormat);
         const statusText = this.isExpired ? 
@@ -73,8 +80,8 @@ class CacheNoticeInjector {
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
                     <div>
                         <div style="margin-bottom: 4px;">📂 <b>缓存分发状态</b>：${statusText}</div>
-                        <div style="color: #666;">🕒 <b>页面固定同步时间</b>：${curStr}</div>
-                        <div style="color: #666;">🔄 <b>预计下次更新时间</b>：${nextStr}</div>
+                        <div style="color: #666;">🕒 <b>页面同步时间</b>：${curStr}</div>
+                        <div style="color: #666;">🔄 <b>下次更新时间</b>：${nextStr}</div>
                     </div>
                     <a href="${this.refreshUrl}" style="background: #4CAF50; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 12px;">手动刷新缓存</a>
                 </div>
@@ -185,11 +192,9 @@ async function handleRequest(event) {
     }
 
     if (!isHit || isManualRefresh) {
-        // 无缓存或手动刷新：抓取远端
         response = await fetchAndModify(targetUrlStr, request);
         
         if (response.ok && CUSTOM_CONFIG.CACHE_OPTIONS.enable) {
-            // 重要：克隆响应体用于缓存写入，防止 1101 错误
             const responseToCache = response.clone();
             event.waitUntil(
                 (async () => {
@@ -210,7 +215,6 @@ async function handleRequest(event) {
             fixedCacheTime = response.headers.get('X-Proxy-Cache-Date');
         }
     } else if (isExpired) {
-        // 过期异步同步
         event.waitUntil(backgroundInfiniteSync(cacheKey, targetUrlStr, request));
     }
 
@@ -254,7 +258,6 @@ async function fetchAndModify(targetUrl, request) {
     let body;
     let modifiedHeaders = new Headers(res.headers);
 
-    // 对于脚本文件，我们预读 Body 以进行修改，避免流竞争
     if (targetUrl.includes('.js') || contentType.includes('javascript')) {
         let content = await res.text();
         const origin = new URL(request.url).origin;

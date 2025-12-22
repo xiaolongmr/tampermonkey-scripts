@@ -236,21 +236,24 @@
     img.removeAttribute("data-watermark-removed");
   }
 
-  // 去除图片后缀参数，让图片保存为PNG格式
+  // 去除图片后缀参数，让图片保存为PNG格式，并保留查询参数
   function removeImageSuffixParams(url) {
-    // 先移除查询参数
-    const urlWithoutQuery = url.split("?")[0];
+    // 分离URL和查询参数
+    const [baseUrl, queryParams] = url.split("?");
     // 匹配花瓣图片URL中的后缀参数，如 _fw658webp
     const suffixRegex = /(_fw\d+webp)(\.webp)?$/i;
 
-    if (suffixRegex.test(urlWithoutQuery)) {
+    if (suffixRegex.test(baseUrl)) {
       // 去除后缀参数，保留图片ID和扩展名
-      const cleanUrl = urlWithoutQuery.replace(suffixRegex, "");
-      debugLog("去除图片后缀参数和查询参数:", url, "→", cleanUrl);
+      const cleanBaseUrl = baseUrl.replace(suffixRegex, "");
+      // 保留查询参数（如果有）
+      const cleanUrl = queryParams ? `${cleanBaseUrl}?${queryParams}` : cleanBaseUrl;
+      debugLog("去除图片后缀参数，保留查询参数:", url, "→", cleanUrl);
       return cleanUrl;
     }
 
-    return urlWithoutQuery;
+    // 如果没有匹配到后缀参数，直接返回原始URL（包含查询参数）
+    return url;
   }
 
   // 下载历史存储与操作
@@ -487,7 +490,12 @@
             watermarkRegex.test(originalSrc) &&
             !originalSrc.includes("/small/")
           ) {
-            const newSrc = originalSrc.replace(watermarkRegex, "$1/small/$2");
+            // 分离URL和查询参数
+            const [baseUrl, queryParams] = originalSrc.split("?");
+            // 在基础URL上添加/small/
+            const newBaseUrl = baseUrl.replace(watermarkRegex, "$1/small/$2");
+            // 保留查询参数（如果有）
+            const newSrc = queryParams ? `${newBaseUrl}?${queryParams}` : newBaseUrl;
             debugLog("检查新图片URL是否有效:", newSrc);
 
             // 检查新链接是否有效
@@ -507,7 +515,20 @@
             watermarkRegex.test(img.srcset) &&
             !img.srcset.includes("/small/")
           ) {
-            const newSrcset = img.srcset.replace(watermarkRegex, "$1/small/$2");
+            // 处理srcset中的每个URL
+            const newSrcset = img.srcset.split(" ")
+              .map(item => {
+                if (item.match(/^https?:\/\//)) {
+                  // 这是一个URL，需要处理
+                  const [baseUrl, queryParams] = item.split("?");
+                  const newBaseUrl = baseUrl.replace(watermarkRegex, "$1/small/$2");
+                  return queryParams ? `${newBaseUrl}?${queryParams}` : newBaseUrl;
+                }
+                // 这可能是一个宽度描述符（如w500），直接返回
+                return item;
+              })
+              .join(" ");
+              
             debugLog("检查新图片srcset是否有效:", newSrcset);
 
             // 检查新链接是否有效
