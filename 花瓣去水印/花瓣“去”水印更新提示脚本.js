@@ -129,7 +129,7 @@
   async function fetchLatestVersion() {
     try {
       const url =
-        "https://update.gf.qytechs.cn/scripts/554301/%E8%8A%B1%E7%93%A3%22%E5%8E%BB%22%E6%B0%B4%E5%8D%B0.meta.js";
+        "https://gf.z-l.top/scripts/554301.meta.js";
       const txt = await (await fetch(url)).text();
       const m = txt.match(/^\/\/\s*@version\s+(.+)$/im);
       return m ? m[1].trim() : null;

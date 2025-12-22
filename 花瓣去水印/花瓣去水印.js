@@ -1176,7 +1176,7 @@
         "block w-full text-left p-3 mb-2 rounded-lg bg-transparent cursor-pointer text-slate-700 text-sm transition-all duration-150 border-none";
       // 简约hover效果
       b.addEventListener("mouseenter", () => {
-        if (!b.dataset.active) b.style.backgroundColor = "rgb(248, 250, 252)";
+        if (!b.dataset.active) b.style.backgroundColor = "#e9edf3ff";
       });
       b.addEventListener("mouseleave", () => {
         if (!b.dataset.active) b.style.backgroundColor = "transparent";
