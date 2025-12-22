@@ -1259,6 +1259,13 @@
       main.appendChild(switchesSection);
       main.innerHTML += colorSettings;
       main.appendChild(actions);
+      
+      // 初始化时根据开关状态显示或隐藏颜色选择器
+      const colorSettingsContainer = document.getElementById("colorSettingsContainer");
+      const enableCustomSwitch = document.getElementById("enableCustomSwitch");
+      if (colorSettingsContainer && enableCustomSwitch) {
+        colorSettingsContainer.style.display = enableCustomSwitch.checked ? "block" : "none";
+      }
     }
 
     // 更新记录在主区域嵌入 Feishu（iframe），若无法显示提供外链
@@ -1365,8 +1372,8 @@
                             <span class="stat-label">关注</span>
                         </div>
                     </div>
-                </div>
-            `;
+            </div>
+        `;
         })
         .catch((error) => {
           main.innerHTML =
@@ -1817,6 +1824,8 @@
 
     // 颜色设置区域
     const colorSettings = `
+            <!-- 颜色设置容器 -->
+            <div id="colorSettingsContainer">
             <!-- 花瓣素材颜色 -->
             <div style="margin-bottom: 12px;">
                 <div style="
@@ -1903,6 +1912,7 @@
                                color: #334155;
                            ">
                 </div>
+            </div>
             </div>
         `;
 
@@ -2016,7 +2026,14 @@
         enableCustomThumb,
         enableCustomContainer,
         COLORS.switchCustom,
-        () => applyStyles()
+        (isChecked) => {
+          applyStyles();
+          // 动态显示或隐藏颜色选择器
+          const colorSettingsContainer = document.getElementById("colorSettingsContainer");
+          if (colorSettingsContainer) {
+            colorSettingsContainer.style.display = isChecked ? "block" : "none";
+          }
+        }
       )
     );
 

@@ -39,7 +39,7 @@
       // 添加指定的class
       adLink.className = "__0lf9vC8q modalOpenWidth";
       // 添加指定的style
-      adLink.style.backgroundColor = "rgb(75, 121, 255)";
+      adLink.style.setProperty("background-color", "rgb(75, 121, 255)", "important");
       adLink.style.height = "60px";
       adLink.target = "_blank";
       adLink.rel = "noreferrer nofollow";
@@ -58,7 +58,7 @@
       // 调整高度以显示广告
       showBanner();
     } else {
-      // 情况2：容器有内容，只替换链接和图片，保持其他结构不变
+      // 情况2：容器有内容，替换链接、图片并确保背景色为蓝色
       const adLink = adContainer.querySelector('a[data-click-type="点击广告"]');
       if (adLink) {
         // 替换链接
@@ -69,6 +69,10 @@
         if (img) {
           img.src = AD_IMAGE_URL;
         }
+        
+        // 确保背景色为蓝色并添加!important以保证优先级
+        adLink.style.setProperty("background-color", "rgb(75, 121, 255)", "important");
+        adLink.style.height = "60px";
       }
     }
   }
@@ -178,6 +182,9 @@
           closeAd();
         }
       }
+      
+      // 开始观察广告元素的背景色变化
+      watchBackgroundColor();
     }
 
     // 根据DOM加载状态执行
