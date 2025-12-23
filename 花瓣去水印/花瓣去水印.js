@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         花瓣"去"水印
-// @version      2025-12-23 08:00:00
+// @version      2025-12-24
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -35,6 +35,93 @@
     }
   };
 
+  // 在素材页面渲染素材网站列表
+  function renderMaterialSitesOnSucaiPage() {
+      // 检查当前是否在指定页面
+      if (window.location.href === 'https://huaban.com/pages/sucai') {
+        const layoutContent = document.getElementById('layout-content');
+        if (layoutContent) {
+          // 检查是否已经渲染过，避免重复创建
+          if (document.getElementById('material-sites-container')) {
+            return;
+          }
+          
+          // 隐藏原有内容
+          const children = Array.from(layoutContent.children);
+          children.forEach(child => {
+            child.style.display = 'none';
+          });
+          
+          // 创建素材网站列表容器
+          const materialSitesContainer = document.createElement('div');
+          materialSitesContainer.id = 'material-sites-container';
+          materialSitesContainer.className = 'bg-white rounded-lg p-4 mb-4';
+          
+          // 创建标题
+          const title = document.createElement('h3');
+          title.className = 'text-lg font-medium text-slate-700 mb-3';
+          title.textContent = '素材网站推荐';
+          materialSitesContainer.appendChild(title);
+          
+          // 创建列表
+          const sitesList = document.createElement('div');
+          sitesList.className = 'grid grid-cols-5 gap-3 overflow-auto';
+          
+          // 渲染素材网站列表
+          try {
+            MATERIAL_SITES.forEach(site => {
+              const siteItem = document.createElement('a');
+              siteItem.href = site.href;
+              siteItem.target = '_blank';
+              siteItem.rel = 'noopener noreferrer';
+              siteItem.className = 'flex items-center gap-2 p-3 border rounded-md hover:bg-slate-50 transition-colors text-sm';
+              
+              const siteLogo = document.createElement('img');
+              siteLogo.src = site.logoSrc;
+              siteLogo.alt = site.alt;
+              siteLogo.className = 'w-6 h-6 object-contain';
+              
+              const siteInfo = document.createElement('div');
+              siteInfo.className = 'flex-1 min-w-0';
+              
+              const siteTitle = document.createElement('div');
+              siteTitle.className = 'font-medium text-slate-700 truncate';
+              siteTitle.textContent = site.title;
+              
+              const siteTip = document.createElement('div');
+              siteTip.className = 'text-xs text-slate-500 truncate';
+              siteTip.textContent = site.tip;
+              
+              const sitePoints = document.createElement('div');
+              sitePoints.className = 'text-xs text-amber-600';
+              sitePoints.textContent = site.jifen_tip;
+              
+              siteInfo.appendChild(siteTitle);
+              siteInfo.appendChild(siteTip);
+              siteItem.appendChild(siteLogo);
+              siteItem.appendChild(siteInfo);
+              siteItem.appendChild(sitePoints);
+              sitesList.appendChild(siteItem);
+            });
+          } catch (error) {
+            console.error('渲染素材网站列表失败:', error);
+            sitesList.innerHTML = `<div class="col-span-3 text-center text-slate-500 py-4">无法加载素材网站列表</div>`;
+          }
+          
+          materialSitesContainer.appendChild(sitesList);
+          
+          // 添加文案信息
+          const infoText = document.createElement('div');
+          infoText.className = 'mt-4 p-4 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200';
+          infoText.innerHTML = '以上网站使用 <a href="http://121.40.25.9:8080/" target="_blank" class="text-blue-500 hover:underline">http://121.40.25.9:8080/</a> 素材下载网站 购买积分进行下载，你也可以自己注册，邀请码：1474728874 使用邀请码注册双方各得1000积分';
+          materialSitesContainer.appendChild(infoText);
+          
+          // 将列表添加到页面中
+          layoutContent.insertBefore(materialSitesContainer, layoutContent.firstChild);
+        }
+      }
+  };
+
   // ==================== 常量定义 ====================
   // UI 配色方案
   const COLORS = {
@@ -51,6 +138,67 @@
     minProcessInterval: 500, // 最小处理间隔
     switchTransition: 1000, // 开关状态变化反馈时长
   };
+  
+  // 素材网站列表数据
+  const MATERIAL_SITES = [
+    {"href":"https://www.design006.com/","logoSrc":"https://ico.cxr.cool/www.design006.com.ico","alt":"享设计","channelAlt":"1250积分下载一次","title":"享设计","tip":"超高质量素材","jifen_tip":"1250积分"},
+    {"href":"https://www.redocn.com/","logoSrc":"https://ico.cxr.cool/www.redocn.com.ico","alt":"红动中国","channelAlt":"510积分下载一次","title":"红动中国","tip":"高质量素材","jifen_tip":"510积分"},
+    {"href":"http://www.nipic.com/","logoSrc":"https://ico.cxr.cool/www.nipic.com.ico","alt":"昵图网","channelAlt":"对应昵图网积分,最低580分一次","title":"昵图网","tip":"共享图任性下","jifen_tip":"最低580积分"},
+    {"href":"https://www.58pic.com/","logoSrc":"https://ico.cxr.cool/www.58pic.com.ico","alt":"千图网","channelAlt":"380积分下载一次","title":"千图网","tip":"超多设计素材下载","jifen_tip":"380积分"},
+    {"href":"https://ibaotu.com/","logoSrc":"https://ico.cxr.cool/www.ibaotu.com.ico","alt":"包图网","channelAlt":"320积分下载一次","title":"包图网","tip":"高质量设计图片下载","jifen_tip":"320积分"},
+    {"href":"http://699pic.com/","logoSrc":"https://ico.cxr.cool/www.699pic.com.ico","alt":"摄图网","channelAlt":"360积分下载一次","title":"摄图网","tip":"高清摄影图片下载","jifen_tip":"360积分"},
+    {"href":"https://588ku.com/","logoSrc":"https://ico.cxr.cool/www.588ku.com.ico","alt":"千库网","channelAlt":"320积分下载一次","title":"千库网","tip":"做设计,不抠图","jifen_tip":"320积分"},
+    {"href":"https://www.ztupic.com/","logoSrc":"https://ico.cxr.cool/www.ztupic.com.ico","alt":"众图网","channelAlt":"280积分下载一次","title":"众图网","tip":"高质量文化墙下载","jifen_tip":"280积分"},
+    {"href":"https://www.tukuppt.com/","logoSrc":"https://ico.cxr.cool/www.tukuppt.com.ico","alt":"熊猫办公","channelAlt":"280积分下载一次","title":"熊猫办公","tip":"高质量PPT下载","jifen_tip":"280积分"},
+    {"href":"https://www.51miz.com/","logoSrc":"https://ico.cxr.cool/www.51miz.com.ico","alt":"觅知网","channelAlt":"280积分下载一次","title":"觅知网","tip":"质量堪比收费素材","jifen_tip":"280积分"},
+    {"href":"http://www.51yuansu.com/","logoSrc":"https://ico.cxr.cool/www.51yuansu.com.ico","alt":"觅元素","channelAlt":"240积分下载一次","title":"觅元素","tip":"无需抠图的元素专区","jifen_tip":"240积分"},
+    {"href":"https://www.ooopic.com/sucaixiazai/","logoSrc":"https://ico.cxr.cool/www.ooopic.com.ico","alt":"我图网","channelAlt":"340积分下载一次","title":"我图网","tip":"我图网原创区","jifen_tip":"340积分"},
+    {"href":"https://www.88tph.com/","logoSrc":"https://ico.cxr.cool/www.88tph.com.ico","alt":"图品汇","channelAlt":"360积分下载一次","title":"图品汇","tip":"原创设计","jifen_tip":"360积分"},
+    {"href":"https://shipin520.com/","logoSrc":"https://ico.cxr.cool/www.shipin520.com.ico","alt":"潮点视频","channelAlt":"460积分下载一次","title":"潮点视频","tip":"做视频就要潮一点","jifen_tip":"460积分"},
+    {"href":"https://huaban.com/","logoSrc":"https://ico.cxr.cool/www.huaban.com.ico","alt":"花瓣网","channelAlt":"880积分下载一次","title":"花瓣网","tip":"最新采集图片素材资源","jifen_tip":"880积分"},
+    {"href":"https://zhitu66.com/","logoSrc":"https://ico.cxr.cool/www.zhitu66.com.ico","alt":"致图网","channelAlt":"360积分下载一次","title":"致图网","tip":"设计模板素材图库","jifen_tip":"360积分"},
+    {"href":"https://www.16pic.com/","logoSrc":"https://ico.cxr.cool/www.16pic.com.ico","alt":"六图网","channelAlt":"240积分下载一次","title":"六图网","tip":"新潜力网站","jifen_tip":"240积分"},
+    {"href":"http://90sheji.com/","logoSrc":"https://ico.cxr.cool/www.90sheji.com.ico","alt":"90设计","channelAlt":"280积分下载一次","title":"90设计","tip":"电商精品设计模板下载","jifen_tip":"280积分"},
+    {"href":"https://izihun.com/","logoSrc":"https://ico.cxr.cool/www.izihun.com.ico","alt":"字魂网","channelAlt":"240积分下载一次","title":"字魂网","tip":"字体下载专区","jifen_tip":"240积分"},
+    {"href":"https://www.bangongziyuan.com/","logoSrc":"https://ico.cxr.cool/www.bangongziyuan.com.ico","alt":"办公资源","channelAlt":"220积分下载一次","title":"办公资源","tip":"办公文档尽在办公资源","jifen_tip":"220积分"},
+    {"href":"https://www.qiuziti.com/","logoSrc":"https://ico.cxr.cool/www.qiuziti.com.ico","alt":"求字体","channelAlt":"480积分下载一次","title":"求字体","tip":"字体实时预览","jifen_tip":"480积分"},
+    {"href":"https://www.shetu66.com/","logoSrc":"https://ico.cxr.cool/www.shetu66.com.ico","alt":"设图网","channelAlt":"360积分下载一次","title":"设图网","tip":"原创素材分享平台","jifen_tip":"360积分"},
+    {"href":"https://www.bigbigwork.com/","logoSrc":"https://ico.cxr.cool/www.bigbigwork.com.ico","alt":"大作网","channelAlt":"360积分下载一次","title":"大作网","tip":"设计灵感搜索引擎","jifen_tip":"360积分"},
+    {"href":"http://www.ppt118.com/","logoSrc":"https://ico.cxr.cool/www.ppt118.com.ico","alt":"风云办公","channelAlt":"260积分下载一次","title":"风云办公","tip":"提供原创办公素材的下载","jifen_tip":"260积分"},
+    {"href":"http://616pic.com/","logoSrc":"https://ico.cxr.cool/www.616pic.com.ico","alt":"图精灵","channelAlt":"360积分下载一次","title":"图精灵","tip":"配图背景素材","jifen_tip":"360积分"},
+    {"href":"https://www.888ppt.com/","logoSrc":"https://ico.cxr.cool/www.888ppt.com.ico","alt":"办图网","channelAlt":"260积分下载一次","title":"办图网","tip":"小型网站","jifen_tip":"260积分"},
+    {"href":"https://www.99ppt.com/","logoSrc":"https://ico.cxr.cool/www.99ppt.com.ico","alt":"当图网","channelAlt":"260积分下载一次","title":"当图网","tip":"海量精品PPT模板","jifen_tip":"260积分"},
+    {"href":"http://300ppt.com/","logoSrc":"https://ico.cxr.cool/www.300ppt.com.ico","alt":"闪办网","channelAlt":"260积分下载一次","title":"闪办网","tip":"ppt模板音效素材","jifen_tip":"260积分"},
+    {"href":"http://www.tuke88.com/","logoSrc":"https://ico.cxr.cool/www.tuke88.com.ico","alt":"图客巴巴","channelAlt":"360积分下载一次","title":"图客巴巴","tip":"创意图片设计","jifen_tip":"360积分"},
+    {"href":"http://www.kuaipng.com/","logoSrc":"https://ico.cxr.cool/www.kuaipng.com.ico","alt":"快图网","channelAlt":"260积分下载一次","title":"快图网","tip":"免扣png图素材","jifen_tip":"260积分"},
+    {"href":"https://www.yuantunet.com/","logoSrc":"https://ico.cxr.cool/www.yuantunet.com.ico","alt":"原图网","channelAlt":"1050积分下载一次","title":"原图网","tip":"高质量设计作品","jifen_tip":"1050积分"},
+    {"href":"https://www.900ppt.com/","logoSrc":"https://ico.cxr.cool/www.900ppt.com.ico","alt":"工图网","channelAlt":"460积分下载一次","title":"工图网","tip":"海量ppt文档","jifen_tip":"460积分"},
+    {"href":"https://www.officeplus.cn/","logoSrc":"https://ico.cxr.cool/www.officeplus.cn.ico","alt":"微软office","channelAlt":"360积分下载一次","title":"微软office","tip":"ppt模板word文档","jifen_tip":"360积分"},
+    {"href":"https://www.5ifont.cn/","logoSrc":"https://ico.cxr.cool/www.5ifont.cn.ico","alt":"字格网","channelAlt":"360积分下载一次","title":"字格网","tip":"发现好字体","jifen_tip":"360积分"},
+    {"href":"https://www.molishe.com/","logoSrc":"https://ico.cxr.cool/www.molishe.com.ico","alt":"魔力设","channelAlt":"360积分下载一次","title":"魔力设","tip":"海量图片素材库","jifen_tip":"360积分"},
+    {"href":"https://ixintu.com/","logoSrc":"https://ico.cxr.cool/www.ixintu.com.ico","alt":"新图网","channelAlt":"360积分下载一次","title":"新图网","tip":"png图片背景素材","jifen_tip":"360积分"},
+    {"href":"https://chaopx.com/","logoSrc":"https://ico.cxr.cool/www.chaopx.com.ico","alt":"潮国创意","channelAlt":"360积分下载一次","title":"潮国创意","tip":"国潮风格等创意设计","jifen_tip":"360积分"},
+    {"href":"https://stock.xinpianchang.com/vip","logoSrc":"https://ico.cxr.cool/www.xinpianchang.com.ico","alt":"片场素材","channelAlt":"680积分下载一次","title":"片场素材","tip":"高清视频AE模板","jifen_tip":"680积分"},
+    {"href":"https://www.xianpic.com/","logoSrc":"https://ico.cxr.cool/www.xianpic.com.ico","alt":"仙图网","channelAlt":"460积分下载一次","title":"仙图网","tip":"高质量共享素材","jifen_tip":"460积分"},
+    {"href":"https://elements.envato.com/","logoSrc":"https://ico.cxr.cool/www.elements.envato.com.ico","alt":"envato综合","channelAlt":"460积分下载一次","title":"envato综合","tip":"海外站点:envato综合","jifen_tip":"460积分"},
+    {"href":"https://www.freepik.com/","logoSrc":"https://ico.cxr.cool/www.freepik.com.ico","alt":"freepik综合","channelAlt":"460积分下载一次","title":"freepik综合","tip":"海外站点:freepik综合","jifen_tip":"460积分"},
+    {"href":"https://www.vecteezy.com/","logoSrc":"https://ico.cxr.cool/www.vecteezy.com.ico","alt":"vecteezy综合","channelAlt":"360积分下载一次","title":"vecteezy综合","tip":"海外站点:vecteezy综合","jifen_tip":"360积分"},
+    {"href":"https://www.rawpixel.com/free-images","logoSrc":"https://ico.cxr.cool/www.rawpixel.com.ico","alt":"rawpi元素","channelAlt":"360积分下载一次","title":"rawpi元素","tip":"海外站点:rawpi元素","jifen_tip":"360积分"},
+    {"href":"https://motionarray.com/","logoSrc":"https://ico.cxr.cool/www.motionarray.com.ico","alt":"motion样式","channelAlt":"460积分下载一次","title":"motion样式","tip":"海外站点:motion样式","jifen_tip":"460积分"},
+    {"href":"https://www.flaticon.com/","logoSrc":"https://ico.cxr.cool/www.flaticon.com.ico","alt":"flaticon图标","channelAlt":"360积分下载一次","title":"flaticon图标","tip":"海外站点:flaticon图标","jifen_tip":"360积分"},
+    {"href":"https://slidesgo.com/","logoSrc":"https://ico.cxr.cool/www.slidesgo.com.ico","alt":"slidePPT","channelAlt":"360积分下载一次","title":"slidePPT","tip":"海外站点:slidePPT","jifen_tip":"360积分"},
+    {"href":"https://www.storyblocks.com/","logoSrc":"https://ico.cxr.cool/www.storyblocks.com.ico","alt":"story视频","channelAlt":"360积分下载一次","title":"story视频","tip":"海外站点:story视频","jifen_tip":"360积分"},
+    {"href":"https://pixabay.com/","logoSrc":"https://ico.cxr.cool/www.pixabay.com.ico","alt":"pixabay实拍","channelAlt":"360积分下载一次","title":"pixabay实拍","tip":"海外站点:pixabay实拍","jifen_tip":"360积分"},
+    {"href":"https://iconscout.com/","logoSrc":"https://ico.cxr.cool/www.iconscout.com.ico","alt":"iconsco图标","channelAlt":"360积分下载一次","title":"iconsco图标","tip":"海外站点:iconsco图标","jifen_tip":"360积分"},
+    {"href":"https://unsplash.com/","logoSrc":"https://ico.cxr.cool/www.unsplash.com.ico","alt":"unspla实拍","channelAlt":"360积分下载一次","title":"unspla实拍","tip":"海外站点:unspla实拍","jifen_tip":"360积分"},
+    {"href":"https://pixelbuddha.net/","logoSrc":"https://ico.cxr.cool/www.pixelbuddha.net.ico","alt":"pixel样式","channelAlt":"360积分下载一次","title":"pixel样式","tip":"海外站点:pixel样式","jifen_tip":"360积分"},
+    {"href":"https://www.brusheezy.com/","logoSrc":"https://ico.cxr.cool/www.brusheezy.com.ico","alt":"brushe效果","channelAlt":"360积分下载一次","title":"brushe效果","tip":"海外站点:brushe效果","jifen_tip":"360积分"},
+    {"href":"https://www.slidemembers.com/en_US/","logoSrc":"https://ico.cxr.cool/www.slidemembers.com.ico","alt":"slidemembersPPT","channelAlt":"360积分下载一次","title":"slidemembersPPT","tip":"海外站点:slidemembersPPT","jifen_tip":"360积分"},
+    {"href":"https://deeezy.com/","logoSrc":"https://ico.cxr.cool/www.deeezy.com.ico","alt":"deeezy字体","channelAlt":"360积分下载一次","title":"deeezy字体","tip":"海外站点:deeezy字体","jifen_tip":"360积分"},
+    {"href":"https://www.yayimages.com/","logoSrc":"https://ico.cxr.cool/www.yayimages.com.ico","alt":"yay实拍","channelAlt":"360积分下载一次","title":"yay实拍","tip":"海外站点:yay实拍","jifen_tip":"360积分"},
+    {"href":"https://imgbin.com/","logoSrc":"https://ico.cxr.cool/www.imgbin.com.ico","alt":"img免扣","channelAlt":"360积分下载一次","title":"img免扣","tip":"海外站点:img免扣","jifen_tip":"360积分"},
+    {"href":"https://dribbble.com/shots","logoSrc":"https://ico.cxr.cool/www.dribbble.com.ico","alt":"dribbble前端","channelAlt":"360积分下载一次","title":"dribbble前端","tip":"海外站点:dribbble前端","jifen_tip":"360积分"}
+  ];
   
   // 状态变量：跟踪Ctrl+V/Cmd+V的使用状态
   let isImageSearchMode = false;
@@ -1165,8 +1313,11 @@
     const container = document.createElement("div");
     container.id = "huabanConfig";
     // 使用 Tailwind 工具类替代常规样式
-    container.className =
-      "fixed inset-0 bg-black/30 flex items-center justify-center z-[1000] backdrop-blur-sm";
+    container.className = 
+      "fixed inset-0 bg-black/30 flex items-center justify-center z-[115] backdrop-blur-sm";
+    
+    // 禁止页面滚动
+    document.body.style.overflow = 'hidden';
 
     // 创建卡片（更宽以容纳侧边栏）
     const card = document.createElement("div");
@@ -1248,9 +1399,9 @@
     sidebar.appendChild(versionEl);
 
     const main = document.createElement("div");
-    main.id = "hb-config-main";
+    main.id = "hb-config-main-settings"; // 默认显示设置面板，所以默认id为settings
     // 主区使用滚动容器以适配内嵌大型面板（如历史、聊天）
-    main.className = "flex-1 p-4 overflow-hidden min-h-0 box-border";
+    main.className = "flex-1 m-4 overflow-auto min-h-0 box-border";
 
     bodyWrap.appendChild(sidebar);
     bodyWrap.appendChild(main);
@@ -1272,7 +1423,13 @@
 
     // 导航交互：渲染不同的面板
     function renderSettings() {
+      // 设置主容器的 id，包含所属分类
+      main.id = "hb-config-main-settings";
+      // 重置所有可能受致谢名单影响的样式
       main.style.padding = "16px";
+      main.style.margin = "0";
+      main.style.background = "none";
+      main.style.borderRadius = "0";
       main.innerHTML = "";
       // 将原来的 content 区域内容渲染到 main
       main.innerHTML = "";
@@ -1291,18 +1448,23 @@
 
     // 更新记录在主区域嵌入 Feishu（iframe），若无法显示提供外链
     function renderUpdate() {
+      // 设置主容器的 id，包含所属分类
+      main.id = "hb-config-main-update";
       main.innerHTML = "";
+      // 重置所有可能受致谢名单影响的样式
       main.style.padding = "0";
-      const configMain = document.getElementById("hb-config-main");
-      if (configMain) configMain.style.position = "relative";
-      const feishuUrl =
+      main.style.margin = "0";
+      main.style.background = "none";
+      main.style.borderRadius = "0";
+      main.style.position = "relative";
+      const feishuUrl = 
         "https://ai-chimo.feishu.cn/wiki/EcTAwKw2bifqGjku9pzccaVcnId";
       const iframe = document.createElement("iframe");
       iframe.src = feishuUrl;
       iframe.className = "w-full h-full min-h-[480px] border-0 rounded-lg";
       iframe.allow = "fullscreen; clipboard-write";
       const fallback = document.createElement("div");
-      fallback.className =
+      fallback.className = 
         "text-sm text-center absolute w-full bottom-0 left-1/2 -translate-x-1/2 no-underline bg-white px-4 py-2 rounded shadow-md";
       fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-500">在新标签页打开更新记录</a>（飞书文档）`;
       main.appendChild(iframe);
@@ -1311,18 +1473,23 @@
 
     // 使用说明在主区域嵌入 Feishu（iframe），若无法显示提供外链
     function renderUsage() {
+      // 设置主容器的 id，包含所属分类
+      main.id = "hb-config-main-usage";
       main.innerHTML = "";
+      // 重置所有可能受致谢名单影响的样式
       main.style.padding = "0";
-      const configMain = document.getElementById("hb-config-main");
-      if (configMain) configMain.style.position = "relative";
-      const feishuUrl =
+      main.style.margin = "0";
+      main.style.background = "none";
+      main.style.borderRadius = "0";
+      main.style.position = "relative";
+      const feishuUrl = 
         "https://ai-chimo.feishu.cn/wiki/E9SEwhoMmiv2CkkC1VgcAbRTnW3";
       const iframe = document.createElement("iframe");
       iframe.src = feishuUrl;
       iframe.className = "w-full h-full min-h-[480px] border-0 rounded-lg";
       iframe.allow = "fullscreen; clipboard-write";
       const fallback = document.createElement("div");
-      fallback.className =
+      fallback.className = 
         "text-sm text-center absolute w-full bottom-0 left-1/2 -translate-x-1/2 no-underline bg-white px-4 py-2 rounded shadow-md";
       fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-500">在新标签页打开使用说明</a>（飞书文档）`;
       main.appendChild(iframe);
@@ -1343,12 +1510,21 @@
       renderUpdate();
     });
 
-    // 在主区域渲染致谢名单（iframe）
+    //个人信息
     function renderUserProfile() {
-      const main = document.getElementById("hb-config-main");
-      main.innerHTML =
+      // 获取主容器元素（通过class或其他方式，而不是固定id）
+      const main = document.querySelector('.flex-1.m-4.overflow-hidden.min-h-0.box-border');
+      if (!main) return;
+      
+      // 设置主容器的 id，包含所属分类
+      main.id = "hb-config-main-user";
+      main.innerHTML = 
         '<div class="loading"><i class="fa fa-spinner fa-spin"></i> 加载个人信息中...</div>';
+      // 重置所有可能受致谢名单影响的样式
       main.style.padding = "16px";
+      main.style.margin = "0";
+      main.style.background = "none";
+      main.style.borderRadius = "0";
       main.style.position = "relative";
 
       fetch("https://huaban.com/v3/users/me")
@@ -1402,22 +1578,34 @@
           console.error("获取花瓣用户信息失败:", error);
         });
     }
-
+    // 在主区域渲染致谢名单（iframe）
     function renderThanksPanel() {
-      main.style.padding = "16px";
+      // 设置主容器的 id，包含所属分类
+      main.id = "hb-config-main-thanks";
+      main.style.padding = "0px";
+      main.style.margin = "16px";
+      main.style.background = "linear-gradient(rgb(255, 198, 196), rgba(255, 198, 196, 0.95) 50%, rgb(255, 255, 255) 90%)";
+      main.style.borderRadius = "6px";
       main.innerHTML = "";
       main.innerHTML = "";
       const iframe = document.createElement("iframe");
-      iframe.src =
+      iframe.src = 
         "https://xiaolongmr.github.io/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%87%B4%E8%B0%A2%E5%90%8D%E5%8D%95.html";
-      iframe.className =
+      iframe.className = 
         "block mx-auto w-[420px] h-[585px] border-0 rounded-lg";
       main.appendChild(iframe);
     }
 
     // 在主区域渲染网友互助区（Twikoo）
-    function renderTwikooPanel() {
+    // 先暂时移除这个函数，后面重新创建
+    /* function renderTwikooPanel() {
+      // 设置主容器的 id，包含所属分类
+      main.id = "hb-config-main-twikoo";
+      // 重置所有可能受致谢名单影响的样式
       main.style.padding = "16px";
+      main.style.margin = "0";
+      main.style.background = "none";
+      main.style.borderRadius = "0";
       main.innerHTML = "";
       main.innerHTML = "";
       const title = document.createElement("div");
@@ -1425,10 +1613,140 @@
       title.innerHTML = `<h3 class="m-0 text-base text-slate-700">网友互助区</h3><div class="text-xs text-slate-400">通过 Twikoo 聊天与其他用户交流</div>`;
       const wrapper = document.createElement("div");
       wrapper.className = "flex-1 flex flex-col gap-3 h-full min-h-0";
+      
+      // 创建素材网站列表区域
+      const materialSitesSection = document.createElement("div");
+      materialSitesSection.className = "bg-white rounded-lg p-3 box-border";
+      const materialSitesTitle = document.createElement("div");
+      // materialSitesTitle.className = "flex items-center justify-between mb-3";
+      // materialSitesTitle.innerHTML = `<h4 class="m-0 text-sm text-slate-700">素材网站推荐</h4><div class="text-xs text-slate-400">精选设计素材网站</div>`;
+      const materialSitesList = document.createElement("div");
+      materialSitesList.className = "text-sm text-slate-600 p-4 text-center";
+      materialSitesSection.appendChild(materialSitesTitle);
+      materialSitesSection.appendChild(materialSitesList);
+      
+      // 显示迁移说明文字
+      materialSitesList.innerHTML = "📁 素材网站推荐已迁移至<a href='https://huaban.com/pages/sucai' target='_blank' class='text-blue-500 hover:underline'>花瓣素材</a>页面，欢迎访问查看更多优质素材资源！";
+      return;
+              const siteItem = document.createElement("a");
+              siteItem.href = site.href;
+              siteItem.target = "_blank";
+              siteItem.rel = "noopener noreferrer";
+              siteItem.className = "flex items-center gap-2 p-2 border rounded-md hover:bg-slate-50 transition-colors text-sm";
+              
+              const siteLogo = document.createElement("img");
+              siteLogo.src = site.logoSrc;
+              siteLogo.alt = site.alt;
+              siteLogo.className = "w-6 h-6 object-contain";
+              
+              const siteInfo = document.createElement("div");
+              siteInfo.className = "flex-1 min-w-0";
+              
+              const siteTitle = document.createElement("div");
+              siteTitle.className = "font-medium text-slate-700 truncate";
+              siteTitle.textContent = site.title;
+              
+              const siteTip = document.createElement("div");
+              siteTip.className = "text-xs text-slate-500 truncate";
+              siteTip.textContent = site.tip;
+              
+              const sitePoints = document.createElement("div");
+              sitePoints.className = "text-xs text-amber-600";
+              sitePoints.textContent = site.jifen_tip;
+              
+              siteInfo.appendChild(siteTitle);
+              siteInfo.appendChild(siteTip);
+              siteItem.appendChild(siteLogo);
+              siteItem.appendChild(siteInfo);
+              siteItem.appendChild(sitePoints);
+              materialSitesList.appendChild(siteItem);
+              });
+      } catch (error) {
+        console.error("渲染素材网站列表失败:", error);
+        materialSitesList.innerHTML = `<div class="col-span-2 text-center text-slate-500 py-4">无法加载素材网站列表</div>`;
+      }
+      
       const commentWrap = document.createElement("div");
       commentWrap.id = "tcomment";
-      commentWrap.className =
+      commentWrap.className = 
         "flex-1 min-h-0 overflow-auto bg-white rounded-lg p-3 box-border";
+      wrapper.appendChild(materialSitesSection);
+      wrapper.appendChild(commentWrap);
+      main.appendChild(title);
+      main.appendChild(wrapper);
+
+      // 动态加载Twikoo并初始化（若未加载）
+      try {
+        if (!document.querySelector('link[href*="twikoo"]')) {
+          const twikooCss = document.createElement("link");
+          twikooCss.rel = "stylesheet";
+          twikooCss.href =
+            "https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.css";
+          document.head.appendChild(twikooCss);
+        }
+        if (typeof twikoo === "undefined") {
+          const twikooScript = document.createElement("script");
+          twikooScript.src =
+            "https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.nocss.js";
+          twikooScript.onload = function () {
+            try {
+              if (typeof twikoo !== "undefined") {
+                twikoo.init({
+                  envId: "https://twikookaishu.z-l.top",
+                  el: "#tcomment",
+                  path: "/huaban-helper-all",
+                });
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          };
+          document.head.appendChild(twikooScript);
+        } else {
+          try {
+            twikoo.init({
+              envId: "https://twikookaishu.z-l.top",
+              el: "#tcomment",
+              path: "/huaban-helper-all",
+            });
+          } catch (e) {}
+        }
+      } catch (e) {
+        console.error("初始化 Twikoo 失败", e);
+      }
+    } */
+    
+    // 重新创建修改后的renderTwikooPanel函数
+    function renderTwikooPanel() {
+      // 设置主容器的 id，包含所属分类
+      main.id = "hb-config-main-twikoo";
+      // 重置所有可能受致谢名单影响的样式
+      main.style.padding = "16px";
+      main.style.margin = "0";
+      main.style.background = "none";
+      main.style.borderRadius = "0";
+      main.innerHTML = "";
+      const title = document.createElement("div");
+      title.className = "flex items-center justify-between mb-3";
+      title.innerHTML = `<h3 class="m-0 text-base text-slate-700">网友互助区</h3><div class="text-xs text-slate-400">通过 Twikoo 聊天与其他用户交流</div>`;
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex-1 flex flex-col gap-3 h-full min-h-0";
+      
+      // 创建说明文字区域
+      const materialSitesSection = document.createElement("div");
+      materialSitesSection.className = "bg-white rounded-lg p-3 box-border";
+      const materialSitesTitle = document.createElement("div");
+      const materialSitesList = document.createElement("div");
+      materialSitesList.className = "text-sm text-slate-600 leading-relaxed";
+      materialSitesList.innerHTML = "公众号文章开了广告，朋友们有空的话每天可点点广告，收益将用于购买素材解析网站的积分，帮使用脚本的朋友免费下载素材，可下载的素材<a href='https://huaban.com/pages/sucai' target='_blank' class='text-blue-500 hover:underline'>点我进入查看</a>，可在此处留言，看到会帮忙下载的，积分用完为止！";
+      materialSitesSection.appendChild(materialSitesTitle);
+      materialSitesSection.appendChild(materialSitesList);
+      
+      const commentWrap = document.createElement("div");
+      commentWrap.id = "tcomment";
+      commentWrap.className = 
+        "flex-1 min-h-0 overflow-auto bg-white rounded-lg p-3 box-border";
+      wrapper.appendChild(materialSitesSection);
       wrapper.appendChild(commentWrap);
       main.appendChild(title);
       main.appendChild(wrapper);
@@ -1482,6 +1800,8 @@
     navHistory.addEventListener("click", (e) => {
       e.preventDefault();
       setActive("cfg-tab-history");
+      // 设置主容器的 id，包含所属分类
+      main.id = "hb-config-main-history";
       showDownloadHistory(main);
     });
     navThanks.addEventListener("click", (e) => {
@@ -1502,6 +1822,9 @@
         const modal = document.createElement("div");
         modal.className =
           "fixed inset-0 bg-black/30 flex items-center justify-center z-[9999] backdrop-blur-sm";
+        
+        // 禁止页面滚动
+        document.body.style.overflow = 'hidden';
 
         // 创建容器
         const container = document.createElement("div");
@@ -1547,6 +1870,8 @@
         closeButton.appendChild(closeIcon);
         closeButton.addEventListener("click", () => {
           document.body.removeChild(modal);
+          // 恢复页面滚动
+          document.body.style.overflow = 'auto';
         });
         closeButton.addEventListener("mouseenter", () => {
           closeButton.style.backgroundColor = "rgba(0, 0, 0, 0.2)";
@@ -1564,6 +1889,8 @@
         modal.addEventListener("click", (e) => {
           if (e.target === modal) {
             document.body.removeChild(modal);
+            // 恢复页面滚动
+            document.body.style.overflow = 'auto';
           }
         });
 
@@ -2263,7 +2590,11 @@
     // 关闭配置
     function closeConfig() {
       container.style.opacity = "0";
-      setTimeout(() => container.remove(), 200);
+      setTimeout(() => {
+        container.remove();
+        // 恢复页面滚动
+        document.body.style.overflow = 'auto';
+      }, 200);
     }
 
     // 点击外部关闭
@@ -2291,6 +2622,27 @@
 
     // 应用样式（包含动画效果）
     applyStyles();
+
+    // 立即尝试渲染素材网站列表（不等待事件）
+    renderMaterialSitesOnSucaiPage();
+    
+    // 使用MutationObserver监听DOM变化，确保元素出现后立即渲染
+    const materialSitesObserver = new MutationObserver(() => {
+      if (window.location.href === 'https://huaban.com/pages/sucai') {
+        const layoutContent = document.getElementById('layout-content');
+        if (layoutContent) {
+          renderMaterialSitesOnSucaiPage();
+          // 只需要渲染一次，所以停止观察
+          materialSitesObserver.disconnect();
+        }
+      }
+    });
+    
+    // 观察body的子元素变化
+    materialSitesObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
 
     // 页面加载完成后执行水印处理
     window.addEventListener("load", () => {
@@ -2415,7 +2767,10 @@
     const container = document.createElement("div");
     container.id = "huabanUsageGuide";
     container.className =
-      "fixed inset-0 bg-black/30 flex items-center justify-center z-[1000] backdrop-blur-sm";
+      "fixed inset-0 bg-black/30 flex items-center justify-center z-[115] backdrop-blur-sm";
+    
+    // 禁止页面滚动
+    document.body.style.overflow = 'hidden';
 
     const card = document.createElement("div");
     card.className =
@@ -2458,18 +2813,32 @@
     document.body.appendChild(container);
 
     const closeBtn = header.querySelector("#closeUsageGuide");
-    closeBtn.addEventListener("click", () => container.remove());
+    closeBtn.addEventListener("click", () => {
+      container.remove();
+      // 恢复页面滚动
+      document.body.style.overflow = 'auto';
+    });
 
     container.addEventListener("click", (e) => {
-      if (e.target === container) container.remove();
+      if (e.target === container) {
+        container.remove();
+        // 恢复页面滚动
+        document.body.style.overflow = 'auto';
+      }
     });
 
     const escHandler = (e) => {
-      if (e.key === "Escape") container.remove();
+      if (e.key === "Escape") {
+        container.remove();
+        // 恢复页面滚动
+        document.body.style.overflow = 'auto';
+      }
     };
     document.addEventListener("keydown", escHandler);
     container.addEventListener("remove", () => {
       document.removeEventListener("keydown", escHandler);
+      // 恢复页面滚动
+      document.body.style.overflow = 'auto';
     });
   }
 
@@ -2478,6 +2847,7 @@
     const existing = document.getElementById("huabanDownloadHistory");
     if (existing && !isEmbed) {
       existing.remove();
+      return;
     }
     let overlay;
     if (!isEmbed) {
@@ -2485,10 +2855,28 @@
       overlay.id = "huabanDownloadHistory";
       overlay.className =
         "fixed inset-0 bg-black/40 flex items-center justify-center z-[10000] backdrop-blur-sm";
+      
+      // 禁止页面滚动
+      document.body.style.overflow = 'hidden';
+      
+      // 监听overlay元素的移除事件，恢复页面滚动
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.removedNodes.forEach((node) => {
+            if (node === overlay) {
+              // 恢复页面滚动
+              document.body.style.overflow = 'auto';
+              observer.disconnect();
+            }
+          });
+        });
+      });
+      
+      observer.observe(document.body, { childList: true });
     }
     const card = document.createElement("div");
     card.className =
-      "bg-white rounded-[24px] shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[1200px] max-w-[95vw] max-h-[88vh] flex flex-col relative";
+      "shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[1200px] max-w-[95vw] max-h-[88vh] flex flex-col relative";
     card.style.fontFamily =
       "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif";
     // 如果以嵌入方式渲染在右侧面板，调整样式以填满容器并弱化浮层风格
@@ -2497,11 +2885,10 @@
       card.style.height = "100%";
       card.style.maxWidth = "100%";
       card.style.maxHeight = "100%";
-      card.style.borderRadius = "12px";
       card.style.boxShadow = "none";
     }
     const header = document.createElement("div");
-    header.className = "flex items-center gap-3 justify-between px-4 py-3";
+    header.className = "bg-white flex items-center gap-3 justify-between pb-[6px]";
     const tools = document.createElement("div");
     tools.className = "flex gap-2 items-stretch";
     const title = document.createElement("div");
@@ -2554,7 +2941,7 @@
     // 绑定交互
     selectBtn.addEventListener("click", () => {
       selectionMode = !selectionMode;
-      selectBtn.textContent = selectionMode ? "退出选择" : "选择";
+      selectBtn.textContent = selectionMode ? "退出" : "选择";
       if (!selectionMode) {
         selectedIds.clear();
       }
@@ -2578,7 +2965,7 @@
     const content = document.createElement("div");
     content.id = "hb-history-content";
     content.className = "hb-history-content";
-    content.className = "pt-2 overflow-y-auto flex-1 bg-white";
+    content.className = "pt-2 overflow-y-auto flex-1 bg-white mr-[-16px]";
     const masonry = document.createElement("div");
     masonry.className = "hb-history-masonry";
     masonry.className = "hb-history-masonry";
