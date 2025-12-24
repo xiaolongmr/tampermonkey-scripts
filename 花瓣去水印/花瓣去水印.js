@@ -113,7 +113,7 @@
           // 添加文案信息
           const infoText = document.createElement('div');
           infoText.className = 'mt-4 p-4 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200';
-          infoText.innerHTML = '以上网站使用 <a href="http://121.40.25.9:8080/" target="_blank" class="text-blue-500 hover:underline">http://121.40.25.9:8080/</a> 素材下载网站 购买积分进行下载，你也可以自己注册，邀请码：1474728874 使用邀请码注册双方各得1000积分';
+          infoText.innerHTML = '以上网站使用 <a href="http://121.40.25.9:8080/register.html" target="_blank" class="text-blue-500 hover:underline">http://121.40.25.9:8080/</a> 素材下载网站 购买积分进行下载，你也可以自己注册，邀请码：1474728874 使用邀请码注册双方各得1000积分';
           materialSitesContainer.appendChild(infoText);
           
           // 将列表添加到页面中
@@ -1436,6 +1436,7 @@
       // switchesSection, colorSettings, actions 会被插入后
       main.appendChild(switchesSection);
       main.innerHTML += colorSettings;
+      main.appendChild(hotkeysSettings);
       main.appendChild(actions);
       
       // 初始化时根据开关状态显示或隐藏颜色选择器
@@ -2264,6 +2265,96 @@
             </div>
         `;
 
+    // 获取快捷键配置
+    const getHotkeysConfig = () => {
+        const defaultHotkeys = {
+            searchFocus: { ctrlCmd: true, shift: false, alt: false, key: 'k', description: '快速定位到搜索框' },
+            imageSearch: { ctrlCmd: true, shift: false, alt: false, key: 'v', description: '以图搜索功能' },
+            openSettings: { ctrlCmd: true, shift: false, alt: false, key: ',', description: '打开设置界面' }
+        };
+        return typeof GM_getValue === "function" 
+            ? GM_getValue("hotkeysConfig", defaultHotkeys)
+            : defaultHotkeys;
+    };
+
+    // 快捷键设置区域
+    const hotkeysSettings = document.createElement("div");
+    hotkeysSettings.className = "mb-4";
+    hotkeysSettings.innerHTML = `
+        <div style="margin-bottom: 12px;">
+            <div style="
+                font-size: 14px;
+                color: #334155;
+                font-weight: 600;
+                margin-bottom: 8px;
+            ">
+                ⌨️ 快捷键设置
+            </div>
+            <div style="color: #64748b; font-size: 12px; margin-bottom: 12px;">
+                点击输入框后按下新的快捷键组合
+            </div>
+        </div>`;
+
+    // 获取当前快捷键配置
+    const hotkeysConfig = getHotkeysConfig();
+    
+    // 快捷键项目列表
+    const hotkeyItems = [
+        { id: 'searchFocus', label: '快速定位到搜索框', defaultKey: 'k' },
+        { id: 'imageSearch', label: '以图搜索功能', defaultKey: 'v' },
+        { id: 'openSettings', label: '打开设置界面', defaultKey: ',' }
+    ];
+    
+    // 创建每个快捷键设置项
+    hotkeyItems.forEach(item => {
+        const hotkeyItem = document.createElement("div");
+        hotkeyItem.className = "mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200";
+        
+        const hotkeyConfig = hotkeysConfig[item.id] || { ctrlCmd: true, shift: false, alt: false, key: item.defaultKey };
+        
+        hotkeyItem.innerHTML = `
+            <div style="
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 6px;
+            ">
+                <span style="font-size: 13px; color: #334155; font-weight: 500;">${item.label}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="flex: 1;">
+                    <input type="text" id="hotkey-${item.id}" 
+                           value="${hotkeyConfig.ctrlCmd ? 'Ctrl+' : ''}${hotkeyConfig.shift ? 'Shift+' : ''}${hotkeyConfig.alt ? 'Alt+' : ''}${hotkeyConfig.key.toUpperCase()}"
+                           style="
+                               width: 100%;
+                               padding: 8px 10px;
+                               border: 1px solid #e2e8f0;
+                               border-radius: 6px;
+                               font-size: 13px;
+                               color: #334155;
+                               font-family: monospace;
+                           "
+                           data-hotkey-id="${item.id}"
+                           readonly>
+                </div>
+                <button type="button" id="reset-hotkey-${item.id}" 
+                        style="
+                            padding: 6px 10px;
+                            background: #f8fafc;
+                            color: #64748b;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            cursor: pointer;
+                        ">
+                    重置
+                </button>
+            </div>
+        `;
+        
+        hotkeysSettings.appendChild(hotkeyItem);
+    });
+
     // 操作按钮
     const actions = document.createElement("div");
     actions.className = "flex gap-2";
@@ -2472,6 +2563,81 @@
     createColorPickerHandler(userInput, userPicker, userPreview);
 
     // 保存配置
+    // 快捷键配置变量
+    let currentHotkeyInput = null;
+    let currentHotkeyConfig = null;
+    
+    // 快捷键输入框点击事件
+    const hotkeyInputs = document.querySelectorAll('input[id^="hotkey-"]');
+    hotkeyInputs.forEach(input => {
+        input.addEventListener('click', () => {
+            // 移除其他输入框的激活状态
+            hotkeyInputs.forEach(i => i.style.borderColor = '#e2e8f0');
+            
+            // 设置当前激活的输入框
+            currentHotkeyInput = input;
+            currentHotkeyInput.style.borderColor = '#ff284b';
+            currentHotkeyInput.value = '请按下新的快捷键组合...';
+        });
+    });
+    
+    // 键盘事件监听（捕获快捷键）
+    document.addEventListener('keydown', (e) => {
+        if (currentHotkeyInput) {
+            e.preventDefault();
+            
+            // 获取按键信息
+            const ctrlCmd = e.ctrlKey || e.metaKey;
+            const shift = e.shiftKey;
+            const alt = e.altKey;
+            const key = e.key.toLowerCase();
+            
+            // 只允许字母、数字和部分符号
+            if (key && key.length === 1 && !e.code.includes('F') && key !== ' ') {
+                // 更新输入框显示
+                const hotkeyText = `${ctrlCmd ? 'Ctrl+' : ''}${shift ? 'Shift+' : ''}${alt ? 'Alt+' : ''}${key.toUpperCase()}`;
+                currentHotkeyInput.value = hotkeyText;
+                
+                // 保存到临时配置
+                const hotkeyId = currentHotkeyInput.dataset.hotkeyId;
+                if (!currentHotkeyConfig) {
+                    currentHotkeyConfig = getHotkeysConfig();
+                }
+                currentHotkeyConfig[hotkeyId] = { ctrlCmd, shift, alt, key, description: currentHotkeyConfig[hotkeyId].description };
+                
+                // 移除激活状态
+                currentHotkeyInput.style.borderColor = '#e2e8f0';
+                currentHotkeyInput = null;
+            }
+        }
+    });
+    
+    // 快捷键重置按钮事件
+    const resetHotkeyBtns = document.querySelectorAll('button[id^="reset-hotkey-"]');
+    resetHotkeyBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const hotkeyId = btn.id.replace('reset-hotkey-', '');
+            const input = document.getElementById(`hotkey-${hotkeyId}`);
+            
+            // 获取默认配置
+            const defaultHotkeys = {
+                searchFocus: { ctrlCmd: true, shift: false, alt: false, key: 'k', description: '快速定位到搜索框' },
+                imageSearch: { ctrlCmd: true, shift: false, alt: false, key: 'v', description: '以图搜索功能' },
+                openSettings: { ctrlCmd: true, shift: false, alt: false, key: ',', description: '打开设置界面' }
+            };
+            
+            // 重置配置
+            const defaultConfig = defaultHotkeys[hotkeyId];
+            input.value = `${defaultConfig.ctrlCmd ? 'Ctrl+' : ''}${defaultConfig.shift ? 'Shift+' : ''}${defaultConfig.alt ? 'Alt+' : ''}${defaultConfig.key.toUpperCase()}`;
+            
+            // 更新临时配置
+            if (!currentHotkeyConfig) {
+                currentHotkeyConfig = getHotkeysConfig();
+            }
+            currentHotkeyConfig[hotkeyId] = defaultConfig;
+        });
+    });
+
     saveBtn.addEventListener("click", () => {
       const materialColor = materialInput.value;
       const userColor = userInput.value;
@@ -2494,6 +2660,12 @@
       };
 
       saveConfig(newConfig);
+      
+      // 保存快捷键配置
+      if (typeof GM_setValue === "function") {
+          GM_setValue("hotkeysConfig", currentHotkeyConfig || getHotkeysConfig());
+      }
+      
       applyStyles();
 
       // 根据去水印开关状态处理图片
@@ -2681,10 +2853,39 @@
       observer.disconnect();
     });
     
+    // 获取快捷键配置
+    const getHotkeysConfig = () => {
+        const defaultHotkeys = {
+            searchFocus: { ctrlCmd: true, shift: false, alt: false, key: 'k', description: '快速定位到搜索框' },
+            imageSearch: { ctrlCmd: true, shift: false, alt: false, key: 'v', description: '以图搜索功能' },
+            openSettings: { ctrlCmd: true, shift: false, alt: false, key: ',', description: '打开设置界面' }
+        };
+        return typeof GM_getValue === "function" 
+            ? GM_getValue("hotkeysConfig", defaultHotkeys)
+            : defaultHotkeys;
+    };
+
+    // 检查快捷键是否匹配
+    const isHotkeyMatch = (e, hotkeyConfig) => {
+        if (!hotkeyConfig) return false;
+        const ctrlCmd = e.ctrlKey || e.metaKey;
+        const shift = e.shiftKey;
+        const alt = e.altKey;
+        const key = e.key.toLowerCase();
+        
+        return ctrlCmd === hotkeyConfig.ctrlCmd && 
+               shift === hotkeyConfig.shift && 
+               alt === hotkeyConfig.alt && 
+               key === hotkeyConfig.key;
+    };
+
     // 添加快捷键处理
     document.addEventListener("keydown", (e) => {
-      // 检查是否按下了Ctrl+K或Cmd+K组合键（快速定位到搜索框）
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      // 获取当前快捷键配置
+      const hotkeysConfig = getHotkeysConfig();
+      
+      // 快速定位到搜索框
+      if (isHotkeyMatch(e, hotkeysConfig.searchFocus)) {
         // 阻止默认行为
         e.preventDefault();
         // 查找搜索框并聚焦
@@ -2708,8 +2909,8 @@
         }
       }
       
-      // 检查是否按下了Ctrl+V或Cmd+V组合键
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
+      // 以图搜索功能
+      if (isHotkeyMatch(e, hotkeysConfig.imageSearch)) {
         // 查找以图搜索按钮
         const imageSearchButton = document.querySelector('[data-button-name="以图搜索按钮"]');
         
@@ -2736,8 +2937,8 @@
         }
       }
       
-      // 检查是否按下了Ctrl+,或Cmd+,组合键（打开设置首选项）
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === ",") {
+      // 打开设置界面
+      if (isHotkeyMatch(e, hotkeysConfig.openSettings)) {
         // 阻止默认行为
         e.preventDefault();
         // 调用设置首选项函数
