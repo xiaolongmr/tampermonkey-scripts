@@ -60,7 +60,7 @@
   };
 
   // 在素材页面渲染素材网站列表
-  function renderMaterialSitesOnSucaiPage() {
+  async function renderMaterialSitesOnSucaiPage() {
     // 检查当前是否在指定页面
     if (window.location.href === "https://huaban.com/pages/sucai") {
       const layoutContent = document.getElementById("layout-content");
@@ -93,7 +93,10 @@
 
         // 渲染素材网站列表
         try {
-          MATERIAL_SITES.forEach((site) => {
+          // 从CDN或缓存加载数据
+          const materialSites = await loadMaterialSites();
+          
+          materialSites.forEach((site) => {
             const siteItem = document.createElement("a");
             siteItem.href = site.href;
             siteItem.target = "_blank";
@@ -169,522 +172,6 @@
     switchTransition: 1000, // 开关状态变化反馈时长
   };
 
-  // 素材网站列表数据
-  const MATERIAL_SITES = [
-    {
-      href: "https://www.design006.com/",
-      logoSrc: "https://ico.cxr.cool/www.design006.com.ico",
-      alt: "享设计",
-      channelAlt: "1250积分下载一次",
-      title: "享设计",
-      tip: "超高质量素材",
-      jifen_tip: "1250积分",
-    },
-    {
-      href: "https://www.redocn.com/",
-      logoSrc: "https://ico.cxr.cool/www.redocn.com.ico",
-      alt: "红动中国",
-      channelAlt: "510积分下载一次",
-      title: "红动中国",
-      tip: "高质量素材",
-      jifen_tip: "510积分",
-    },
-    {
-      href: "http://www.nipic.com/",
-      logoSrc: "https://ico.cxr.cool/www.nipic.com.ico",
-      alt: "昵图网",
-      channelAlt: "对应昵图网积分,最低580分一次",
-      title: "昵图网",
-      tip: "共享图任性下",
-      jifen_tip: "最低580积分",
-    },
-    {
-      href: "https://www.58pic.com/",
-      logoSrc: "https://ico.cxr.cool/www.58pic.com.ico",
-      alt: "千图网",
-      channelAlt: "380积分下载一次",
-      title: "千图网",
-      tip: "超多设计素材下载",
-      jifen_tip: "380积分",
-    },
-    {
-      href: "https://ibaotu.com/",
-      logoSrc: "https://ico.cxr.cool/www.ibaotu.com.ico",
-      alt: "包图网",
-      channelAlt: "320积分下载一次",
-      title: "包图网",
-      tip: "高质量设计图片下载",
-      jifen_tip: "320积分",
-    },
-    {
-      href: "http://699pic.com/",
-      logoSrc: "https://ico.cxr.cool/www.699pic.com.ico",
-      alt: "摄图网",
-      channelAlt: "360积分下载一次",
-      title: "摄图网",
-      tip: "高清摄影图片下载",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://588ku.com/",
-      logoSrc: "https://ico.cxr.cool/www.588ku.com.ico",
-      alt: "千库网",
-      channelAlt: "320积分下载一次",
-      title: "千库网",
-      tip: "做设计,不抠图",
-      jifen_tip: "320积分",
-    },
-    {
-      href: "https://www.ztupic.com/",
-      logoSrc: "https://ico.cxr.cool/www.ztupic.com.ico",
-      alt: "众图网",
-      channelAlt: "280积分下载一次",
-      title: "众图网",
-      tip: "高质量文化墙下载",
-      jifen_tip: "280积分",
-    },
-    {
-      href: "https://www.tukuppt.com/",
-      logoSrc: "https://ico.cxr.cool/www.tukuppt.com.ico",
-      alt: "熊猫办公",
-      channelAlt: "280积分下载一次",
-      title: "熊猫办公",
-      tip: "高质量PPT下载",
-      jifen_tip: "280积分",
-    },
-    {
-      href: "https://www.51miz.com/",
-      logoSrc: "https://ico.cxr.cool/www.51miz.com.ico",
-      alt: "觅知网",
-      channelAlt: "280积分下载一次",
-      title: "觅知网",
-      tip: "质量堪比收费素材",
-      jifen_tip: "280积分",
-    },
-    {
-      href: "http://www.51yuansu.com/",
-      logoSrc: "https://ico.cxr.cool/www.51yuansu.com.ico",
-      alt: "觅元素",
-      channelAlt: "240积分下载一次",
-      title: "觅元素",
-      tip: "无需抠图的元素专区",
-      jifen_tip: "240积分",
-    },
-    {
-      href: "https://www.ooopic.com/sucaixiazai/",
-      logoSrc: "https://ico.cxr.cool/www.ooopic.com.ico",
-      alt: "我图网",
-      channelAlt: "340积分下载一次",
-      title: "我图网",
-      tip: "我图网原创区",
-      jifen_tip: "340积分",
-    },
-    {
-      href: "https://www.88tph.com/",
-      logoSrc: "https://ico.cxr.cool/www.88tph.com.ico",
-      alt: "图品汇",
-      channelAlt: "360积分下载一次",
-      title: "图品汇",
-      tip: "原创设计",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://shipin520.com/",
-      logoSrc: "https://ico.cxr.cool/www.shipin520.com.ico",
-      alt: "潮点视频",
-      channelAlt: "460积分下载一次",
-      title: "潮点视频",
-      tip: "做视频就要潮一点",
-      jifen_tip: "460积分",
-    },
-    {
-      href: "https://huaban.com/",
-      logoSrc: "https://ico.cxr.cool/www.huaban.com.ico",
-      alt: "花瓣网",
-      channelAlt: "880积分下载一次",
-      title: "花瓣网",
-      tip: "最新采集图片素材资源",
-      jifen_tip: "880积分",
-    },
-    {
-      href: "https://zhitu66.com/",
-      logoSrc: "https://ico.cxr.cool/www.zhitu66.com.ico",
-      alt: "致图网",
-      channelAlt: "360积分下载一次",
-      title: "致图网",
-      tip: "设计模板素材图库",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.16pic.com/",
-      logoSrc: "https://ico.cxr.cool/www.16pic.com.ico",
-      alt: "六图网",
-      channelAlt: "240积分下载一次",
-      title: "六图网",
-      tip: "新潜力网站",
-      jifen_tip: "240积分",
-    },
-    {
-      href: "http://90sheji.com/",
-      logoSrc: "https://ico.cxr.cool/www.90sheji.com.ico",
-      alt: "90设计",
-      channelAlt: "280积分下载一次",
-      title: "90设计",
-      tip: "电商精品设计模板下载",
-      jifen_tip: "280积分",
-    },
-    {
-      href: "https://izihun.com/",
-      logoSrc: "https://ico.cxr.cool/www.izihun.com.ico",
-      alt: "字魂网",
-      channelAlt: "240积分下载一次",
-      title: "字魂网",
-      tip: "字体下载专区",
-      jifen_tip: "240积分",
-    },
-    {
-      href: "https://www.bangongziyuan.com/",
-      logoSrc: "https://ico.cxr.cool/www.bangongziyuan.com.ico",
-      alt: "办公资源",
-      channelAlt: "220积分下载一次",
-      title: "办公资源",
-      tip: "办公文档尽在办公资源",
-      jifen_tip: "220积分",
-    },
-    {
-      href: "https://www.qiuziti.com/",
-      logoSrc: "https://ico.cxr.cool/www.qiuziti.com.ico",
-      alt: "求字体",
-      channelAlt: "480积分下载一次",
-      title: "求字体",
-      tip: "字体实时预览",
-      jifen_tip: "480积分",
-    },
-    {
-      href: "https://www.shetu66.com/",
-      logoSrc: "https://ico.cxr.cool/www.shetu66.com.ico",
-      alt: "设图网",
-      channelAlt: "360积分下载一次",
-      title: "设图网",
-      tip: "原创素材分享平台",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.bigbigwork.com/",
-      logoSrc: "https://ico.cxr.cool/www.bigbigwork.com.ico",
-      alt: "大作网",
-      channelAlt: "360积分下载一次",
-      title: "大作网",
-      tip: "设计灵感搜索引擎",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "http://www.ppt118.com/",
-      logoSrc: "https://ico.cxr.cool/www.ppt118.com.ico",
-      alt: "风云办公",
-      channelAlt: "260积分下载一次",
-      title: "风云办公",
-      tip: "提供原创办公素材的下载",
-      jifen_tip: "260积分",
-    },
-    {
-      href: "http://616pic.com/",
-      logoSrc: "https://ico.cxr.cool/www.616pic.com.ico",
-      alt: "图精灵",
-      channelAlt: "360积分下载一次",
-      title: "图精灵",
-      tip: "配图背景素材",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.888ppt.com/",
-      logoSrc: "https://ico.cxr.cool/www.888ppt.com.ico",
-      alt: "办图网",
-      channelAlt: "260积分下载一次",
-      title: "办图网",
-      tip: "小型网站",
-      jifen_tip: "260积分",
-    },
-    {
-      href: "https://www.99ppt.com/",
-      logoSrc: "https://ico.cxr.cool/www.99ppt.com.ico",
-      alt: "当图网",
-      channelAlt: "260积分下载一次",
-      title: "当图网",
-      tip: "海量精品PPT模板",
-      jifen_tip: "260积分",
-    },
-    {
-      href: "http://300ppt.com/",
-      logoSrc: "https://ico.cxr.cool/www.300ppt.com.ico",
-      alt: "闪办网",
-      channelAlt: "260积分下载一次",
-      title: "闪办网",
-      tip: "ppt模板音效素材",
-      jifen_tip: "260积分",
-    },
-    {
-      href: "http://www.tuke88.com/",
-      logoSrc: "https://ico.cxr.cool/www.tuke88.com.ico",
-      alt: "图客巴巴",
-      channelAlt: "360积分下载一次",
-      title: "图客巴巴",
-      tip: "创意图片设计",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "http://www.kuaipng.com/",
-      logoSrc: "https://ico.cxr.cool/www.kuaipng.com.ico",
-      alt: "快图网",
-      channelAlt: "260积分下载一次",
-      title: "快图网",
-      tip: "免扣png图素材",
-      jifen_tip: "260积分",
-    },
-    {
-      href: "https://www.yuantunet.com/",
-      logoSrc: "https://ico.cxr.cool/www.yuantunet.com.ico",
-      alt: "原图网",
-      channelAlt: "1050积分下载一次",
-      title: "原图网",
-      tip: "高质量设计作品",
-      jifen_tip: "1050积分",
-    },
-    {
-      href: "https://www.900ppt.com/",
-      logoSrc: "https://ico.cxr.cool/www.900ppt.com.ico",
-      alt: "工图网",
-      channelAlt: "460积分下载一次",
-      title: "工图网",
-      tip: "海量ppt文档",
-      jifen_tip: "460积分",
-    },
-    {
-      href: "https://www.officeplus.cn/",
-      logoSrc: "https://ico.cxr.cool/www.officeplus.cn.ico",
-      alt: "微软office",
-      channelAlt: "360积分下载一次",
-      title: "微软office",
-      tip: "ppt模板word文档",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.5ifont.cn/",
-      logoSrc: "https://ico.cxr.cool/www.5ifont.cn.ico",
-      alt: "字格网",
-      channelAlt: "360积分下载一次",
-      title: "字格网",
-      tip: "发现好字体",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.molishe.com/",
-      logoSrc: "https://ico.cxr.cool/www.molishe.com.ico",
-      alt: "魔力设",
-      channelAlt: "360积分下载一次",
-      title: "魔力设",
-      tip: "海量图片素材库",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://ixintu.com/",
-      logoSrc: "https://ico.cxr.cool/www.ixintu.com.ico",
-      alt: "新图网",
-      channelAlt: "360积分下载一次",
-      title: "新图网",
-      tip: "png图片背景素材",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://chaopx.com/",
-      logoSrc: "https://ico.cxr.cool/www.chaopx.com.ico",
-      alt: "潮国创意",
-      channelAlt: "360积分下载一次",
-      title: "潮国创意",
-      tip: "国潮风格等创意设计",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://stock.xinpianchang.com/vip",
-      logoSrc: "https://ico.cxr.cool/www.xinpianchang.com.ico",
-      alt: "片场素材",
-      channelAlt: "680积分下载一次",
-      title: "片场素材",
-      tip: "高清视频AE模板",
-      jifen_tip: "680积分",
-    },
-    {
-      href: "https://www.xianpic.com/",
-      logoSrc: "https://ico.cxr.cool/www.xianpic.com.ico",
-      alt: "仙图网",
-      channelAlt: "460积分下载一次",
-      title: "仙图网",
-      tip: "高质量共享素材",
-      jifen_tip: "460积分",
-    },
-    {
-      href: "https://elements.envato.com/",
-      logoSrc: "https://ico.cxr.cool/www.elements.envato.com.ico",
-      alt: "envato综合",
-      channelAlt: "460积分下载一次",
-      title: "envato综合",
-      tip: "海外站点:envato综合",
-      jifen_tip: "460积分",
-    },
-    {
-      href: "https://www.freepik.com/",
-      logoSrc: "https://ico.cxr.cool/www.freepik.com.ico",
-      alt: "freepik综合",
-      channelAlt: "460积分下载一次",
-      title: "freepik综合",
-      tip: "海外站点:freepik综合",
-      jifen_tip: "460积分",
-    },
-    {
-      href: "https://www.vecteezy.com/",
-      logoSrc: "https://ico.cxr.cool/www.vecteezy.com.ico",
-      alt: "vecteezy综合",
-      channelAlt: "360积分下载一次",
-      title: "vecteezy综合",
-      tip: "海外站点:vecteezy综合",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.rawpixel.com/free-images",
-      logoSrc: "https://ico.cxr.cool/www.rawpixel.com.ico",
-      alt: "rawpi元素",
-      channelAlt: "360积分下载一次",
-      title: "rawpi元素",
-      tip: "海外站点:rawpi元素",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://motionarray.com/",
-      logoSrc: "https://ico.cxr.cool/www.motionarray.com.ico",
-      alt: "motion样式",
-      channelAlt: "460积分下载一次",
-      title: "motion样式",
-      tip: "海外站点:motion样式",
-      jifen_tip: "460积分",
-    },
-    {
-      href: "https://www.flaticon.com/",
-      logoSrc: "https://ico.cxr.cool/www.flaticon.com.ico",
-      alt: "flaticon图标",
-      channelAlt: "360积分下载一次",
-      title: "flaticon图标",
-      tip: "海外站点:flaticon图标",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://slidesgo.com/",
-      logoSrc: "https://ico.cxr.cool/www.slidesgo.com.ico",
-      alt: "slidePPT",
-      channelAlt: "360积分下载一次",
-      title: "slidePPT",
-      tip: "海外站点:slidePPT",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.storyblocks.com/",
-      logoSrc: "https://ico.cxr.cool/www.storyblocks.com.ico",
-      alt: "story视频",
-      channelAlt: "360积分下载一次",
-      title: "story视频",
-      tip: "海外站点:story视频",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://pixabay.com/",
-      logoSrc: "https://ico.cxr.cool/www.pixabay.com.ico",
-      alt: "pixabay实拍",
-      channelAlt: "360积分下载一次",
-      title: "pixabay实拍",
-      tip: "海外站点:pixabay实拍",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://iconscout.com/",
-      logoSrc: "https://ico.cxr.cool/www.iconscout.com.ico",
-      alt: "iconsco图标",
-      channelAlt: "360积分下载一次",
-      title: "iconsco图标",
-      tip: "海外站点:iconsco图标",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://unsplash.com/",
-      logoSrc: "https://ico.cxr.cool/www.unsplash.com.ico",
-      alt: "unspla实拍",
-      channelAlt: "360积分下载一次",
-      title: "unspla实拍",
-      tip: "海外站点:unspla实拍",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://pixelbuddha.net/",
-      logoSrc: "https://ico.cxr.cool/www.pixelbuddha.net.ico",
-      alt: "pixel样式",
-      channelAlt: "360积分下载一次",
-      title: "pixel样式",
-      tip: "海外站点:pixel样式",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.brusheezy.com/",
-      logoSrc: "https://ico.cxr.cool/www.brusheezy.com.ico",
-      alt: "brushe效果",
-      channelAlt: "360积分下载一次",
-      title: "brushe效果",
-      tip: "海外站点:brushe效果",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.slidemembers.com/en_US/",
-      logoSrc: "https://ico.cxr.cool/www.slidemembers.com.ico",
-      alt: "slidemembersPPT",
-      channelAlt: "360积分下载一次",
-      title: "slidemembersPPT",
-      tip: "海外站点:slidemembersPPT",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://deeezy.com/",
-      logoSrc: "https://ico.cxr.cool/www.deeezy.com.ico",
-      alt: "deeezy字体",
-      channelAlt: "360积分下载一次",
-      title: "deeezy字体",
-      tip: "海外站点:deeezy字体",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://www.yayimages.com/",
-      logoSrc: "https://ico.cxr.cool/www.yayimages.com.ico",
-      alt: "yay实拍",
-      channelAlt: "360积分下载一次",
-      title: "yay实拍",
-      tip: "海外站点:yay实拍",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://imgbin.com/",
-      logoSrc: "https://ico.cxr.cool/www.imgbin.com.ico",
-      alt: "img免扣",
-      channelAlt: "360积分下载一次",
-      title: "img免扣",
-      tip: "海外站点:img免扣",
-      jifen_tip: "360积分",
-    },
-    {
-      href: "https://dribbble.com/shots",
-      logoSrc: "https://ico.cxr.cool/www.dribbble.com.ico",
-      alt: "dribbble前端",
-      channelAlt: "360积分下载一次",
-      title: "dribbble前端",
-      tip: "海外站点:dribbble前端",
-      jifen_tip: "360积分",
-    },
-  ];
 
   // 状态变量：跟踪Ctrl+V/Cmd+V的使用状态
   let isImageSearchMode = false;
@@ -849,6 +336,41 @@
       img.onerror = () => resolve(false);
       img.src = url;
     });
+  }
+
+  // 加载素材网站列表数据（异步）
+  // 实现CDN加载和缓存机制
+  async function loadMaterialSites() {
+    // 1. 检查缓存
+    const cacheKey = 'materialSitesCache';
+    const cacheExpiryKey = 'materialSitesCacheExpiry';
+    const cachedData = GM_getValue(cacheKey, null);
+    const cacheExpiry = GM_getValue(cacheExpiryKey, 0);
+    const now = Date.now();
+    const cacheDuration = 24 * 60 * 60 * 1000; // 24小时
+    
+    // 2. 缓存有效直接返回
+    if (cachedData && now < cacheExpiry) {
+      debugLog('使用缓存的素材网站数据');
+      return cachedData;
+    }
+    
+    // 3. 缓存失效，从CDN加载
+    try {
+      debugLog('从CDN加载素材网站数据');
+      const response = await fetch('https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts/花瓣去水印/素材网.json');
+      const data = await response.json();
+      
+      // 4. 更新缓存
+      GM_setValue(cacheKey, data);
+      GM_setValue(cacheExpiryKey, now + cacheDuration);
+      debugLog('素材网站数据已缓存');
+      
+      return data;
+    } catch (error) {
+      console.error('加载素材网站列表失败:', error);
+      throw error;
+    }
   }
 
   // 核心URL处理逻辑（同步）
