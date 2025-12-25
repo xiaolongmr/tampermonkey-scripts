@@ -136,7 +136,7 @@
     }
 
     // 如果alt属性无效，返回默认名称
-    return "";
+    return "未命名";
   }
 
   // 检查快捷键是否匹配
@@ -304,18 +304,10 @@
 
   // 判断是否为官方自营素材
   function isOfficialMaterial() {
-    // 从页面元素中检查是否为官方自营素材
     return (
-      // 检查是否有包含"官方自营"文本的元素
       Array.from(document.querySelectorAll(".fgsjNg46")).some(
         (el) => el.textContent && el.textContent.includes("官方自营")
-      ) || 
-      // 检查是否有title="来自官方自营"的元素
-      document.querySelectorAll('[title="来自官方自营"]').length > 0 ||
-      // 检查是否有VIP标识元素
-      document.querySelectorAll('.vip-marker, [data-vip="true"]').length > 0 ||
-      // 检查当前页面是否为素材页面
-      window.location.href.includes('/pages/sucai')
+      ) || document.querySelectorAll('[title="来自官方自营"]').length > 0
     );
   }
 
@@ -617,120 +609,100 @@
     }
   }
 
-  // 创建单个素材网站项
-  function createSiteItem(site) {
-    const siteItem = document.createElement("a");
-    siteItem.href = site.href;
-    siteItem.target = "_blank";
-    siteItem.rel = "noopener noreferrer";
-    siteItem.className = "flex items-center gap-2 p-3 border rounded-md hover:bg-slate-50 transition-colors text-sm";
-
-    // 网站Logo
-    const siteLogo = document.createElement("img");
-    siteLogo.src = site.logoSrc;
-    siteLogo.alt = site.alt;
-    siteLogo.className = "w-6 h-6 object-contain";
-
-    // 网站信息容器
-    const siteInfo = document.createElement("div");
-    siteInfo.className = "flex-1 min-w-0";
-
-    // 网站标题
-    const siteTitle = document.createElement("div");
-    siteTitle.className = "font-medium text-slate-700 truncate";
-    siteTitle.textContent = site.title;
-
-    // 网站描述
-    const siteTip = document.createElement("div");
-    siteTip.className = "text-xs text-slate-500 truncate";
-    siteTip.textContent = site.tip;
-
-    // 积分提示
-    const sitePoints = document.createElement("div");
-    sitePoints.className = "text-xs text-amber-600";
-    sitePoints.textContent = site.jifen_tip;
-
-    // 组装网站信息
-    siteInfo.appendChild(siteTitle);
-    siteInfo.appendChild(siteTip);
-
-    // 组装网站项
-    siteItem.appendChild(siteLogo);
-    siteItem.appendChild(siteInfo);
-    siteItem.appendChild(sitePoints);
-
-    return siteItem;
-  }
-
-  // 创建素材网站列表容器
-  function createMaterialSitesContainer() {
-    const container = document.createElement("div");
-    container.id = "material-sites-container";
-    container.className = "bg-white rounded-lg p-4 mb-4";
-
-    // 创建标题
-    const title = document.createElement("h3");
-    title.className = "text-lg font-medium text-slate-700 mb-3";
-    title.textContent = "素材网站推荐";
-    container.appendChild(title);
-
-    return container;
-  }
-
-  // 添加文案信息
-  function addInfoText(container) {
-    const infoText = document.createElement("div");
-    infoText.className = "mt-4 p-4 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200";
-    infoText.innerHTML = '以上网站使用 <a href="http://121.40.25.9:8080" target="_blank" class="text-blue-500 hover:underline">http://www.sucaifeng.com</a> 网站 购买积分进行下载，你也可以注册一下，邀请码：1474728874 使用邀请码注册，我们都能得到1000积分，就可以给更多朋友下载素材';
-    container.appendChild(infoText);
-  }
-
   // 在素材页面渲染素材网站列表
   async function renderMaterialSitesOnSucaiPage() {
     // 检查当前是否在指定页面
-    if (window.location.href !== "https://huaban.com/pages/sucai") {
-      return;
+    if (window.location.href === "https://huaban.com/pages/sucai") {
+      const layoutContent = document.getElementById("layout-content");
+      if (layoutContent) {
+        // 检查是否已经渲染过，避免重复创建
+        if (document.getElementById("material-sites-container")) {
+          return;
+        }
+
+        // 隐藏原有内容
+        const children = Array.from(layoutContent.children);
+        children.forEach((child) => {
+          child.style.display = "none";
+        });
+
+        // 创建素材网站列表容器
+        const materialSitesContainer = document.createElement("div");
+        materialSitesContainer.id = "material-sites-container";
+        materialSitesContainer.className = "bg-white rounded-lg p-4 mb-4";
+
+        // 创建标题
+        const title = document.createElement("h3");
+        title.className = "text-lg font-medium text-slate-700 mb-3";
+        title.textContent = "素材网站推荐";
+        materialSitesContainer.appendChild(title);
+
+        // 创建列表
+        const sitesList = document.createElement("div");
+        sitesList.className = "grid grid-cols-5 gap-3 overflow-auto";
+
+        // 渲染素材网站列表
+        try {
+          // 从CDN或缓存加载数据
+          const materialSites = await loadMaterialSites();
+          
+          materialSites.forEach((site) => {
+            const siteItem = document.createElement("a");
+            siteItem.href = site.href;
+            siteItem.target = "_blank";
+            siteItem.rel = "noopener noreferrer";
+            siteItem.className =
+              "flex items-center gap-2 p-3 border rounded-md hover:bg-slate-50 transition-colors text-sm";
+
+            const siteLogo = document.createElement("img");
+            siteLogo.src = site.logoSrc;
+            siteLogo.alt = site.alt;
+            siteLogo.className = "w-6 h-6 object-contain";
+
+            const siteInfo = document.createElement("div");
+            siteInfo.className = "flex-1 min-w-0";
+
+            const siteTitle = document.createElement("div");
+            siteTitle.className = "font-medium text-slate-700 truncate";
+            siteTitle.textContent = site.title;
+
+            const siteTip = document.createElement("div");
+            siteTip.className = "text-xs text-slate-500 truncate";
+            siteTip.textContent = site.tip;
+
+            const sitePoints = document.createElement("div");
+            sitePoints.className = "text-xs text-amber-600";
+            sitePoints.textContent = site.jifen_tip;
+
+            siteInfo.appendChild(siteTitle);
+            siteInfo.appendChild(siteTip);
+            siteItem.appendChild(siteLogo);
+            siteItem.appendChild(siteInfo);
+            siteItem.appendChild(sitePoints);
+            sitesList.appendChild(siteItem);
+          });
+        } catch (error) {
+          console.error("渲染素材网站列表失败:", error);
+          sitesList.innerHTML = `<div class="col-span-3 text-center text-slate-500 py-4">无法加载素材网站列表</div>`;
+        }
+
+        materialSitesContainer.appendChild(sitesList);
+
+        // 添加文案信息
+        const infoText = document.createElement("div");
+        infoText.className =
+          "mt-4 p-4 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200";
+        infoText.innerHTML =
+          '以上网站使用 <a href="http://121.40.25.9:8080" target="_blank" class="text-blue-500 hover:underline">http://www.sucaifeng.com</a> 素材下载网站 购买积分进行下载，你也可以自己注册，邀请码：1474728874 使用邀请码注册双方各得1000积分';
+        materialSitesContainer.appendChild(infoText);
+
+        // 将列表添加到页面中
+        layoutContent.insertBefore(
+          materialSitesContainer,
+          layoutContent.firstChild
+        );
+      }
     }
-
-    const layoutContent = document.getElementById("layout-content");
-    if (!layoutContent) {
-      return;
-    }
-
-    // 检查是否已经渲染过，避免重复创建
-    if (document.getElementById("material-sites-container")) {
-      return;
-    }
-
-    // 隐藏原有内容
-    Array.from(layoutContent.children).forEach((child) => {
-      child.style.display = "none";
-    });
-
-    // 创建容器和列表
-    const materialSitesContainer = createMaterialSitesContainer();
-    const sitesList = document.createElement("div");
-    sitesList.className = "grid grid-cols-5 gap-3 overflow-auto";
-
-    // 渲染素材网站列表
-    try {
-      // 从CDN或缓存加载数据
-      const materialSites = await loadMaterialSites();
-      
-      // 创建并添加所有网站项
-      materialSites.forEach((site) => {
-        const siteItem = createSiteItem(site);
-        sitesList.appendChild(siteItem);
-      });
-    } catch (error) {
-      console.error("渲染素材网站列表失败:", error);
-      sitesList.innerHTML = `<div class="col-span-3 text-center text-slate-500 py-4">无法加载素材网站列表</div>`;
-    }
-
-    // 组装并添加到页面
-    materialSitesContainer.appendChild(sitesList);
-    addInfoText(materialSitesContainer);
-    layoutContent.insertBefore(materialSitesContainer, layoutContent.firstChild);
   }
 
   // ==================== 事件监听 ====================
@@ -1054,63 +1026,51 @@
   function interceptDragAndDownload() {
     // 监听拖拽开始事件 - 支持传统拖拽（拖拽到桌面/资源管理器）
     document.addEventListener("dragstart", function (e) {
-      // 确保是图片元素
       const img = e.target;
-      if (img.tagName !== "IMG") {
-        return;
-      }
-      
-      // 只处理花瓣图片
-      if (!img.src.includes("gd-hbimg-edge.huaban.com")) {
-        return;
-      }
+      if (
+        img.tagName === "IMG" &&
+        img.src.includes("gd-hbimg-edge.huaban.com")
+      ) {
+        // 检查是否为需要处理的图片类型
+        if (
+          img.matches(SELECTORS.imageButton.split("[src*")[0]) ||
+          img.closest("#imageViewerWrapper") ||
+          img.matches(SELECTORS.imageViewerSimple) ||
+          // 新增：支持预览图片（a标签内的img标签）
+          (img.closest("a") &&
+            img.closest("a").querySelector('span[style*="display: none"]'))
+        ) {
+          // 检查拖拽下载功能是否启用
+          const config = getConfig();
+          if (!config.enableDragDownload) {
+            debugLog("拖拽下载功能已禁用，跳过处理");
+            return;
+          }
 
-      // 检查拖拽下载功能是否启用
-      const config = getConfig();
-      if (!config.enableDragDownload) {
-        debugLog("拖拽下载功能已禁用，跳过处理");
-        return;
-      }
+          debugLog("检测到图片拖拽开始:", img.src);
 
-      debugLog("检测到图片拖拽开始:", img.src);
+          // 检查是否为官方自营素材
+          const isOfficial = isOfficialMaterial();
+          debugLog("是否为官方自营素材:", isOfficial);
 
-      // 检查是否为官方自营素材
-      const isOfficial = isOfficialMaterial();
-      debugLog("是否为官方自营素材:", isOfficial);
+          // 使用核心同步函数处理URL（不检查有效性）
+          const cleanUrl = extractImageUrlCore(img.src, isOfficial);
+          
+          debugLog("同步处理后的下载URL:", img.src, "→", cleanUrl);
 
-      try {
-        // 处理URL - 优化：直接使用原始URL作为备选
-        let cleanUrl;
-        try {
-          cleanUrl = extractImageUrlCore(img.src, isOfficial);
-          debugLog("处理后的下载URL:", img.src, "→", cleanUrl);
-        } catch (error) {
-          // 如果处理失败，使用原始URL
-          debugLog("URL处理失败，使用原始URL:", error.message);
-          cleanUrl = img.src;
+          // 设置拖拽数据 - 支持传统拖拽到桌面/资源管理器
+          e.dataTransfer.setData("text/uri-list", cleanUrl);
+          e.dataTransfer.setData("text/plain", cleanUrl);
+          
+          // 设置文件名：优先使用alt属性，如果没有则使用URL生成的文件名
+          const fileName = getFileNameFromAlt(img) + ".png";
+          e.dataTransfer.setData(
+            "DownloadURL",
+            `image/png:${fileName}:${cleanUrl}`
+          );
+          
+          debugLog("已设置拖拽数据，文件名将保存为:", fileName);
         }
-
-        // 设置拖拽数据 - 支持多种拖拽场景
-        e.dataTransfer.effectAllowed = "copy";
-        
-        // 设置URI列表（支持大多数文件管理器）
-        e.dataTransfer.setData("text/uri-list", cleanUrl);
-        
-        // 设置纯文本URL（备用）
-        e.dataTransfer.setData("text/plain", cleanUrl);
-        
-        // 设置DownloadURL（支持某些浏览器和工具）
-        const fileName = getFileNameFromAlt(img) + ".png";
-        e.dataTransfer.setData(
-          "DownloadURL",
-          `image/png:${fileName}:${cleanUrl}`
-        );
-        
-        debugLog("已设置拖拽数据，文件名将保存为:", fileName);
-        debugLog("拖拽数据设置完成");
-      } catch (error) {
-        console.error("拖拽处理失败:", error);
-        // 失败时不阻止默认行为，让浏览器使用原始URL
       }
     });
 
@@ -1517,7 +1477,7 @@
       const materialSitesList = document.createElement("div");
       materialSitesList.className = "text-sm text-slate-600 leading-relaxed";
       materialSitesList.innerHTML =
-        "公众号文章开了广告，朋友们有空的话每天可点点广告，收益将用于购买素材解析网站的积分，帮使用脚本的朋友免费下载素材，可下载的素材<a href='https://huaban.com/pages/sucai' target='_blank' class='text-blue-500 hover:underline'>点我进入查看</a>，复制你要下的素材网址，在下方或公众号任意文章下评论，我看到会帮忙下载的，积分用完为止！";
+        "公众号文章开了广告，朋友们有空的话每天可点点广告，收益将用于购买素材解析网站的积分，帮使用脚本的朋友免费下载素材，可下载的素材<a href='https://huaban.com/pages/sucai' target='_blank' class='text-blue-500 hover:underline'>点我进入查看</a>，可在此处留言，看到会帮忙下载的，积分用完为止！";
       materialSitesSection.appendChild(materialSitesTitle);
       materialSitesSection.appendChild(materialSitesList);
 
@@ -1782,29 +1742,37 @@
     switchesSection.appendChild(enableRightClickSection);
 
     const colorSettings = `
-            <!-- 素材背景颜色设置容器 -->
+            <!-- 颜色设置容器 -->
             <div id="colorSettingsContainer" class="mb-3">
             <div class="text-sm font-semibold text-slate-800 mb-2">
-                🎨 背景颜色设置
+                🎨 颜色设置
             </div>
             <div class="grid grid-cols-2 gap-3">
             <!-- 花瓣素材颜色 -->
-            <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
-                <div class="text-xs font-medium text-slate-700">
+            <div class="p-2 bg-slate-50 rounded-lg border border-slate-200">
+                <div class="flex items-center mb-1 text-xs font-medium text-slate-700">
+                    <span class="w-2 h-2 rounded-sm mr-1 border border-slate-200" style="background: ${config.materialColor}"></span>
                     花瓣素材
                 </div>
-                <div class="w-7 h-7 rounded border border-slate-200 cursor-pointer" id="materialPreview" style="background: ${config.materialColor}">
-                    <input type="color" id="materialPicker" value="${config.materialColor}" class="w-full h-full opacity-0 cursor-pointer">
+                <div class="flex items-center gap-1">
+                    <div class="w-7 h-7 rounded border border-slate-200 cursor-pointer" id="materialPreview" style="background: ${config.materialColor}">
+                        <input type="color" id="materialPicker" value="${config.materialColor}" class="w-full h-full opacity-0 cursor-pointer">
+                    </div>
+                    <input type="text" id="materialInput" value="${config.materialColor}" class="flex-1 px-1.5 py-1 border border-slate-200 rounded text-xs text-slate-800">
                 </div>
             </div>
 
             <!-- 用户上传颜色 -->
-            <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg border border-slate-200">
-                <div class="text-xs font-medium text-slate-700">
+            <div class="p-2 bg-slate-50 rounded-lg border border-slate-200">
+                <div class="flex items-center mb-1 text-xs font-medium text-slate-700">
+                    <span class="w-2 h-2 rounded-sm mr-1 border border-slate-200" style="background: ${config.userColor}"></span>
                     用户上传
                 </div>
-                <div class="w-7 h-7 rounded border border-slate-200 cursor-pointer" id="userPreview" style="background: ${config.userColor}">
-                    <input type="color" id="userPicker" value="${config.userColor}" class="w-full h-full opacity-0 cursor-pointer">
+                <div class="flex items-center gap-1">
+                    <div class="w-7 h-7 rounded border border-slate-200 cursor-pointer" id="userPreview" style="background: ${config.userColor}">
+                        <input type="color" id="userPicker" value="${config.userColor}" class="w-full h-full opacity-0 cursor-pointer">
+                    </div>
+                    <input type="text" id="userInput" value="${config.userColor}" class="flex-1 px-1.5 py-1 border border-slate-200 rounded text-xs text-slate-800">
                 </div>
             </div>
             </div>
@@ -2062,8 +2030,9 @@
       )
     );
 
-    // 颜色选择器工厂函数 - 简化版本，只保留拾色器功能
+    // 颜色选择器工厂函数 - 消除重复代码
     const createColorPickerHandler = (
+      inputElement,
       pickerElement,
       previewElement
     ) => {
@@ -2072,177 +2041,140 @@
 
       // 拾色器输入事件
       pickerElement.addEventListener("input", (e) => {
+        inputElement.value = e.target.value;
         previewElement.style.backgroundColor = e.target.value;
+      });
+
+      // 文本输入事件
+      inputElement.addEventListener("input", (e) => {
+        const color = e.target.value;
+        if (isValidColor(color)) {
+          previewElement.style.backgroundColor = color;
+          if (color.startsWith("#")) {
+            pickerElement.value = color;
+          }
+        }
       });
     };
 
     // 绑定材料水印颜色选择器
-    createColorPickerHandler(materialPicker, materialPreview);
+    createColorPickerHandler(materialInput, materialPicker, materialPreview);
 
     // 绑定用户水印颜色选择器
-    createColorPickerHandler(userPicker, userPreview);
+    createColorPickerHandler(userInput, userPicker, userPreview);
 
     // 保存配置
-    // 初始化快捷键设置功能
-    function initHotkeySettings() {
-      // 快捷键配置变量
-      let currentHotkeyInput = null;
-      let currentHotkeyConfig = getHotkeysConfig();
-      let originalHotkeyValue = null;
+    // 快捷键配置变量
+    let currentHotkeyInput = null;
+    let currentHotkeyConfig = null;
 
-      // 默认快捷键配置
-      const defaultHotkeys = {
-        searchFocus: {
-          ctrlCmd: true,
-          shift: false,
-          alt: false,
-          key: "k",
-          description: "定位到搜索框",
-        },
-        imageSearch: {
-          ctrlCmd: true,
-          shift: false,
-          alt: false,
-          key: "v",
-          description: "以图搜索功能",
-        },
-        openSettings: {
-          ctrlCmd: true,
-          shift: false,
-          alt: false,
-          key: ",",
-          description: "打开设置界面",
-        },
-      };
-
-      // 格式化快捷键显示文本
-      const formatHotkeyText = (config) => {
-        return `${config.ctrlCmd ? "Ctrl+" : ""}${
-          config.shift ? "Shift+" : ""
-        }${config.alt ? "Alt+" : ""}${config.key.toUpperCase()}`;
-      };
-
-      // 处理输入框激活
-      const handleInputFocus = (input) => {
+    // 快捷键输入框点击事件
+    const hotkeyInputs = document.querySelectorAll('input[id^="hotkey-"]');
+    hotkeyInputs.forEach((input) => {
+      input.addEventListener("click", () => {
         // 移除其他输入框的激活状态
-        document.querySelectorAll('input[id^="hotkey-"]').forEach((i) => {
-          i.style.borderColor = "#e2e8f0";
-          // 恢复其他输入框的原始值
-          if (i !== input && i.dataset.originalValue) {
-            i.value = i.dataset.originalValue;
-          }
-        });
-
-        // 保存原始值
-        originalHotkeyValue = input.value;
-        input.dataset.originalValue = originalHotkeyValue;
+        hotkeyInputs.forEach((i) => (i.style.borderColor = "#e2e8f0"));
 
         // 设置当前激活的输入框
         currentHotkeyInput = input;
         currentHotkeyInput.style.borderColor = "#ff284b";
         currentHotkeyInput.value = "请按下新的快捷键组合...";
-      };
+      });
+    });
 
-      // 处理输入框失焦
-      const handleInputBlur = (input) => {
-        if (currentHotkeyInput === input) {
-          // 如果没有完成快捷键设置，恢复原始值
-          input.value = input.dataset.originalValue || "";
-          input.style.borderColor = "#e2e8f0";
-          currentHotkeyInput = null;
-          originalHotkeyValue = null;
-        }
-      };
+    // 键盘事件监听（捕获快捷键）
+    document.addEventListener("keydown", (e) => {
+      if (currentHotkeyInput) {
+        e.preventDefault();
 
-      // 处理键盘事件
-      const handleKeydown = (e) => {
-        if (currentHotkeyInput) {
-          e.preventDefault();
+        // 获取按键信息
+        const ctrlCmd = e.ctrlKey || e.metaKey;
+        const shift = e.shiftKey;
+        const alt = e.altKey;
+        const key = e.key.toLowerCase();
 
-          // 获取按键信息
-          const ctrlCmd = e.ctrlKey || e.metaKey;
-          const shift = e.shiftKey;
-          const alt = e.altKey;
-          const key = e.key.toLowerCase();
+        // 只允许字母、数字和部分符号
+        if (key && key.length === 1 && !e.code.includes("F") && key !== " ") {
+          // 更新输入框显示
+          const hotkeyText = `${ctrlCmd ? "Ctrl+" : ""}${
+            shift ? "Shift+" : ""
+          }${alt ? "Alt+" : ""}${key.toUpperCase()}`;
+          currentHotkeyInput.value = hotkeyText;
 
-          // 只允许字母、数字和部分符号
-          if (key && key.length === 1 && !e.code.includes("F") && key !== " ") {
-            // 构建快捷键配置
-            const hotkeyConfig = {
-              ctrlCmd,
-              shift,
-              alt,
-              key,
-              description: currentHotkeyConfig[currentHotkeyInput.dataset.hotkeyId].description,
-            };
-
-            // 更新输入框显示
-            currentHotkeyInput.value = formatHotkeyText(hotkeyConfig);
-
-            // 保存到临时配置
-            currentHotkeyConfig[currentHotkeyInput.dataset.hotkeyId] = hotkeyConfig;
-
-            // 移除激活状态和原始值标记
-            currentHotkeyInput.style.borderColor = "#e2e8f0";
-            delete currentHotkeyInput.dataset.originalValue;
-            currentHotkeyInput = null;
-            originalHotkeyValue = null;
+          // 保存到临时配置
+          const hotkeyId = currentHotkeyInput.dataset.hotkeyId;
+          if (!currentHotkeyConfig) {
+            currentHotkeyConfig = getHotkeysConfig();
           }
-        }
-      };
+          currentHotkeyConfig[hotkeyId] = {
+            ctrlCmd,
+            shift,
+            alt,
+            key,
+            description: currentHotkeyConfig[hotkeyId].description,
+          };
 
-      // 处理重置按钮点击
-      const handleResetClick = (btn) => {
+          // 移除激活状态
+          currentHotkeyInput.style.borderColor = "#e2e8f0";
+          currentHotkeyInput = null;
+        }
+      }
+    });
+
+    // 快捷键重置按钮事件
+    const resetHotkeyBtns = document.querySelectorAll(
+      'button[id^="reset-hotkey-"]'
+    );
+    resetHotkeyBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
         const hotkeyId = btn.id.replace("reset-hotkey-", "");
         const input = document.getElementById(`hotkey-${hotkeyId}`);
 
         // 获取默认配置
+        const defaultHotkeys = {
+          searchFocus: {
+            ctrlCmd: true,
+            shift: false,
+            alt: false,
+            key: "k",
+            description: "定位到搜索框",
+          },
+          imageSearch: {
+            ctrlCmd: true,
+            shift: false,
+            alt: false,
+            key: "v",
+            description: "以图搜索功能",
+          },
+          openSettings: {
+            ctrlCmd: true,
+            shift: false,
+            alt: false,
+            key: ",",
+            description: "打开设置界面",
+          },
+        };
+
+        // 重置配置
         const defaultConfig = defaultHotkeys[hotkeyId];
-        
-        // 更新输入框显示
-        input.value = formatHotkeyText(defaultConfig);
+        input.value = `${defaultConfig.ctrlCmd ? "Ctrl+" : ""}${
+          defaultConfig.shift ? "Shift+" : ""
+        }${defaultConfig.alt ? "Alt+" : ""}${defaultConfig.key.toUpperCase()}`;
 
         // 更新临时配置
-        currentHotkeyConfig[hotkeyId] = defaultConfig;
-      };
-
-      // 保存快捷键配置
-      const saveHotkeyConfig = () => {
-        if (typeof GM_setValue === "function") {
-          GM_setValue("hotkeysConfig", currentHotkeyConfig);
+        if (!currentHotkeyConfig) {
+          currentHotkeyConfig = getHotkeysConfig();
         }
-      };
-
-      // 绑定事件监听器
-      // 输入框点击事件
-      document.querySelectorAll('input[id^="hotkey-"]').forEach((input) => {
-        input.addEventListener("click", () => handleInputFocus(input));
-        input.addEventListener("blur", () => handleInputBlur(input));
+        currentHotkeyConfig[hotkeyId] = defaultConfig;
       });
-
-      // 键盘事件
-      document.addEventListener("keydown", handleKeydown);
-
-      // 重置按钮事件
-      document.querySelectorAll('button[id^="reset-hotkey-"]').forEach((btn) => {
-        btn.addEventListener("click", () => handleResetClick(btn));
-      });
-
-      // 返回保存配置的方法
-      return { saveHotkeyConfig };
-    }
-
-    // 初始化快捷键设置
-    const hotkeyManager = initHotkeySettings();
+    });
 
     saveBtn.addEventListener("click", () => {
-      // 从颜色选择器获取颜色值
-      const materialColor = materialPicker.value;
-      const userColor = userPicker.value;
+      const materialColor = materialInput.value;
+      const userColor = userInput.value;
 
-      // 由于使用了颜色选择器，颜色值一定是有效的HEX格式，所以可以跳过验证
       if (!isValidColor(materialColor) || !isValidColor(userColor)) {
-        alert("请选择有效的颜色");
+        alert("请输入有效的颜色代码（HEX或RGB格式）");
         return;
       }
 
@@ -2258,7 +2190,9 @@
       saveConfig(newConfig);
 
       // 保存快捷键配置
-      hotkeyManager.saveHotkeyConfig();
+      if (typeof GM_setValue === "function") {
+        GM_setValue("hotkeysConfig", currentHotkeyConfig || getHotkeysConfig());
+      }
 
       applyStyles();
 
