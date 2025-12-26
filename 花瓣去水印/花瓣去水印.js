@@ -17,7 +17,7 @@
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
 // @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@8ed09bc4be4797388576008ceadbe0f8258126e5/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
 // @require      https://cdn.tailwindcss.com
-// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@8ed09bc4be4797388576008ceadbe0f8258126e5/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
+// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@09ee56b513ba1a42a4d0257c69a332d0a91aba77/%E7%BD%91%E7%AB%99%E6%B3%A8%E5%86%8C%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%A1%A8%E5%8D%95%E4%BF%A1%E6%81%AF/%E7%BD%91%E7%AB%99%E6%B3%A8%E5%86%8C%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%A1%A8%E5%8D%95%E4%BF%A1%E6%81%AF.js
 // ==/UserScript==
 
 (function () {

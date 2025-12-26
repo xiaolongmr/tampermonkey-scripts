@@ -11,6 +11,7 @@
 // @grant        GM_registerMenuCommand
 // @icon         https://dh.z-l.top/assets/favicon.ico
 // @run-at       document-end
+// @license      MIT
 // ==/UserScript==
 
 (function() {
