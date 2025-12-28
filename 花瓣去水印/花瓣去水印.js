@@ -15,8 +15,8 @@
 // @connect      *
 // @grant        GM_download
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
-// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@8ed09bc4be4797388576008ceadbe0f8258126e5/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
 // @require      https://cdn.tailwindcss.com
+// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@8ed09bc4be4797388576008ceadbe0f8258126e5/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
 // @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@09ee56b513ba1a42a4d0257c69a332d0a91aba77/%E7%BD%91%E7%AB%99%E6%B3%A8%E5%86%8C%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%A1%A8%E5%8D%95%E4%BF%A1%E6%81%AF/%E7%BD%91%E7%AB%99%E6%B3%A8%E5%86%8C%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%A1%A8%E5%8D%95%E4%BF%A1%E6%81%AF.js
 // ==/UserScript==
 
@@ -1219,7 +1219,7 @@
     const container = document.createElement("div");
     container.id = "huabanConfig";
     container.className =
-      "fixed inset-0 bg-black/30 flex items-center justify-center z-[115] backdrop-blur-sm";
+      "fixed inset-0 bg-black/30 flex items-center justify-center z-[999] backdrop-blur-sm";
 
     // 禁止页面滚动
     document.body.style.overflow = "hidden";
@@ -1472,7 +1472,7 @@
         .catch((error) => {
           main.innerHTML =
             '<div class="error-message"><i class="fa fa-exclamation-circle"></i> 获取个人信息失败，请稍后重试</div>';
-          console.error("获取花瓣用户信息失败:", error);
+          console.error("获取花瓣用户信息失败:可能未登录", error);
         });
     }
     // 在主区域渲染致谢名单（iframe）
@@ -1517,7 +1517,7 @@
       const materialSitesList = document.createElement("div");
       materialSitesList.className = "text-sm text-slate-600 leading-relaxed";
       materialSitesList.innerHTML =
-        "公众号文章开了广告，朋友们有空的话每天可点点广告，收益将用于购买素材解析网站的积分，帮使用脚本的朋友免费下载素材，可下载的素材<a href='https://huaban.com/pages/sucai' target='_blank' class='text-blue-500 hover:underline'>点我进入查看</a>，复制你要下的素材网址，在下方或公众号任意文章下评论，我看到会帮忙下载的，积分用完为止！";
+        "公众号文章开了广告，朋友们有空的话每天可点点广告，收益用于购买素材解析网站的积分，帮使用脚本的朋友免费下载素材，可下载的素材<a href='https://huaban.com/pages/sucai' target='_blank' class='text-blue-500 hover:underline'>点我进入查看</a>，复制你要下的素材网址，在下方或公众号任意文章下评论，我看到会帮忙下载的，积分用完为止！";
       materialSitesSection.appendChild(materialSitesTitle);
       materialSitesSection.appendChild(materialSitesList);
 
@@ -1785,7 +1785,7 @@
             <!-- 素材背景颜色设置容器 -->
             <div id="colorSettingsContainer" class="mb-3">
             <div class="text-sm font-semibold text-slate-800 mb-2">
-                🎨 背景颜色设置
+                🎨 背景颜色
             </div>
             <div class="grid grid-cols-2 gap-3">
             <!-- 花瓣素材颜色 -->
@@ -1822,9 +1822,6 @@
                 margin-bottom: 6px;
             ">
                 ⌨️ 快捷键设置
-            </div>
-            <div style="color: #64748b; font-size: 11px; margin-bottom: 10px;">
-                点击输入框后按下新的快捷键组合
             </div>
         </div>`;
 
@@ -2380,7 +2377,7 @@
     const container = document.createElement("div");
     container.id = "huabanUsageGuide";
     container.className =
-      "fixed inset-0 bg-black/30 flex items-center justify-center z-[115] backdrop-blur-sm";
+      "fixed inset-0 bg-black/30 flex items-center justify-center z-[999] backdrop-blur-sm";
 
     // 禁止页面滚动
     document.body.style.overflow = "hidden";
