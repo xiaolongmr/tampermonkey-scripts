@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         花瓣去水印Pro
-// @version      2025-12-25
+// @version      2025-12-30
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：通过ID获取高清预览图地址，直接替换为无水印高清源）更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -12,11 +12,11 @@
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // @grant        GM_xmlhttpRequest
-// @connect      *
+// @connect      gd.huaban.com
 // @grant        GM_download
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
 // @require      https://cdn.tailwindcss.com
-// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@8ed09bc4be4797388576008ceadbe0f8258126e5/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
+// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@10eb70fd822165082ce79edf445d7a90d48ade26/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0Pro%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
 // @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@09ee56b513ba1a42a4d0257c69a332d0a91aba77/%E7%BD%91%E7%AB%99%E6%B3%A8%E5%86%8C%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%A1%A8%E5%8D%95%E4%BF%A1%E6%81%AF/%E7%BD%91%E7%AB%99%E6%B3%A8%E5%86%8C%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%A1%A8%E5%8D%95%E4%BF%A1%E6%81%AF.js
 // ==/UserScript==
 
@@ -86,10 +86,6 @@
 
   // ==================== 工具函数 ====================
 
-  function debugLog() {
-    /* no-op */
-  }
-
   // 获取脚本版本号
   const getScriptVersion = () => {
     try {
@@ -99,7 +95,7 @@
     }
   };
 
-  // 调试日志函数
+  // 调试日志函数（空实现，避免生产环境输出）
   function debugLog() {
     /* no-op */
   }
@@ -353,8 +349,8 @@
           if (scriptMatch) {
             try {
               const ssrData = JSON.parse(scriptMatch[1]);
-              if (ssrData?.preview?.image_url) {
-                const hdUrl = ssrData.preview.image_url;
+              if (ssrData?.preview?.url) {
+                const hdUrl = ssrData.preview.url;
                 hdUrlCache.set(pinId, hdUrl);
                 console.log(`[花瓣脚本] ID ${pinId} 高清源已获取`);
                 executeReplacement(hdUrl); // 立即尝试替换
@@ -516,18 +512,22 @@
 
   // 获取VIP素材的高清图URL
   async function getHDImageUrl(img) {
-    // 从img的父容器中找到data-material-id的值作为pin ID
-    let pinId = null;
-    let parent = img.parentElement;
-    while (parent) {
-      if (parent.hasAttribute('data-material-id')) {
-        pinId = parent.getAttribute('data-material-id');
-        break;
+    // 优先检查图片元素本身是否有data-material-id属性
+    let pinId = img.getAttribute('data-material-id');
+
+    // 如果图片元素本身没有，则从父容器中查找
+    if (!pinId) {
+      let parent = img.parentElement;
+      while (parent) {
+        if (parent.hasAttribute('data-material-id')) {
+          pinId = parent.getAttribute('data-material-id');
+          break;
+        }
+        if (parent.classList.contains('brick') || parent.tagName === 'BODY') {
+          break;
+        }
+        parent = parent.parentElement;
       }
-      if (parent.classList.contains('brick') || parent.tagName === 'BODY') {
-        break;
-      }
-      parent = parent.parentElement;
     }
 
     if (!pinId) {
@@ -552,8 +552,8 @@
           if (scriptMatch) {
             try {
               const ssrData = JSON.parse(scriptMatch[1]);
-              if (ssrData?.preview?.image_url) {
-                const hdUrl = ssrData.preview.image_url;
+              if (ssrData?.preview?.url) {
+                const hdUrl = ssrData.preview.url;
                 hdUrlCache.set(pinId, hdUrl);
                 console.log(`[花瓣脚本] ID ${pinId} 高清源已获取: ${hdUrl}`);
                 resolve(hdUrl);
@@ -1122,9 +1122,114 @@
     }, 2000);
   }
 
-  // ==================== 工具函数 ====================
+  // ==================== 页面元素处理 ====================
 
-  // 获取下载文件名
+  // 加载素材网站列表数据（异步）
+  // 实现CDN加载和缓存机制
+  async function loadMaterialSites() {
+    // 1. 检查缓存
+    const cacheKey = 'materialSitesCache';
+    const cacheExpiryKey = 'materialSitesCacheExpiry';
+    const cachedData = GM_getValue(cacheKey, null);
+    const cacheExpiry = GM_getValue(cacheExpiryKey, 0);
+    const now = Date.now();
+    const cacheDuration = 24 * 60 * 60 * 1000; // 24小时
+    
+    // 2. 缓存有效直接返回
+    if (cachedData && now < cacheExpiry) {
+      debugLog('使用缓存的素材网站数据');
+      return cachedData;
+    }
+    
+    // 3. 缓存失效，从CDN加载
+    try {
+      debugLog('从CDN加载素材网站数据');
+      const response = await fetch('https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts/花瓣去水印/素材网.json');
+      const data = await response.json();
+      
+      // 4. 更新缓存
+      GM_setValue(cacheKey, data);
+      GM_setValue(cacheExpiryKey, now + cacheDuration);
+      debugLog('素材网站数据已缓存');
+      
+      return data;
+    } catch (error) {
+      console.error('加载素材网站列表失败:', error);
+      throw error;
+    }
+  }
+
+  // 创建单个素材网站项
+  function createSiteItem(site) {
+    const siteItem = document.createElement("a");
+    siteItem.href = site.href;
+    siteItem.target = "_blank";
+    siteItem.rel = "noopener noreferrer";
+    siteItem.className = "flex items-center gap-2 p-3 border rounded-md hover:bg-slate-50 transition-colors text-sm";
+
+    // 网站Logo
+    const siteLogo = document.createElement("img");
+    siteLogo.src = site.logoSrc;
+    siteLogo.alt = site.alt;
+    siteLogo.className = "w-6 h-6 object-contain";
+
+    // 网站信息容器
+    const siteInfo = document.createElement("div");
+    siteInfo.className = "flex-1 min-w-0";
+
+    // 网站标题
+    const siteTitle = document.createElement("div");
+    siteTitle.className = "font-medium text-slate-700 truncate";
+    siteTitle.textContent = site.title;
+
+    // 网站描述
+    const siteTip = document.createElement("div");
+    siteTip.className = "text-xs text-slate-500 truncate";
+    siteTip.textContent = site.tip;
+
+    // 积分提示
+    const sitePoints = document.createElement("div");
+    sitePoints.className = "text-xs text-amber-600";
+    sitePoints.textContent = site.jifen_tip;
+
+    // 组装网站信息
+    siteInfo.appendChild(siteTitle);
+    siteInfo.appendChild(siteTip);
+
+    // 组装网站项
+    siteItem.appendChild(siteLogo);
+    siteItem.appendChild(siteInfo);
+    siteItem.appendChild(sitePoints);
+
+    return siteItem;
+  }
+
+  // 创建素材网站列表容器
+  function createMaterialSitesContainer() {
+    const container = document.createElement("div");
+    container.id = "material-sites-container";
+    container.className = "bg-white rounded-lg p-4 mb-4";
+
+    // 创建标题
+    const title = document.createElement("h3");
+    title.className = "text-lg font-medium text-slate-700 mb-3";
+    title.textContent = "素材网站推荐";
+    container.appendChild(title);
+
+    return container;
+  }
+
+  // 添加文案信息
+  function addInfoText(container) {
+    const infoText = document.createElement("div");
+    infoText.className = "mt-4 p-4 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200";
+    infoText.innerHTML = '以上网站使用 <a href="http://121.40.25.9:8080" target="_blank" class="text-blue-500 hover:underline">http://www.sucaifeng.com</a> 网站 购买积分进行下载，你也可以注册一下，邀请码：1474728874 使用邀请码注册，我们都能得到1000积分，就可以给更多朋友下载素材';
+    container.appendChild(infoText);
+  }
+
+
+
+  // ==================== 工具函数 ====================
   function getDownloadName(pinId, url) {
     const extension = url.split('.').pop().split('?')[0] || 'jpg';
     const timestamp = Date.now();
@@ -1151,8 +1256,8 @@
         if (scriptMatch) {
           try {
             const ssrData = JSON.parse(scriptMatch[1]);
-            if (ssrData?.preview?.image_url) {
-              const hdUrl = ssrData.preview.image_url;
+            if (ssrData?.preview?.url) {
+              const hdUrl = ssrData.preview.url;
               hdUrlCache.set(pinId, hdUrl);
               console.log(`[花瓣脚本] ID ${pinId} 高清源已获取`);
             }
@@ -1961,10 +2066,8 @@
 
     const materialPreview = document.getElementById("materialPreview");
     const materialPicker = document.getElementById("materialPicker");
-    const materialInput = document.getElementById("materialInput");
     const userPreview = document.getElementById("userPreview");
     const userPicker = document.getElementById("userPicker");
-    const userInput = document.getElementById("userInput");
     const saveBtn = document.getElementById("saveBtn");
     const resetBtn = document.getElementById("resetBtn");
 
@@ -2075,6 +2178,173 @@
       }
     });
 
+    // 初始化快捷键设置功能
+    function initHotkeySettings() {
+      // 快捷键配置变量
+      let currentHotkeyInput = null;
+      let currentHotkeyConfig = getHotkeysConfig();
+      let originalHotkeyValue = null;
+
+      // 默认快捷键配置
+      const defaultHotkeys = {
+        searchFocus: {
+          ctrlCmd: true,
+          shift: false,
+          alt: false,
+          key: "k",
+          description: "定位到搜索框",
+        },
+        imageSearch: {
+          ctrlCmd: true,
+          shift: false,
+          alt: false,
+          key: "v",
+          description: "以图搜索功能",
+        },
+        openSettings: {
+          ctrlCmd: true,
+          shift: false,
+          alt: false,
+          key: ",",
+          description: "打开设置界面",
+        },
+      };
+
+      // 格式化快捷键显示文本
+      const formatHotkeyText = (config) => {
+        return `${config.ctrlCmd ? "Ctrl+" : ""}${
+          config.shift ? "Shift+" : ""
+        }${config.alt ? "Alt+" : ""}${config.key.toUpperCase()}`;
+      };
+
+      // 处理输入框激活
+      const handleInputFocus = (input) => {
+        // 移除其他输入框的激活状态
+        document.querySelectorAll('input[id^="hotkey-"]').forEach((i) => {
+          i.style.borderColor = "#e2e8f0";
+          // 恢复其他输入框的原始值
+          if (i !== input && i.dataset.originalValue) {
+            i.value = i.dataset.originalValue;
+          }
+        });
+
+        // 保存原始值
+        originalHotkeyValue = input.value;
+        input.dataset.originalValue = originalHotkeyValue;
+
+        // 设置当前激活的输入框
+        currentHotkeyInput = input;
+        currentHotkeyInput.style.borderColor = "#ff284b";
+        currentHotkeyInput.value = "请按下新的快捷键组合...";
+      };
+
+      // 处理输入框失焦
+      const handleInputBlur = (input) => {
+        if (currentHotkeyInput === input) {
+          // 如果没有完成快捷键设置，恢复原始值
+          input.value = input.dataset.originalValue || "";
+          input.style.borderColor = "#e2e8f0";
+          currentHotkeyInput = null;
+          originalHotkeyValue = null;
+        }
+      };
+
+      // 处理键盘事件
+      const handleKeydown = (e) => {
+        if (currentHotkeyInput) {
+          e.preventDefault();
+
+          // 获取按键信息
+          const ctrlCmd = e.ctrlKey || e.metaKey;
+          const shift = e.shiftKey;
+          const alt = e.altKey;
+          const key = e.key.toLowerCase();
+
+          // 只允许字母、数字和部分符号
+          if (key && key.length === 1 && !e.code.includes("F") && key !== " ") {
+            // 构建快捷键配置
+            const hotkeyConfig = {
+              ctrlCmd,
+              shift,
+              alt,
+              key,
+              description: currentHotkeyConfig[currentHotkeyInput.dataset.hotkeyId].description,
+            };
+
+            // 更新输入框显示
+            currentHotkeyInput.value = formatHotkeyText(hotkeyConfig);
+
+            // 保存到临时配置
+            currentHotkeyConfig[currentHotkeyInput.dataset.hotkeyId] = hotkeyConfig;
+
+            // 移除激活状态和原始值标记
+            currentHotkeyInput.style.borderColor = "#e2e8f0";
+            delete currentHotkeyInput.dataset.originalValue;
+            currentHotkeyInput = null;
+            originalHotkeyValue = null;
+          }
+        }
+      };
+
+      // 处理重置按钮点击
+      const handleResetClick = (btn) => {
+        const hotkeyId = btn.id.replace("reset-hotkey-", "");
+        const input = document.getElementById(`hotkey-${hotkeyId}`);
+
+        // 获取默认配置
+        const defaultConfig = defaultHotkeys[hotkeyId];
+
+        // 更新输入框显示
+        input.value = formatHotkeyText(defaultConfig);
+
+        // 更新临时配置
+        currentHotkeyConfig[hotkeyId] = defaultConfig;
+      };
+
+      // 保存快捷键配置
+      const saveHotkeyConfig = () => {
+        if (typeof GM_setValue === "function") {
+          GM_setValue("hotkeysConfig", currentHotkeyConfig);
+        }
+      };
+
+      // 重置快捷键配置
+      const resetHotkeyConfig = () => {
+        // 重置为默认配置
+        currentHotkeyConfig = { ...defaultHotkeys };
+        // 更新所有输入框显示
+        Object.keys(defaultHotkeys).forEach((hotkeyId) => {
+          const input = document.getElementById(`hotkey-${hotkeyId}`);
+          if (input) {
+            input.value = formatHotkeyText(defaultHotkeys[hotkeyId]);
+          }
+        });
+        // 保存重置后的配置
+        saveHotkeyConfig();
+      };
+
+      // 绑定事件监听器
+      // 输入框点击事件
+      document.querySelectorAll('input[id^="hotkey-"]').forEach((input) => {
+        input.addEventListener("click", () => handleInputFocus(input));
+        input.addEventListener("blur", () => handleInputBlur(input));
+      });
+
+      // 键盘事件
+      document.addEventListener("keydown", handleKeydown);
+
+      // 重置按钮事件
+      document.querySelectorAll('button[id^="reset-hotkey-"]').forEach((btn) => {
+        btn.addEventListener("click", () => handleResetClick(btn));
+      });
+
+      // 返回保存和重置配置的方法
+      return { saveHotkeyConfig, resetHotkeyConfig };
+    }
+
+    // 初始化快捷键设置
+    const hotkeyManager = initHotkeySettings();
+
     // 保存设置
     saveBtn.addEventListener("click", () => {
       const newConfig = {
@@ -2097,6 +2367,9 @@
         saveBtn.textContent = "保存设置";
         saveBtn.style.background = "#ff284b";
       }, 1000);
+
+      // 保存快捷键配置
+      hotkeyManager.saveHotkeyConfig();
 
       // 如果去水印功能被启用，立即执行处理
       if (newConfig.enableRemoveWatermark) {
@@ -2126,13 +2399,16 @@
       handleRightClickSwitch.call(enableRightClickSwitch);
       handleMouseenterSwitch.call(enableMouseenterSwitch);
 
-      // 重置快捷键
-      hotkeyItems.forEach((item) => {
-        const input = document.getElementById(`hotkey-${item.id}`);
-        if (input) {
-          input.value = `Ctrl+${item.defaultKey.toUpperCase()}`;
-        }
-      });
+      // 重置快捷键配置
+      hotkeyManager.resetHotkeyConfig();
+
+      // 显示重置成功反馈
+      resetBtn.textContent = "已重置";
+      resetBtn.style.background = "#10b981";
+      setTimeout(() => {
+        resetBtn.textContent = "恢复默认";
+        resetBtn.style.background = "#f8fafc";
+      }, 1000);
     });
 
     // 关闭面板
@@ -2190,6 +2466,25 @@
     // 在素材页面渲染网站列表
     renderMaterialSitesOnSucaiPage();
 
+    // 使用MutationObserver监听DOM变化，确保元素出现后立即渲染
+    const materialSitesObserver = new MutationObserver(() => {
+      if (window.location.href === "https://huaban.com/pages/sucai") {
+        const layoutContent = document.getElementById("layout-content");
+        if (layoutContent) {
+          // 检查容器是否存在，如果不存在则渲染
+          if (!document.getElementById("material-sites-container")) {
+            renderMaterialSitesOnSucaiPage();
+          }
+        }
+      }
+    });
+
+    // 观察body的子元素变化，持续监听
+    materialSitesObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
     // 监听 DOM 变化：处理异步加载的 ID 和图片容器
     const observer = new MutationObserver(() => {
       preloadHD();
@@ -2201,13 +2496,13 @@
       subtree: true
     });
 
-    // 针对 URL 变化（带参数跳转）的额外轮询 - 更频繁检查
+    // 针对 URL 变化（带参数跳转）的额外轮询 - 降低频率以优化性能
     setInterval(() => {
       const config = getConfig();
       if (config.enableRemoveWatermark) {
         checkState();
       }
-    }, 200); // 从500ms改为200ms，更频繁检查
+    }, 500); // 从200ms改为500ms，降低频率
 
     // 检查快捷键是否匹配
     const isHotkeyMatch = (e, hotkeyConfig) => {
@@ -2305,13 +2600,13 @@
       }, 500); // 延迟一点时间，确保页面完全渲染
     });
 
-    // 定期检查（作为最后的保障）- 更频繁并检查开关
+    // 定期检查（作为最后的保障）- 降低频率以优化性能
     setInterval(() => {
       const config = getConfig();
       if (config.enableRemoveWatermark) {
         processWatermark();
       }
-    }, 1000); // 从2000ms改为1000ms，更频繁检查
+    }, 2000); // 从1000ms改为2000ms，降低频率
 
     // 使用动态版本号输出日志（样式化控制台信息）
     (function () {

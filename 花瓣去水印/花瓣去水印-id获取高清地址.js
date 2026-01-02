@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         测试版
+// @name         花瓣去水印-id获取高清地址
 // @namespace    http://tampermonkey.net/
-// @version      2025-12-24
+// @version      2026-1-02
 // @description  同时替换主展示区和弹出层(vYzIMzy2)的图片为高清源
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -16,101 +16,152 @@
 (function() {
     'use strict';
 
-    let hdUrlCache = new Map(); // 存储 ID 对应的高清 URL
+    // 缓存高清URL和尺寸信息，避免重复请求
+    const hdUrlCache = new Map();
 
-    // --- 逻辑 1：提取 ID 并预读取高清地址 ---
-    function preloadHD() {
-        const sourceDiv = document.querySelector('.__2p__B98x, .AGmy_6yA'); //ID选择器 .__2p__B98x是老版本花瓣网的，.AGmy_6yA是新版本花瓣网
+    // 处理页面更新：提取ID，请求或替换高清图片
+    function handleUpdate() {
+        // 查找包含ID的元素（支持新旧版本选择器）
+        // .__2p__B98x: 老版本花瓣网的ID显示元素
+        // .AGmy_6yA: 新版本花瓣网的ID显示元素
+        const sourceDiv = document.querySelector('.__2p__B98x, .AGmy_6yA');
         if (!sourceDiv) return;
 
+        // 提取ID
         const match = sourceDiv.innerText.match(/ID[:：]\s*(\d+)/i);
-        if (match && match[1]) {
-            const pinId = match[1];
-            if (hdUrlCache.has(pinId)) return;
+        if (!match) return;
 
-            hdUrlCache.set(pinId, "loading");
+        const id = match[1];
+        const cachedData = hdUrlCache.get(id);
 
-            GM_xmlhttpRequest({
-                method: "GET",
-                url: `https://gd.huaban.com/editor/design?id=${pinId}`,
-                onload: (res) => {
-                    const scriptMatch = res.responseText.match(/window\.__SSR_TEMPLATE\s*=\s*(\{[\s\S]*?\})(?:;|\s*<\/script>)/);
-                    if (scriptMatch) {
-                        try {
-                            const ssrData = JSON.parse(scriptMatch[1]);
-                            if (ssrData?.preview?.image_url) {
-                                const hdUrl = ssrData.preview.image_url;
-                                hdUrlCache.set(pinId, hdUrl);
-                                console.log(`[花瓣脚本] ID ${pinId} 高清源已获取`);
-                                executeReplacement(hdUrl); // 立即尝试替换
-                            }
-                        } catch(e) { console.error("解析JSON失败"); }
-                    }
+        // 如果正在加载或已有缓存，直接返回或替换
+        if (cachedData === "loading") return;
+        if (cachedData) {
+            executeReplacement(cachedData.url, cachedData.width, cachedData.height, cachedData.dpi);
+            return;
+        }
+
+        // 标记为加载中
+        hdUrlCache.set(id, "loading");
+
+        // 请求高清图片数据
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: `https://gd.huaban.com/editor/design?id=${id}`,
+            onload: (res) => {
+                // 解析响应中的JSON数据
+                const scriptMatch = res.responseText.match(/window\.__SSR_TEMPLATE\s*=\s*(\{[\s\S]*?\})(?:;|\s*<\/script>)/);
+                if (scriptMatch) {
+                    try {
+                        const ssrData = JSON.parse(scriptMatch[1]);
+                        if (ssrData?.preview?.url) {
+                            const hdUrl = ssrData.preview.url;
+                            const width = ssrData.preview.width || 0;
+                            const height = ssrData.preview.height || 0;
+                            const dpi = ssrData.dpi || 0;
+                            const cachedData = { url: hdUrl, width: width, height: height, dpi: dpi };
+                            hdUrlCache.set(id, cachedData);
+                            console.log(`ID: ${id}\nUrl: ${hdUrl}\n尺寸: ${width} x ${height} @ ${dpi}dpi`);
+                            executeReplacement(hdUrl, width, height, dpi);
+                        }
+                    } catch (e) {}
                 }
-            });
-        }
-    }
-
-    // --- 逻辑 2：执行 DOM 替换 ---
-    function executeReplacement(url) {
-        // 目标容器 1: 原始主展示区
-        const container1 = document.querySelector('.OPWXbLYw , .Wa6mMsQV'); //图片详情选择器 .OPWXbLYw是老版本花瓣网，.Wa6mMsQV是新版本花瓣网
-        // 目标容器 2: 新发现的弹出层/容器
-        const container2 = document.querySelector('.vYzIMzy2 , .VFtkdxbR'); //图片详情弹出层选择器class
-
-        const targets = [];
-        if (container1) targets.push(container1.querySelector('img'));
-        if (container2) {
-            // 如果 vYzIMzy2 本身就是 img，直接添加；如果是 div，找内部 img
-            if (container2.tagName === 'IMG') targets.push(container2);
-            else targets.push(container2.querySelector('img'));
-        }
-
-        targets.forEach(img => {
-            if (img && img.src !== url) {
-                img.src = url;
-                // 核心：移除 srcset，防止浏览器根据分辨率自动切回压缩图
-                img.removeAttribute('srcset');
-                // 视觉反馈：绿色边框表示已成功替换
-                img.style.border = '1px solid #00FF00';
-                img.style.boxSizing = 'border-box';
-                console.log('[花瓣脚本] 成功替换图片');
             }
         });
     }
 
-    // --- 逻辑 3：状态检查循环 ---
-    function checkState() {
-        const sourceDiv = document.querySelector('.__2p__B98x, .AGmy_6yA');
-        if (!sourceDiv) return;
+    // 替换图片并显示加载指示器和尺寸信息
+    function executeReplacement(url, width, height, dpi) {
+        // 目标图片选择器（主展示区和弹出层）
+        // .OPWXbLYw img: 老版本花瓣网主展示区图片
+        // .Wa6mMsQV img: 新版本花瓣网主展示区图片
+        // .vYzIMzy2 img: 弹出层图片（可能为老版本）
+        // .VFtkdxbR img: 弹出层图片（可能为新版本）
+        const selectors = ['.OPWXbLYw img', '.Wa6mMsQV img', '.vYzIMzy2 img', '.VFtkdxbR img'];
+        const targets = selectors.map(sel => document.querySelector(sel)).filter(img => img && img.src !== url);
 
-        const match = sourceDiv.innerText.match(/ID[:：]\s*(\d+)/i);
-        if (match) {
-            const currentId = match[1];
-            const cachedUrl = hdUrlCache.get(currentId);
+        targets.forEach(img => {
+            const parent = img.parentElement;
+            // 避免重复添加覆盖层
+            if (parent.querySelector('.loading-overlay')) return;
 
-            // 如果已经有缓存好的高清图，检查页面是否需要更新
-            if (cachedUrl && cachedUrl !== "loading") {
-                executeReplacement(cachedUrl);
-            }
-        }
+            // 创建加载覆盖层
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.textContent = '正在加载高清图片...';
+            Object.assign(overlay.style, {
+                position: 'absolute',
+                top: '0',
+                left: '0',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                zIndex: '9999',
+                pointerEvents: 'none'
+            });
+
+            // 确保父元素相对定位
+            if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+            parent.appendChild(overlay);
+
+            // 图片加载完成后移除覆盖层并显示尺寸信息
+            img.onload = () => {
+                overlay.remove();
+                // 显示尺寸信息覆盖层
+                if (width > 0 && height > 0) {
+                    showSizeInfo(parent, width, height, dpi);
+                }
+            };
+            img.onerror = () => {
+                overlay.remove();
+                console.log('高清图片加载失败');
+            };
+            // 设置高清URL并移除srcset
+            img.src = url;
+            img.removeAttribute('srcset');
+            img.style.boxSizing = 'border-box';
+        });
     }
 
-    // --- 监听与启动 ---
+    // 显示尺寸信息的覆盖层
+    function showSizeInfo(parent, width, height, dpi) {
+        // 移除已有的尺寸信息覆盖层
+        const existingSizeInfo = parent.querySelector('.size-info-overlay');
+        if (existingSizeInfo) {
+            existingSizeInfo.remove();
+        }
 
-    // 监听 DOM 变化：处理异步加载的 ID 和图片容器
-    const observer = new MutationObserver(() => {
-        preloadHD();
-        checkState();
-    });
+        // 创建尺寸信息覆盖层
+        const sizeOverlay = document.createElement('div');
+        sizeOverlay.className = 'size-info-overlay';
+        // 格式化显示文本，包含DPI信息
+        const displayText = dpi > 0 ? `${width} 像素 x ${height} 像素 (${dpi} dpi)` : `${width} 像素 x ${height} 像素`;
+        sizeOverlay.textContent = displayText;
+        Object.assign(sizeOverlay.style, {
+            position: 'absolute',
+            bottom: '0px',
+            left: '0px',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '6px 12px',
+            zIndex: '9998',
+        });
 
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+        parent.appendChild(sizeOverlay);
+    }
 
-    // 针对 URL 变化（带参数跳转）的额外轮询
-    setInterval(checkState, 500);
+    // 监听DOM变化，处理异步加载内容
+    const observer = new MutationObserver(handleUpdate);
+    observer.observe(document.body, { childList: true, subtree: true });
 
-    console.log('[花瓣脚本] 双容器强力替换模式已启动');
+    // 定期检查更新（处理URL变化等情况）
+    setInterval(handleUpdate, 1000);
+
+    console.log('✅脚本已运行_双容器替换模式已启动');
 })();
