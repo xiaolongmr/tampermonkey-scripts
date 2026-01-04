@@ -28,7 +28,7 @@
   // 时间配置（毫秒）
   const TIMING = {
     debounceWatermark: 200, // 去水印操作的防抖延迟
-    watermarkCheckInterval: 2000, // 水印检测间隔
+    watermarkCheckInterval: 500, // 水印检测间隔
     minProcessInterval: 500, // 最小处理间隔
     switchTransition: 1000, // 开关状态变化反馈时长
   };
@@ -2496,13 +2496,13 @@
       subtree: true
     });
 
-    // 针对 URL 变化（带参数跳转）的额外轮询 - 降低频率以优化性能
+    // 针对 URL 变化（带参数跳转）的额外轮询 - 更频繁检查
     setInterval(() => {
       const config = getConfig();
       if (config.enableRemoveWatermark) {
         checkState();
       }
-    }, 500); // 从200ms改为500ms，降低频率
+    }, 200); // 从500ms改为200ms，更频繁检查
 
     // 检查快捷键是否匹配
     const isHotkeyMatch = (e, hotkeyConfig) => {
@@ -2600,13 +2600,13 @@
       }, 500); // 延迟一点时间，确保页面完全渲染
     });
 
-    // 定期检查（作为最后的保障）- 降低频率以优化性能
+    // 定期检查（作为最后的保障）- 更频繁并检查开关
     setInterval(() => {
       const config = getConfig();
       if (config.enableRemoveWatermark) {
         processWatermark();
       }
-    }, 2000); // 从1000ms改为2000ms，降低频率
+    }, 500); // 500ms，更频繁检查
 
     // 使用动态版本号输出日志（样式化控制台信息）
     (function () {
