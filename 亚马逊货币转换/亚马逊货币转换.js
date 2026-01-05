@@ -249,7 +249,7 @@
                 <div class="w-full box-border mb-8 px-2">
                     <!-- 输入行 -->
                     <div class="flex items-baseline w-full mb-1">
-                        <input id="ios-in" type="number" value="100" class="flex-1 bg-transparent text-4xl font-bold text-black outline-none placeholder-gray-300 text-left !p-0 m-0 !border-none w-full" placeholder="0">
+                        <input id="ios-in" type="number" value="1" class="flex-1 bg-transparent text-4xl font-bold text-black outline-none placeholder-gray-300 text-left !p-0 m-0 !border-none w-full" placeholder="0">
                         <span class="text-xl font-bold text-gray-400 ml-2 whitespace-nowrap">${getUnit(state.pageBase)}</span>
                     </div>
 
