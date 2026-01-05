@@ -187,6 +187,18 @@
             aiButton.style.top = (8 + buttonIndex * 40) + 'px';
             parent.appendChild(aiButton);
             buttonIndex++;
+        } else if (type === 'element' && fileFormat === 'svg') {
+            // SVG元素素材：额外显示下载SVG按钮（与AI共用下载逻辑）
+            const svgButton = createSingleButton('下载 SVG', contentUrl, imgElement, 'svg', title);
+            svgButton.style.top = (8 + buttonIndex * 40) + 'px';
+            parent.appendChild(svgButton);
+            buttonIndex++;
+        } else if (type === 'element' && fileFormat === 'ai') {
+            // AI元素素材：额外显示下载AI按钮（与AI共用下载逻辑）
+            const aiButton = createSingleButton('下载 AI', contentUrl, imgElement, 'ai', title);
+            aiButton.style.top = (8 + buttonIndex * 40) + 'px';
+            parent.appendChild(aiButton);
+            buttonIndex++;
         } else if (type === 'movie' && fileFormat === 'zip') {
             // 视频素材：额外显示下载ZIP、MP3、MP4按钮
             const zipButton = createSingleButton('下载 ZIP', contentUrl, imgElement, 'zip', title);
@@ -217,7 +229,7 @@
         downloadBtn.textContent = text;
         
         // 判断是否为待实现的功能
-        const isImplemented = downloadType === 'image' || downloadType === 'zip' || downloadType === 'eps' || downloadType === 'ai';
+        const isImplemented = downloadType === 'image' || downloadType === 'zip' || downloadType === 'eps' || downloadType === 'ai' || downloadType === 'svg';
         
         // 统一的按钮样式
         const btnStyle = {
@@ -268,6 +280,11 @@
                     }
                     break;
                 case 'ai':
+                    if (url) {
+                        downloadAiFile(url, imgElement, title);
+                    }
+                    break;
+                case 'svg':
                     if (url) {
                         downloadAiFile(url, imgElement, title);
                     }
