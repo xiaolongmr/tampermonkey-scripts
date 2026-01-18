@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         花瓣“去”水印临时脚本更新提示脚本
 // @namespace    https://getquicker.net/User/Actions/388875-星河城野❤
-// @version      2025-12-30
+// @version      2026-1-18
 // @description  此脚本不应直接安装。它是供其他脚本使用的外部库，要使用该库请加入元指令 // @require https://update.greasyfork.org/scripts/558885/1713317/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js  或国内地址 https://update.gf.qytechs.cn/scripts/558885/1713317/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
 // @author       小张
 // @license      GPL-3.0
 // @match        https://huaban.com/*
 // @icon         https://dh.z-l.top/assets/favicon.ico
-// @grant        none
+// @grant        GM_info
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 (function () {
