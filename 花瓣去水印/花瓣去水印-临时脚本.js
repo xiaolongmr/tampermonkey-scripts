@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         花瓣去水印-id获取高清地址
+// @name         临时脚本
 // @namespace    http://tampermonkey.net/
-// @version      2026-1-05
-// @description  同时替换主展示区和弹出层(vYzIMzy2)的图片为高清源
+// @version      2026-1-18
+// @description  临时脚本，只能替换无水印图片，如需其他功能请添加老脚本使用
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
 // @match        https://huaban.com/*
@@ -15,16 +15,25 @@
 
 (function() {
     'use strict';
-
+    // 脚本通过id获取高清地址
     // 缓存高清URL，避免重复请求
     const hdUrlCache = new Map();
+
+    // 目标图片/视频选择器（主展示区和弹出层）
+    // .OPWXbLYw img: 老版本花瓣网主展示区图片
+    // .Wa6mMsQV img: 新版本花瓣网主展示区图片
+    // .vYzIMzy2 img: 老版本弹出层图片
+    // .VFtkdxbR img: 新版本弹出层图片
+    // .ujZSLFrU video: 新版本花瓣网主展示区视频
+    // .PBVOckbr img: 新版本花瓣网主展示区图片 2026.1.18
+    const TARGET_SELECTORS = ['.OPWXbLYw img', '.Wa6mMsQV img', '.vYzIMzy2 img', '.VFtkdxbR img', '.ujZSLFrU video', '.PBVOckbr img'];
 
     // 处理页面更新：提取ID，请求或替换高清图片
     function handleUpdate() {
         // 查找包含ID的元素（支持新旧版本选择器）
         // .__2p__B98x: 老版本花瓣网的ID显示元素
-        // .AGmy_6yA: 新版本花瓣网的ID显示元素
-        const sourceDiv = document.querySelector('.__2p__B98x, .AGmy_6yA');
+        // .QzLweiwl: 新版本花瓣网的ID显示元素
+        const sourceDiv = document.querySelector('.__2p__B98x, .QzLweiwl');
         if (!sourceDiv) return;
 
         // 提取ID
@@ -92,8 +101,7 @@
 
     // 显示尺寸信息和下载按钮
     function showSizeInfo(width, height, dpi, url, fileFormat, contentUrl, type, title) {
-        const selectors = ['.OPWXbLYw img', '.Wa6mMsQV img', '.vYzIMzy2 img', '.VFtkdxbR img', '.ujZSLFrU video'];
-        const targets = selectors.map(sel => document.querySelector(sel)).filter(img => img);
+        const targets = TARGET_SELECTORS.map(sel => document.querySelector(sel)).filter(img => img);
 
         targets.forEach(img => {
             const parent = img.parentElement;
@@ -124,7 +132,7 @@
 
             // 在包含ID信息的元素外添加a标签包裹
             if (contentUrl) {
-                const sourceDiv = document.querySelector('.__2p__B98x, .AGmy_6yA');
+                const sourceDiv = document.querySelector('.__2p__B98x, .QzLweiwl');
                 if (sourceDiv && sourceDiv.parentElement && !sourceDiv.parentElement.classList.contains('content-url-wrapper')) {
                     const wrapper = document.createElement('a');
                     wrapper.className = 'content-url-wrapper';
@@ -415,14 +423,7 @@
 
     // 替换图片/视频并显示加载指示器
     function executeReplacement(url) {
-        // 目标图片选择器（主展示区和弹出层）
-        // .OPWXbLYw img: 老版本花瓣网主展示区图片
-        // .Wa6mMsQV img: 新版本花瓣网主展示区图片
-        // .vYzIMzy2 img: 弹出层图片（可能为老版本）
-        // .VFtkdxbR img: 弹出层图片（可能为新版本）
-        // .ujZSLFrU video 新版花瓣视频
-        const selectors = ['.OPWXbLYw img', '.Wa6mMsQV img', '.vYzIMzy2 img', '.VFtkdxbR img', '.ujZSLFrU video'];
-        const targets = selectors.map(sel => document.querySelector(sel)).filter(img => img && img.src !== url);
+        const targets = TARGET_SELECTORS.map(sel => document.querySelector(sel)).filter(img => img && img.src !== url);
 
         targets.forEach(img => {
             const parent = img.parentElement;
