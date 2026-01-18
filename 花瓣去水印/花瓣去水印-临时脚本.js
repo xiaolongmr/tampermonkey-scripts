@@ -6,6 +6,7 @@
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
 // @match        https://huaban.com/*
+// @match        https://webnote.cc/p/*
 // @connect      gd.huaban.com
 // @grant        GM_xmlhttpRequest
 // @run-at       document-end
