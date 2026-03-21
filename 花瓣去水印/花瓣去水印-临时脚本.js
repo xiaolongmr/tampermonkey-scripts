@@ -6,12 +6,10 @@
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
 // @match        https://huaban.com/*
-// @match        https://webnote.cc/p/*
 // @connect      gd.huaban.com
 // @grant        GM_xmlhttpRequest
 // @run-at       document-end
 // @require      https://xiaolongmr.github.io/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0-%E4%B8%B4%E6%97%B6%E8%84%9A%E6%9C%AC%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
-// @require      https://xiaolongmr.github.io/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E4%BA%91%E4%BE%BF%E7%AD%BE.js
 // @require      https://cdn.tailwindcss.com
 // ==/UserScript==
 

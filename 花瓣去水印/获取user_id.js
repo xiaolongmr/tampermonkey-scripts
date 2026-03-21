@@ -14,7 +14,7 @@ try {
     console.log('user_id:', userId);
     
     // 同时显示其他用户信息
-    console.log('\n📋 其他用户信息:');
+    console.log('\n📋 用户其他信息:');
     console.log('用户名:', nextData.props.initStore.user.username);
     console.log('邮箱:', nextData.props.initStore.user.email);
     console.log('注册时间:', new Date(nextData.props.initStore.user.created_at * 1000).toLocaleString());
