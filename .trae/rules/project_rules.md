@@ -17,3 +17,4 @@
    - <script src="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.js.iife.js"></script>
    - <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@latest/dist/driver.css"/>
 4. 这个项目的根目录每一个文件夹就是一个脚本，不要弄混
+5. 最后一点警告，请不要试图造过于通用的轮子，否则会导致脚本开发流程复杂，维护成本高
