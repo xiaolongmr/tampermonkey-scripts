@@ -1,12 +1,13 @@
 // ==UserScript==
-// @name         花瓣"去"水印1.1.1
+// @name         花瓣"去"水印-pro 1.1.1
 // @version      1.1.1
-// @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）更多描述可安装后查看
+// @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
 // @namespace    https://getquicker.net/User/Actions/388875-%E6%98%9F%E6%B2%B3%E5%9F%8E%E9%87%8E%E2%9D%A4
 // @match        https://huaban.com/*
 // @match        http://121.40.25.9:8080/register.html
+// @connect      gd.huaban.com
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -14,6 +15,7 @@
 // @grant        GM_xmlhttpRequest
 // @connect      *
 // @grant        GM_download
+// @run-at       document-end
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
 // @require      https://cdn.tailwindcss.com
 // @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@8ed09bc4be4797388576008ceadbe0f8258126e5/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
@@ -37,14 +39,14 @@
   const SELECTORS = {
     // 花瓣网中的"查看大图"按钮图片
     imageButton:
-      'img[data-button-name="查看大图"][src*="gd-hbimg-edge.huaban.com"]',
-    // 图片查看器中的大图元素（带花瓣域名限制）
+      'img[data-button-name="查看大图"]',
+    // 图片查看器中的大图元素
     imageViewer:
-      'img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huaban.com"]',
-    // 图片查看器容器内的大图元素（带容器ID和花瓣域名限制）
+      'img.vYzIMzy2[alt="查看图片"]',
+    // 图片查看器容器内的大图元素
     imageViewerContainer:
-      '#imageViewerWrapper img.vYzIMzy2[alt="查看图片"][src*="gd-hbimg-edge.huaban.com"]',
-    // 简单图片查看器中的大图元素（不带域名限制）
+      '#imageViewerWrapper img.vYzIMzy2[alt="查看图片"]',
+    // 简单图片查看器中的大图元素
     imageViewerSimple: 'img.vYzIMzy2[alt="查看图片"]',
   };
 
@@ -56,12 +58,12 @@
     // 用户上传：粉蓝色
     enableCustom: true,
     // 启用自定义背景色
-    enableRemoveWatermark: true,
-    // 仅支持花瓣官方素材去水印功能，第三方素材无效
     enableDragDownload: true,
     // 启用拖拽下载功能
     enableRightClickDownload: true,
     // 启用右键下载功能
+    enableRemoveWatermark: true,
+    // 启用去水印功能
   };
 
   // 配置字段映射（简化 getConfig/saveConfig）
@@ -69,9 +71,9 @@
     "materialColor",
     "userColor",
     "enableCustom",
-    "enableRemoveWatermark",
     "enableDragDownload",
     "enableRightClickDownload",
+    "enableRemoveWatermark",
   ];
 
   // ==================== 状态变量 ====================
@@ -130,13 +132,12 @@
           cleanAlt = cleanAlt.substring(0, 40);
         }
 
-        // 添加.png扩展名
         return cleanAlt;
       }
     }
 
     // 如果alt属性无效，返回默认名称
-    return "";
+    return "花瓣图片";
   }
 
   // 检查快捷键是否匹配
@@ -272,311 +273,7 @@
 
   // ==================== 图片处理 ====================
 
-  // 保存原始URL到图片元素的dataset中
-  function saveOriginalUrl(img) {
-    if (!img.dataset.originalSrc) {
-      img.dataset.originalSrc = img.src;
-      debugLog("保存原始URL:", img.dataset.originalSrc);
-    }
-    if (img.srcset && !img.dataset.originalSrcset) {
-      img.dataset.originalSrcset = img.srcset;
-      debugLog("保存原始srcset:", img.dataset.originalSrcset);
-    }
-  }
 
-  // 恢复图片的原始URL
-  function restoreOriginalUrl(img) {
-    if (img.dataset.originalSrc) {
-      debugLog("恢复原始URL:", img.dataset.originalSrc);
-      img.src = img.dataset.originalSrc;
-      delete img.dataset.originalSrc;
-    }
-    if (img.dataset.originalSrcset) {
-      debugLog("恢复原始srcset:", img.dataset.originalSrcset);
-      img.srcset = img.dataset.originalSrcset;
-      delete img.dataset.originalSrcset;
-    }
-    // 移除处理标记
-    img.removeAttribute("data-watermark-removed");
-  }
-
-  // 判断是否为官方自营素材
-  function isOfficialMaterial() {
-    // 从页面元素中检查是否为官方自营素材
-    return (
-      // 检查是否有包含"官方自营"文本的元素
-      Array.from(document.querySelectorAll(".fgsjNg46")).some(
-        (el) => el.textContent && el.textContent.includes("官方自营")
-      ) ||
-      // 检查是否有title="来自官方自营"的元素
-      document.querySelectorAll('[title="来自官方自营"]').length > 0 ||
-      // 检查是否有VIP标识元素
-      document.querySelectorAll('.vip-marker, [data-vip="true"]').length > 0 ||
-      // 检查当前页面是否为素材页面
-      window.location.href.includes('/pages/sucai')
-    );
-  }
-
-  // 核心URL处理逻辑（同步）
-  // 参数：
-  // - url: 原始图片URL
-  // - isOfficialMaterial: 是否为官方自营素材
-  // 返回：string - 处理后的图片URL
-  function extractImageUrlCore(url, isOfficialMaterial) {
-    // 分离URL和查询参数
-    const [baseUrl, queryParams] = url.split("?");
-    // 匹配花瓣图片URL中的后缀参数，如 _fw658webp
-    const suffixRegex = /(_fw\d+webp)(\.webp)?$/i;
-    // 匹配花瓣图片URL的域名和图片ID部分
-    const watermarkRegex = /(https?:\/\/gd-hbimg-edge\.huaban\.com)\/([^\/?]+)/;
-
-    let cleanUrl = url;
-
-    if (suffixRegex.test(baseUrl) || watermarkRegex.test(baseUrl)) {
-      // 去除后缀参数，得到基础URL
-      const baseCleanUrl = baseUrl.replace(suffixRegex, "");
-
-      // 如果是官方自营素材，尝试添加/small/前缀
-      if (isOfficialMaterial) {
-        let urlWithSmallPrefix;
-
-        // 检查域名是否包含/small/，如果没有在域名后添加/small/前缀
-        if (baseCleanUrl.includes("/small/")) {
-          // 已经包含/small/前缀，直接使用
-          urlWithSmallPrefix = baseCleanUrl;
-        } else {
-          // 没有包含/small/前缀，添加前缀
-          urlWithSmallPrefix = watermarkRegex.test(baseCleanUrl)
-            ? baseCleanUrl.replace(watermarkRegex, "$1/small/$2")
-            : baseCleanUrl;
-        }
-
-        // 组合完整URL
-        cleanUrl = queryParams
-          ? `${urlWithSmallPrefix}?${queryParams}`
-          : urlWithSmallPrefix;
-      } else {
-        // 非官方自营素材，仅去除后缀参数
-        cleanUrl = queryParams
-          ? `${baseCleanUrl}?${queryParams}`
-          : baseCleanUrl;
-      }
-    }
-
-    return cleanUrl;
-  }
-
-  // 统一处理图片URL的去水印操作
-  // 参数：
-  // - url: 原始图片URL
-  // - isOfficialMaterial: 是否为官方自营素材
-  // - checkValidity: 是否检查URL有效性
-  // 返回：Promise<string> - 处理后的图片URL
-  async function processImageUrl(url, isOfficialMaterial, checkValidity = false) {
-    // URL替换逻辑注释：
-    // 1. 分离URL和查询参数（如 ?auth_key=xxx）
-    // 2. 检查是否为官方自营素材
-    // 3. 如果是官方自营素材：
-    //    a. 去除后缀参数
-    //    b. 检查域名是否包含/small/，如果没有在域名后添加/small/前缀 有就下一步
-    //    c. 检查URL有效性
-    //    d. 如果无效，回退到仅去除后缀参数的URL
-    // 4. 如果不是官方自营素材：
-    //    a. 仅去除后缀参数
-    // 5. 保留原始查询参数
-
-    // 使用核心同步函数处理URL
-    const processedUrl = extractImageUrlCore(url, isOfficialMaterial);
-
-    // 如果不需要检查有效性，直接返回处理后的URL
-    if (!checkValidity) {
-      return processedUrl;
-    }
-
-    // 需要检查URL有效性
-    debugLog("检查处理后URL的有效性:", processedUrl);
-    const isValid = await checkImageUrl(processedUrl);
-
-    if (isValid) {
-      // URL有效，使用处理后的URL
-      debugLog("URL有效，使用处理后的URL");
-      return processedUrl;
-    } else {
-      // URL无效，回退到仅去除后缀参数的URL（不添加/small/前缀）
-      debugLog("URL无效，回退到仅去除后缀参数的URL");
-      return extractImageUrlCore(url, false);
-    }
-  }
-
-  // 获取所有需要处理的花瓣素材图片
-  function getMaterialImages() {
-    // 使用更精准的选择器，基于你提供的HTML元素
-    const selectors = [
-      // 缩略图：使用 data-button-name="查看大图" 属性
-      SELECTORS.imageButton,
-      // 大图查看器中的图片 - 优先级高，确保能捕获所有大图模式下的图片
-      SELECTORS.imageViewerContainer,
-      // 大图：使用 class="vYzIMzy2" 类名 + alt="查看图片" 属性
-      SELECTORS.imageViewer,
-      // 备用：花瓣素材图片
-      '[data-material-type="套系素材"] img[src*="gd-hbimg-edge.huaban.com"]',
-      // 备用：素材采集类型图片
-      'img[src*="gd-hbimg-edge.huaban.com"][data-content-type="素材采集"]',
-    ];
-
-    return document.querySelectorAll(selectors.join(", "));
-  }
-
-  // 去水印功能：修改图片链接
-  function processWatermark(force = false) {
-    const config = getConfig();
-    const materialImages = getMaterialImages();
-
-    debugLog(
-      "执行水印处理，enable:",
-      config.enableRemoveWatermark,
-      "force:",
-      force
-    );
-
-    let processedCount = 0;
-    let skippedCount = 0;
-
-    materialImages.forEach((img) => {
-      try {
-        const originalSrc = img.src;
-
-        // 检查是否需要处理
-        if (!config.enableRemoveWatermark) {
-          // 如果功能已关闭，恢复原始URL
-          if (img.dataset.originalSrc) {
-            restoreOriginalUrl(img);
-            processedCount++;
-            debugLog("恢复原始URL:", originalSrc);
-          } else {
-            skippedCount++;
-          }
-          return;
-        }
-
-        // 如果功能已启用，但图片已处理且不是force模式，跳过
-        if (!force && img.hasAttribute("data-watermark-removed")) {
-          skippedCount++;
-          return;
-        }
-
-        // 核心判断逻辑：只处理包含"官方自营"字样的素材
-        // 查找包含"官方自营"文本的元素
-        const isOfficialMaterial = Array.from(document.querySelectorAll(".fgsjNg46")).some(
-          (element) =>
-            element.textContent && element.textContent.includes("官方自营")
-        ) ||
-          // 新增条件：存在 title="来自官方自营" 的元素
-          document.querySelectorAll('[title="来自官方自营"]').length > 0;
-        debugLog("素材检查结果 - 是官方自营素材:", isOfficialMaterial);
-
-        // 只处理官方自营素材，其他类型的素材一概跳过
-        if (!isOfficialMaterial) {
-          debugLog("跳过非官方自营素材图片:", originalSrc);
-          skippedCount++;
-          return;
-        }
-
-        // 保存原始URL
-        saveOriginalUrl(img);
-
-        // 去水印规则：在域名后添加/small/
-        const watermarkRegex =
-          /(https?:\/\/gd-hbimg-edge\.huaban\.com)\/([^\/?]+)/;
-
-        // 处理图片链接
-        (async () => {
-          let modified = false;
-
-          // 处理src属性
-          if (
-            watermarkRegex.test(originalSrc) &&
-            !originalSrc.includes("/small/")
-          ) {
-            // 分离URL和查询参数
-            const [baseUrl, queryParams] = originalSrc.split("?");
-            // 在基础URL上添加/small/
-            const newBaseUrl = baseUrl.replace(watermarkRegex, "$1/small/$2");
-            // 保留查询参数（如果有）
-            const newSrc = queryParams
-              ? `${newBaseUrl}?${queryParams}`
-              : newBaseUrl;
-            debugLog("检查新图片URL是否有效:", newSrc);
-
-            // 检查新链接是否有效
-            const isValid = await checkImageUrl(newSrc);
-            if (isValid) {
-              debugLog("修改VIP图片src:", originalSrc, "→", newSrc);
-              img.src = newSrc;
-              modified = true;
-            } else {
-              debugLog("新图片URL无效，跳过处理:", newSrc);
-            }
-          }
-
-          // 处理srcset属性
-          if (
-            img.srcset &&
-            watermarkRegex.test(img.srcset) &&
-            !img.srcset.includes("/small/")
-          ) {
-            // 处理srcset中的每个URL
-            const newSrcset = img.srcset
-              .split(" ")
-              .map((item) => {
-                if (item.match(/^https?:\/\//)) {
-                  // 这是一个URL，需要处理
-                  const [baseUrl, queryParams] = item.split("?");
-                  const newBaseUrl = baseUrl.replace(
-                    watermarkRegex,
-                    "$1/small/$2"
-                  );
-                  return queryParams
-                    ? `${newBaseUrl}?${queryParams}`
-                    : newBaseUrl;
-                }
-                // 这可能是一个宽度描述符（如w500），直接返回
-                return item;
-              })
-              .join(" ");
-
-            debugLog("检查新图片srcset是否有效:", newSrcset);
-
-            // 检查新链接是否有效
-            const isValid = await checkImageUrl(newSrcset.split(" ")[0]); // 取第一个URL检查
-            if (isValid) {
-              debugLog("修改VIP图片srcset:", img.srcset, "→", newSrcset);
-              img.srcset = newSrcset;
-              modified = true;
-            } else {
-              debugLog("新图片srcset URL无效，跳过处理:", newSrcset);
-            }
-          }
-
-          if (modified) {
-            processedCount++;
-            img.setAttribute("data-watermark-removed", "true");
-            debugLog("图片处理成功");
-          } else {
-            skippedCount++;
-            debugLog("图片无需处理或已处理");
-          }
-        })();
-      } catch (error) {
-        console.error("水印处理失败:", error, "图片:", img.src);
-        skippedCount++;
-      }
-    });
-
-    debugLog("=== 处理完成 ===");
-    debugLog(`总共处理了${processedCount}张图片，跳过了${skippedCount}张`);
-    return processedCount > 0;
-  }
 
   // ==================== 页面元素处理 ====================
 
@@ -736,322 +433,574 @@
 
   // ==================== 事件监听 ====================
 
-  // 处理大图查看器
-  function handleImageViewer() {
-    const config = getConfig();
-
-    if (!config.enableRemoveWatermark) {
-      return;
-    }
-
-    debugLog("检查大图查看器");
-
-    let imageViewerInterval = null;
-
-    // 处理大图查看器中的图片的函数
-    function processImageViewerImages() {
-      const imageViewer = document.querySelector("#imageViewerWrapper");
-      if (imageViewer) {
-        const viewerImage = imageViewer.querySelector(
-          SELECTORS.imageViewerSimple
-        );
-        if (viewerImage) {
-          // 检查图片是否已加载完成
-          if (viewerImage.complete && viewerImage.naturalWidth > 0) {
-            debugLog("大图查看器：检测到已加载的图片，执行去水印处理");
-            processWatermark(true); // 强制处理
-
-            // 如果已成功处理，停止定时器
-            if (viewerImage.hasAttribute("data-watermark-removed")) {
-              if (imageViewerInterval) {
-                clearInterval(imageViewerInterval);
-                imageViewerInterval = null;
-              }
-            }
-          } else {
-            debugLog("大图查看器：等待图片加载完成...");
-          }
-        }
-      } else if (imageViewerInterval) {
-        // 如果大图查看器已关闭，停止定时器
-        clearInterval(imageViewerInterval);
-        imageViewerInterval = null;
-      }
-    }
-
-    // 监听大图模态框的打开
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.addedNodes.length) {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === 1) {
-              // 检查是否是大图模态框
-              if (
-                node.querySelector("#imageViewerWrapper") ||
-                node.querySelector(SELECTORS.imageViewerSimple)
-              ) {
-                debugLog("检测到大图模态框打开");
-
-                // 首次处理
-                setTimeout(() => {
-                  processWatermark(true);
-                }, 100);
-
-                // 启动定期检查，确保图片完全加载后能被处理
-                if (!imageViewerInterval) {
-                  debugLog("启动大图查看器定期检查机制");
-                  imageViewerInterval = setInterval(
-                    processImageViewerImages,
-                    300
-                  );
-
-                  // 设置最长检查时间为5秒
-                  setTimeout(() => {
-                    if (imageViewerInterval) {
-                      clearInterval(imageViewerInterval);
-                      imageViewerInterval = null;
-                      debugLog("大图查看器定期检查超时，停止检查");
-                    }
-                  }, 5000);
-                }
-              }
-            }
-          });
-        }
-
-        // 也检查属性变化，特别是图片的src属性变化
-        if (
-          mutation.type === "attributes" &&
-          mutation.target.tagName === "IMG"
-        ) {
-          if (
-            mutation.target.matches(SELECTORS.imageViewerSimple) &&
-            mutation.target.closest("#imageViewerWrapper")
-          ) {
-            debugLog("大图查看器：图片src属性发生变化，重新处理");
-            setTimeout(() => {
-              processWatermark(true);
-            }, 100);
-          }
-        }
-      });
-    });
-
-    // 观察body的变化，检测大图模态框的出现和图片属性变化
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["src", "srcset"],
-    });
-
-    debugLog("大图查看器监听器已启动，增强版支持");
-  }
-
   // 增强的页面变化监听，支持AJAX动态加载
   function observePageChanges() {
-    let lastProcessTime = 0;
-    const MIN_PROCESS_INTERVAL = 500; // 最小处理间隔，避免频繁处理
-
     const observer = new MutationObserver((mutations) => {
-      const now = Date.now();
-      const config = getConfig();
-
-      // 检查是否有新的图片节点被添加或属性变化
-      let needProcess = false;
+      // 检查是否有新的内容被添加
       mutations.forEach((mutation) => {
         if (mutation.type === "childList" && mutation.addedNodes.length) {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === 1) {
               // 元素节点
-              // 检查是否包含需要处理的图片
-              if (
-                node.matches(
-                  SELECTORS.imageButton + ", " + SELECTORS.imageViewerSimple
-                ) ||
-                node.querySelector(
-                  SELECTORS.imageButton + ", " + SELECTORS.imageViewerSimple
-                ) ||
-                node.id === "imageViewerWrapper"
-              ) {
-                needProcess = true;
-              }
+              // 可以在这里添加其他需要的DOM变化处理逻辑
             }
           });
-        } else if (
-          mutation.type === "attributes" &&
-          mutation.target.tagName === "IMG"
-        ) {
-          // 图片属性变化时也需要处理
-          if (
-            mutation.target.matches(
-              SELECTORS.imageButton + ", " + SELECTORS.imageViewerSimple
-            )
-          ) {
-            needProcess = true;
-          }
         }
       });
-
-      // 如果需要处理且距离上次处理时间足够长
-      if (needProcess && now - lastProcessTime > MIN_PROCESS_INTERVAL) {
-        debugLog("检测到图片变化，触发水印处理");
-        setTimeout(() => {
-          processWatermark();
-          lastProcessTime = Date.now();
-        }, 100); // 延迟一点时间，确保图片完全加载
-      }
     });
 
-    // 更全面的观察选项
+    // 观察选项
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      attributes: true,
-      attributeFilter: [
-        "src",
-        "srcset",
-        "data-material-type",
-        "class",
-        "data-button-name",
-        "alt",
-      ],
     });
 
     debugLog("页面变化监听器已启动");
     return observer;
   }
 
-  // 拦截XMLHttpRequest，在AJAX请求完成后执行处理
-  function interceptAjaxRequests() {
-    const originalSend = XMLHttpRequest.prototype.send;
-
-    XMLHttpRequest.prototype.send = function (body) {
-      this.addEventListener("load", function () {
-        try {
-          // 检查是否是花瓣网的API请求
-          if (
-            this.responseURL &&
-            this.responseURL.includes("huaban.com") &&
-            (this.responseURL.includes("/pins/") ||
-              this.responseURL.includes("/api/") ||
-              this.responseURL.includes("/similar/") ||
-              this.responseURL.includes("/image/"))
-          ) {
-            // 图片查看相关请求
-            debugLog("检测到AJAX请求完成:", this.responseURL);
-            // 延迟执行，确保数据已渲染到页面
-            setTimeout(() => {
-              processWatermark();
-            }, 300);
-          }
-        } catch (error) {
-          console.error("AJAX拦截器错误:", error);
-        }
-      });
-
-      return originalSend.apply(this, arguments);
-    };
-
-    debugLog("AJAX请求拦截器已启动");
+  // 处理图片URL，删除_fwXXXwebp部分
+  function processImageUrl(url) {
+    let cleanUrl = url;
+    // 匹配_fw后跟数字和webp的模式
+    const fwRegex = /_fw\d+webp/;
+    if (fwRegex.test(cleanUrl)) {
+      cleanUrl = cleanUrl.replace(fwRegex, "");
+      debugLog("处理后的下载URL:", url, "→", cleanUrl);
+    }
+    return cleanUrl;
   }
 
-  // 拦截fetch请求
-  function interceptFetchRequests() {
-    const originalFetch = window.fetch;
+  // 去水印相关功能
+  // 缓存高清URL，避免重复请求
+  const hdUrlCache = new Map();
 
-    window.fetch = function (input, init) {
-      return originalFetch.apply(this, arguments).then((response) => {
-        try {
-          const url = typeof input === "string" ? input : input.url;
-          if (
-            url &&
-            url.includes("huaban.com") &&
-            (url.includes("/pins/") ||
-              url.includes("/api/") ||
-              url.includes("/similar/") ||
-              url.includes("/image/"))
-          ) {
-            // 图片查看相关请求
-            debugLog("检测到fetch请求完成:", url);
-            // 延迟执行，确保数据已渲染到页面
-            setTimeout(() => {
-              processWatermark();
-            }, 300);
-          }
-        } catch (error) {
-          console.error("fetch拦截器错误:", error);
-        }
-        return response;
-      });
-    };
+  // 目标图片/视频选择器（主展示区和弹出层）
+  const TARGET_SELECTORS = ['.OPWXbLYw img', '.Wa6mMsQV img', '.vYzIMzy2 img', '.VFtkdxbR img', '.ujZSLFrU video', '.PBVOckbr img'];
 
-    debugLog("fetch请求拦截器已启动");
-  }
+  // 处理页面更新：提取ID，请求或替换高清图片
+  function handleUpdate() {
+    const config = getConfig();
+    if (!config.enableRemoveWatermark) return;
 
-  // 拦截图片点击事件，提前处理大图URL
-  function interceptImageClicks() {
-    // 使用事件委托监听所有图片点击
-    document.addEventListener(
-      "click",
-      function (e) {
-        const config = getConfig();
+    // 查找包含ID的元素（支持新旧版本选择器）
+    const sourceDiv = document.querySelector('.__2p__B98x, .QzLweiwl');
+    if (!sourceDiv) return;
 
-        // 精准匹配：使用 data-button-name="查看大图" 属性
-        const img = e.target.closest(SELECTORS.imageButton.split("[src*")[0]);
-        if (img && img.src.includes("gd-hbimg-edge.huaban.com")) {
-          // 检查是否为官方自营素材（新增 title 选择器，满足任一条件即判定）
-          const isOfficialMaterial = Array.from(document.querySelectorAll(".fgsjNg46")).some(
-            (element) =>
-              element.textContent && element.textContent.includes("官方自营")
-          ) ||
-            // 新增条件：存在 title="来自官方自营" 的元素
-            document.querySelectorAll('[title="来自官方自营"]').length > 0;
+    // 提取ID
+    const match = sourceDiv.innerText.match(/ID[:：]\s*(\d+)/i);
+    if (!match) return;
 
-          if (isOfficialMaterial) {
-            debugLog("检测到官方自营素材图片点击:", img.src);
+    const id = match[1];
+    const cachedUrl = hdUrlCache.get(id);
 
-            if (config.enableRemoveWatermark) {
-              // 提前保存原始URL
-              saveOriginalUrl(img);
+    // 如果正在加载或已有缓存，直接返回或替换
+    if (cachedUrl === "loading") return;
+    if (cachedUrl) {
+      // 只有type为image时才替换高清图片
+      if (cachedUrl.type === 'image') {
+        executeReplacement(cachedUrl.url);
+      }
+      // 尺寸信息和下载按钮不受type影响，始终显示
+      if (cachedUrl.width && cachedUrl.height) {
+        showSizeInfo(cachedUrl.width, cachedUrl.height, cachedUrl.dpi, cachedUrl.url, cachedUrl.file_format, cachedUrl.content_url, cachedUrl.type, cachedUrl.title);
+      }
+      return;
+    }
 
-              // 预生成大图URL
-              const watermarkRegex =
-                // /(https?:\/\/gd-hbimg-edge.huaban.com)\/([^\/?]+)/;
-                /(https?:\/\/gd-hbimg-edge\.huaban\.com)\/([^\/?]+)/;
-              if (
-                watermarkRegex.test(img.src) &&
-                !img.src.includes("/small/")
-              ) {
-                const baseImageKey = img.src
-                  .match(watermarkRegex)[2]
-                  .split("_")[0];
-                const largeImageUrl = `https://gd-hbimg-edge.huaban.com/small/${baseImageKey}`;
-                debugLog("预生成VIP大图URL:", largeImageUrl);
+    // 标记为加载中
+    hdUrlCache.set(id, "loading");
+
+    // 请求高清图片数据
+    GM_xmlhttpRequest({
+      method: "GET",
+      url: `https://gd.huaban.com/editor/design?id=${id}`,
+      onload: (res) => {
+        // 解析响应中的JSON数据
+        const scriptMatch = res.responseText.match(/window\.__SSR_TEMPLATE\s*=\s*(\{[\s\S]*?\})(?:;|\s*<\/script>)/);
+        if (scriptMatch) {
+          try {
+            const ssrData = JSON.parse(scriptMatch[1]);
+            if (ssrData?.preview?.url) {
+              const file_format = ssrData.files[0].file_format;
+              const content_url = ssrData.content_url;
+              const hdUrl = ssrData.preview.url;
+              const video = ssrData.preview.video;
+              const title = ssrData.title;
+              const width = ssrData.preview.width;
+              const height = ssrData.preview.height;
+              const dpi = ssrData.dpi;
+              const type = ssrData.type;
+              const newCachedData = { url: hdUrl, width: width, height: height, dpi: dpi, file_format: file_format, content_url: content_url, type: type, title: title };
+              hdUrlCache.set(id, newCachedData);
+
+              // 只有type为image时才替换高清图片
+              if (type === 'image') {
+                executeReplacement(hdUrl);
               }
-            } else {
-              // 如果功能已关闭，确保使用原始URL
-              restoreOriginalUrl(img);
+
+              // 尺寸信息和下载按钮不受type影响，始终显示
+              if (width && height) {
+                showSizeInfo(width, height, dpi, hdUrl, file_format, content_url, type, title);
+              }
             }
-          } else {
-            debugLog("检测到非官方自营素材图片点击，跳过预处理:", img.src);
-            // 对于非官方自营素材，确保使用原始URL
-            restoreOriginalUrl(img);
-          }
-
-          // 延迟一点时间，确保大图模态框已打开
-          setTimeout(() => {
-            processWatermark(true);
-          }, 200);
+          } catch (e) { }
         }
-      },
-      true
-    );
-
-    debugLog("图片点击事件拦截器已启动");
+      }
+    });
   }
 
-  // 拦截拖拽和右键下载事件，移除图片后缀参数
+  // 显示尺寸信息和下载按钮
+  function showSizeInfo(width, height, dpi, url, fileFormat, contentUrl, type, title) {
+    const targets = TARGET_SELECTORS.map(sel => document.querySelector(sel)).filter(img => img);
+
+    targets.forEach(img => {
+      const parent = img.parentElement;
+      if (parent.querySelector('.size-info-overlay') || parent.querySelector('.download-btn-overlay')) return;
+
+      // 创建尺寸信息覆盖层
+      const sizeOverlay = document.createElement('div');
+      sizeOverlay.className = 'size-info-overlay';
+      sizeOverlay.textContent = `${width} 像素 x ${height} 像素 (${dpi} dpi)`;
+
+      const sizeStyle = {
+        position: 'absolute',
+        bottom: '8px',
+        left: '8px',
+        color: '#000000ff',
+        padding: '6px 12px',
+        zIndex: '9999',
+        transform: 'translateZ(0)',
+        borderRadius: '99px',
+        background: 'rgba(255, 255, 255, 0.7)',
+        boxShadow: '0 0 1px 0 var(--boxshadow-color-medium-100, rgba(0, 0, 0, .1)), 0 8px 40px -2px var(--boxshadow-color-medium-200, rgba(0, 0, 0, .1))',
+        transition: 'box-shadow .2s ease',
+        userSelect: 'none'
+      };
+
+      Object.assign(sizeOverlay.style, sizeStyle);
+      parent.appendChild(sizeOverlay);
+
+      // 在包含ID信息的元素外添加a标签包裹
+      if (contentUrl) {
+        const sourceDiv = document.querySelector('.__2p__B98x, .QzLweiwl');
+        if (sourceDiv && sourceDiv.parentElement && !sourceDiv.parentElement.classList.contains('content-url-wrapper')) {
+          const wrapper = document.createElement('a');
+          wrapper.className = 'content-url-wrapper';
+          wrapper.href = contentUrl;
+          wrapper.target = '_blank';
+          wrapper.style.textDecoration = 'none';
+          wrapper.style.color = 'inherit';
+          sourceDiv.parentElement.insertBefore(wrapper, sourceDiv);
+          wrapper.appendChild(sourceDiv);
+        }
+      }
+
+      // 创建下载按钮（可能返回多个按钮）
+      const extension = getFileExtension(url);
+      createDownloadButton(url, img, extension, fileFormat, contentUrl, type, title, parent);
+    });
+  }
+
+  // 获取文件扩展名
+  function getFileExtension(url) {
+    const match = url.match(/\.([^.?]+)(?:\?|$)/);
+    return match ? '.' + match[1] : '.jpg';
+  }
+
+  // 创建下载按钮的公共函数
+  function createDownloadButton(url, imgElement, extension, fileFormat, contentUrl, type, title, parent) {
+    // 不论什么情况，始终显示下载PNG/JPG按钮（下载hdUrl）
+    const pngButton = createSingleButton('下载 ' + extension.toUpperCase(), url, imgElement, 'image', title);
+    pngButton.style.top = '8px';
+    parent.appendChild(pngButton);
+
+    let buttonIndex = 1;
+
+    // 根据类型和文件格式添加额外的下载按钮
+    if (type === 'poster' && fileFormat === 'psd') {
+      // PSD素材：额外显示下载PSD按钮
+      const psdButton = createSingleButton('下载 PSD', null, imgElement, 'psd', title);
+      psdButton.style.top = (8 + buttonIndex * 40) + 'px';
+      parent.appendChild(psdButton);
+      buttonIndex++;
+    } else if (type === 'image' && fileFormat === 'eps') {
+      // EPS素材：需要先获取 originUrl，如果有才显示下载EPS按钮
+      if (contentUrl) {
+        fetch(contentUrl)
+          .then(response => response.json())
+          .then(data => {
+            if (data.originUrl) {
+              const epsButton = createSingleButton('下载 EPS', data.originUrl, imgElement, 'eps', title);
+              epsButton.style.top = (8 + buttonIndex * 40) + 'px';
+              parent.appendChild(epsButton);
+            }
+          })
+          .catch(err => {
+            console.error('获取EPS originUrl失败:', err);
+          });
+      }
+    } else if (type === 'image' && fileFormat === 'ai') {
+      // AI素材：额外显示下载AI按钮
+      const aiButton = createSingleButton('下载 AI', contentUrl, imgElement, 'ai', title);
+      aiButton.style.top = (8 + buttonIndex * 40) + 'px';
+      parent.appendChild(aiButton);
+      buttonIndex++;
+    } else if (type === 'element' && fileFormat === 'svg') {
+      // SVG元素素材：额外显示下载SVG按钮（与AI共用下载逻辑）
+      const svgButton = createSingleButton('下载 SVG', contentUrl, imgElement, 'svg', title);
+      svgButton.style.top = (8 + buttonIndex * 40) + 'px';
+      parent.appendChild(svgButton);
+      buttonIndex++;
+    } else if (type === 'element' && fileFormat === 'ai') {
+      // AI元素素材：额外显示下载AI按钮（与AI共用下载逻辑）
+      const aiButton = createSingleButton('下载 AI', contentUrl, imgElement, 'ai', title);
+      aiButton.style.top = (8 + buttonIndex * 40) + 'px';
+      parent.appendChild(aiButton);
+      buttonIndex++;
+    } else if (type === 'movie' && fileFormat === 'zip') {
+      // 视频素材：额外显示下载ZIP、MP3、MP4按钮
+      const zipButton = createSingleButton('下载 ZIP', contentUrl, imgElement, 'zip', title);
+      zipButton.style.top = (8 + buttonIndex * 40) + 'px';
+      parent.appendChild(zipButton);
+      buttonIndex++;
+
+      const mp3Button = createSingleButton('下载 MP3', null, imgElement, 'mp3', title);
+      mp3Button.style.top = (8 + buttonIndex * 40) + 'px';
+      parent.appendChild(mp3Button);
+      buttonIndex++;
+
+      const mp4Button = createSingleButton('下载 MP4', null, imgElement, 'mp4', title);
+      mp4Button.style.top = (8 + buttonIndex * 40) + 'px';
+      parent.appendChild(mp4Button);
+    } else if (fileFormat === 'zip' && type !== 'image') {
+      // 普通ZIP素材（排除type='image'的情况）：额外显示下载ZIP按钮
+      const zipButton = createSingleButton('下载 ZIP', contentUrl, imgElement, 'zip', title);
+      zipButton.style.top = (8 + buttonIndex * 40) + 'px';
+      parent.appendChild(zipButton);
+    }
+  }
+
+  // 创建单个下载按钮
+  function createSingleButton(text, url, imgElement, downloadType, title) {
+    const downloadBtn = document.createElement('div');
+    downloadBtn.className = 'download-btn-overlay';
+    downloadBtn.textContent = text;
+
+    // 判断是否为待实现的功能
+    const isImplemented = downloadType === 'image' || downloadType === 'zip' || downloadType === 'eps' || downloadType === 'ai' || downloadType === 'svg';
+
+    // 统一的按钮样式
+    const btnStyle = {
+      position: 'absolute',
+      top: '8px',
+      right: '8px',
+      color: '#ffffff',
+      padding: '6px 12px',
+      zIndex: '9999',
+      transform: 'translateZ(0)',
+      borderRadius: '99px',
+      background: 'rgba(0, 153, 255, 0.94)',
+      boxShadow: '0 0 1px 0 var(--boxshadow-color-medium-100, rgba(0, 0, 0, .1)), 0 8px 40px -2px var(--boxshadow-color-medium-200, rgba(0, 0, 0, .1))',
+      transition: 'box-shadow .2s ease',
+      userSelect: 'none'
+    };
+
+    // 待实现的功能按钮样式
+    if (!isImplemented) {
+      btnStyle.cursor = 'not-allowed';
+      btnStyle.opacity = '0.5';
+      btnStyle.pointerEvents = 'none';
+      btnStyle.background = 'rgba(128, 128, 128, 0.7)';
+    } else {
+      btnStyle.cursor = 'pointer';
+    }
+
+    Object.assign(downloadBtn.style, btnStyle);
+
+    // 根据下载类型绑定不同的点击事件
+    downloadBtn.addEventListener('click', () => {
+      console.log(`点击了 ${text} 按钮，下载类型: ${downloadType}`);
+
+      switch (downloadType) {
+        case 'image':
+          if (url) {
+            downloadImage(url, imgElement, title);
+          }
+          break;
+        case 'zip':
+          if (url) {
+            downloadZipFile(url, imgElement, title);
+          }
+          break;
+        case 'eps':
+          if (url) {
+            downloadImage(url, imgElement, title);
+          }
+          break;
+        case 'ai':
+          if (url) {
+            downloadAiFile(url, imgElement, title);
+          }
+          break;
+        case 'svg':
+          if (url) {
+            downloadAiFile(url, imgElement, title);
+          }
+          break;
+        case 'psd':
+          // TODO: 实现PSD下载
+          console.log('PSD下载功能待实现');
+          break;
+        case 'mp3':
+          // TODO: 实现MP3下载
+          console.log('MP3下载功能待实现');
+          break;
+        case 'mp4':
+          // TODO: 实现MP4下载
+          console.log('MP4下载功能待实现');
+          break;
+      }
+    });
+
+    return downloadBtn;
+  }
+
+  // 下载图片功能
+  function downloadImage(url, imgElement, title) {
+    const filename = title || imgElement?.alt || 'huaban_image';
+    const extension = getFileExtension(url);
+    const fullFilename = filename + extension;
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fullFilename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      })
+      .catch(() => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fullFilename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+  }
+
+  // 下载ZIP文件功能
+  function downloadZipFile(contentUrl, imgElement, title) {
+    const filename = title || imgElement?.alt || 'huaban_素材';
+
+    fetch(contentUrl)
+      .then(response => response.json())
+      .then(data => {
+        if (data.url) {
+          const link = document.createElement('a');
+          link.href = data.url;
+          link.download = `${filename}.zip`;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          throw new Error('ZIP URL not found');
+        }
+      })
+      .catch(err => {
+        console.error('ZIP下载失败:', err);
+        alert('ZIP文件下载失败，请稍后重试');
+      });
+  }
+
+  // 下载AI文件功能
+  function downloadAiFile(contentUrl, imgElement, title) {
+    const filename = title || imgElement?.alt || 'huaban_素材';
+
+    fetch(contentUrl)
+      .then(response => response.json())
+      .then(data => {
+        if (data.model && data.model.url) {
+          const svgUrl = data.model.url;
+          const colors = data.model.colors || [];
+
+          fetch(svgUrl)
+            .then(response => response.text())
+            .then(svgContent => {
+              let processedSvg = svgContent;
+
+              if (colors.length > 0) {
+                processedSvg = svgContent.replace(/\{\{colors\[(\d+)\]\}\}/g, (match, index) => {
+                  const colorIndex = parseInt(index);
+                  return colors[colorIndex] || '#000000';
+                });
+              }
+
+              const blob = new Blob([processedSvg], { type: 'image/svg+xml' });
+              const blobUrl = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              link.download = `${filename}.svg`;
+              link.style.display = 'none';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(blobUrl);
+            })
+            .catch(err => {
+              console.error('SVG下载失败:', err);
+              alert('SVG文件下载失败，请稍后重试');
+            });
+        } else {
+          throw new Error('AI data not found');
+        }
+      })
+      .catch(err => {
+        console.error('AI下载失败:', err);
+        alert('AI文件下载失败，请稍后重试');
+      });
+  }
+
+  // 替换图片/视频并显示加载指示器
+  function executeReplacement(url) {
+    const targets = TARGET_SELECTORS.map(sel => document.querySelector(sel)).filter(img => img && img.src !== url);
+
+    targets.forEach(img => {
+      const parent = img.parentElement;
+      // 避免重复添加覆盖层
+      if (parent.querySelector('.loading-overlay')) return;
+
+      // 创建加载覆盖层
+      const overlay = document.createElement('div');
+      overlay.className = 'loading-overlay';
+      overlay.textContent = '正在加载高清图片...';
+      Object.assign(overlay.style, {
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        zIndex: '9999',
+        pointerEvents: 'none'
+      });
+
+      // 确保父元素相对定位
+      if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+      parent.appendChild(overlay);
+
+      // 图片加载完成后移除覆盖层
+      img.onload = () => {
+        overlay.remove();
+      };
+      img.onerror = () => {
+        overlay.remove();
+        console.log('高清图片加载失败');
+      };
+      // 设置高清URL并移除srcset
+      img.src = url;
+      img.removeAttribute('srcset');
+      img.style.boxSizing = 'border-box';
+    });
+  }
+
+  // 图片转base64函数
+  function imageToBase64(url) {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function () {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        // 直接绘制图片，保持透明背景
+        ctx.drawImage(img, 0, 0);
+        try {
+          const base64 = canvas.toDataURL('image/png');
+          resolve(base64);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      img.onerror = function () {
+        reject(new Error('图片加载失败'));
+      };
+      img.src = url;
+    });
+  }
+
+  // 处理鼠标移入事件
+  function handleMouseOver() {
+    // 监听所有图片的鼠标移入事件
+    document.addEventListener('mouseover', async function (e) {
+      const img = e.target;
+      if (img.tagName === 'IMG' && img.src.includes('http')) {
+        // 检查是否已经处理过
+        if (img.dataset.originalSrc) {
+          return;
+        }
+
+        // 处理URL，删除_fwXXXwebp部分
+        const originalSrc = img.src;
+        let cleanUrl = processImageUrl(originalSrc);
+
+        // 如果URL有变化，转换为base64
+        if (cleanUrl !== originalSrc) {
+          try {
+            // 保存原始src
+            img.dataset.originalSrc = originalSrc;
+
+            // 转换为base64
+            const base64 = await imageToBase64(cleanUrl);
+
+            // 设置为base64
+            img.src = base64;
+
+            debugLog('图片已转换为base64:', originalSrc, '→', cleanUrl, '→ base64');
+          } catch (error) {
+            console.error('转换base64失败:', error);
+            // 失败时恢复原始src
+            if (img.dataset.originalSrc) {
+              img.src = img.dataset.originalSrc;
+              delete img.dataset.originalSrc;
+            }
+          }
+        }
+      }
+    });
+
+    // 监听鼠标移出事件，恢复原始src
+    document.addEventListener('mouseout', function (e) {
+      const img = e.target;
+      if (img.tagName === 'IMG' && img.dataset.originalSrc) {
+        img.src = img.dataset.originalSrc;
+        delete img.dataset.originalSrc;
+        debugLog('已恢复原始图片URL');
+      }
+    });
+
+    debugLog('鼠标事件监听器已启动');
+  }
+
+  // 拦截拖拽和右键下载事件
   function interceptDragAndDownload() {
     // 监听拖拽开始事件 - 支持传统拖拽（拖拽到桌面/资源管理器）
     document.addEventListener("dragstart", function (e) {
@@ -1061,8 +1010,8 @@
         return;
       }
 
-      // 只处理花瓣图片
-      if (!img.src.includes("gd-hbimg-edge.huaban.com")) {
+      // 只处理图片
+      if (!img.src.includes("http") && !img.src.includes("data:image") && !img.dataset.originalSrc) {
         return;
       }
 
@@ -1075,20 +1024,18 @@
 
       debugLog("检测到图片拖拽开始:", img.src);
 
-      // 检查是否为官方自营素材
-      const isOfficial = isOfficialMaterial();
-      debugLog("是否为官方自营素材:", isOfficial);
-
       try {
-        // 处理URL - 优化：直接使用原始URL作为备选
+        // 处理URL，删除_fwXXXwebp部分
         let cleanUrl;
-        try {
-          cleanUrl = extractImageUrlCore(img.src, isOfficial);
-          debugLog("处理后的下载URL:", img.src, "→", cleanUrl);
-        } catch (error) {
-          // 如果处理失败，使用原始URL
-          debugLog("URL处理失败，使用原始URL:", error.message);
+        let isBase64 = img.src.includes("data:image");
+
+        if (isBase64) {
+          // 如果是base64格式，直接使用base64
           cleanUrl = img.src;
+        } else {
+          // 如果不是base64格式，使用原始URL并处理
+          const originalSrc = img.dataset.originalSrc || img.src;
+          cleanUrl = processImageUrl(originalSrc);
         }
 
         // 设置拖拽数据 - 支持多种拖拽场景
@@ -1116,15 +1063,15 @@
     });
 
     // 监听右键菜单事件 - 使用GM_download API直接下载
-    document.addEventListener("contextmenu", async function (e) {
+    document.addEventListener("contextmenu", function (e) {
       const img = e.target;
       if (
         img.tagName === "IMG" &&
-        img.src.includes("gd-hbimg-edge.huaban.com")
+        (img.src.includes("http") || img.src.includes("data:image") || img.dataset.originalSrc)
       ) {
         // 检查是否为需要处理的图片类型
         if (
-          img.matches(SELECTORS.imageButton.split("[src*")[0]) ||
+          img.matches(SELECTORS.imageButton) ||
           img.closest("#imageViewerWrapper") ||
           img.matches(SELECTORS.imageViewerSimple) ||
           // 新增：支持预览图片（a标签内的img标签）
@@ -1143,15 +1090,12 @@
 
           debugLog("检测到图片右键菜单，使用GM_download下载:", img.src);
 
-          // 检查是否为官方自营素材
-          const isOfficial = isOfficialMaterial();
-          debugLog("是否为官方自营素材:", isOfficial);
+          // 处理URL，删除_fwXXXwebp部分
+          // 如果是base64格式，使用原始URL
+          const originalSrc = img.dataset.originalSrc || img.src;
+          const cleanUrl = processImageUrl(originalSrc);
 
-          // 使用统一的URL处理函数
-          const cleanUrl = await processImageUrl(img.src, isOfficial, true);
-          debugLog("处理后的下载URL:", img.src, "→", cleanUrl);
-
-          // 使用GM_download API直接下载处理后的图片
+          // 使用GM_download API直接下载图片
           // 注意：GM_download需要用户确认，所以这里使用异步方式
           setTimeout(() => {
             try {
@@ -1164,7 +1108,7 @@
                 url: cleanUrl,
                 name: fileName,
                 onload: function () {
-                  console.log("图片下载成功:", fileName);
+                  console.log("图片下载成功:", fileName, "URL:", cleanUrl);
                 },
                 onerror: function (error) {
                   console.error("图片下载失败:", error);
@@ -1294,7 +1238,7 @@
     // 版本信息放在侧栏底部，参考示例布局
     const versionEl = document.createElement("div");
     versionEl.className = "text-xs text-slate-400 p-3";
-    versionEl.textContent = `版本 v${getScriptVersion()}`;
+    versionEl.textContent = `Pro版 v${getScriptVersion()}`;
     sidebar.appendChild(versionEl);
 
     const main = document.createElement("div");
@@ -1720,11 +1664,10 @@
       "flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200";
 
     const enableWatermarkHTML = `
-            <span class="text-sm font-medium text-slate-700 flex items-center">花瓣 vip 素材去水印
+            <span class="text-sm font-medium text-slate-700 flex items-center">花瓣去水印<span class="text-xs text-slate-400 ml-1">（仅支持商用无忧素材)</span>
             </span>
             <div class="relative w-10 h-5 cursor-pointer" id="enableWatermarkContainer">
-                <input type="checkbox" id="enableWatermarkSwitch" ${config.enableRemoveWatermark ? "checked" : ""
-      }
+                <input type="checkbox" id="enableWatermarkSwitch" ${config.enableRemoveWatermark ? "checked" : ""}
                        class="absolute inset-0 opacity-0 cursor-pointer z-30">
                 <span class="absolute inset-0 rounded-full transition-colors duration-200 z-10" style="background: ${config.enableRemoveWatermark ? '#3b82f6' : '#e2e8f0'}"></span>
                 <span class="absolute w-4 h-4 top-0.5 bg-white rounded-full transition-all duration-200 shadow-sm z-20" id="enableWatermarkThumb" style="left: ${config.enableRemoveWatermark ? '22px' : '2px'}"></span>
@@ -1739,7 +1682,7 @@
       "flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200";
 
     const enableDragHTML = `
-            <span class="text-sm font-medium text-slate-700 flex items-center">拖拽下载图片<span class="text-xs text-slate-400 ml-1">（适配资源管理器/<a href="https://wwz.lanzouq.com/iyUTy1zt2b4d" target="_blank" class="text-blue-500 no-underline" title="点击下载PureRef">PureRef</a>）</span>
+            <span class="text-sm font-medium text-slate-700 flex items-center">拖拽下载图片<span class="text-xs text-slate-400 ml-1">（适配资源管理器/<a href="https://wwz.lanzouq.com/iyUTy1zt2b4d" target="_blank" class="text-blue-500 no-underline" title="点击下载PureRef">PureRef</a>)</span>
             </span>
             <div class="relative w-10 h-5 cursor-pointer" id="enableDragContainer">
                 <input type="checkbox" id="enableDragSwitch" ${config.enableDragDownload ? "checked" : ""
@@ -1946,15 +1889,7 @@
       "enableCustomContainer"
     );
 
-    const enableWatermarkSwitch = document.getElementById(
-      "enableWatermarkSwitch"
-    );
-    const enableWatermarkThumb = document.getElementById(
-      "enableWatermarkThumb"
-    );
-    const enableWatermarkContainer = document.getElementById(
-      "enableWatermarkContainer"
-    );
+
 
     const enableDragSwitch = document.getElementById("enableDragSwitch");
     const enableDragThumb = document.getElementById("enableDragThumb");
@@ -1964,6 +1899,12 @@
     const enableRightClickThumb = document.getElementById("enableRightClickThumb");
     const enableRightClickContainer = document.getElementById(
       "enableRightClickContainer"
+    );
+
+    const enableWatermarkSwitch = document.getElementById("enableWatermarkSwitch");
+    const enableWatermarkThumb = document.getElementById("enableWatermarkThumb");
+    const enableWatermarkContainer = document.getElementById(
+      "enableWatermarkContainer"
     );
 
     const materialPreview = document.getElementById("materialPreview");
@@ -2009,21 +1950,7 @@
       )
     );
 
-    // 修复去水印开关功能
-    enableWatermarkSwitch.addEventListener(
-      "change",
-      createSwitchHandler(
-        enableWatermarkSwitch,
-        enableWatermarkThumb,
-        enableWatermarkContainer,
-        (isChecked) => {
-          debugLog("去水印开关状态变化，立即处理所有图片");
-          setTimeout(() => {
-            processWatermark(true);
-          }, TIMING.debounceWatermark);
-        }
-      )
-    );
+
 
     // 拖拽下载开关功能
     enableDragSwitch.addEventListener(
@@ -2047,6 +1974,19 @@
         enableRightClickContainer,
         (isChecked) => {
           debugLog("右键下载开关状态变化:", isChecked);
+        }
+      )
+    );
+
+    // 去水印功能开关
+    enableWatermarkSwitch.addEventListener(
+      "change",
+      createSwitchHandler(
+        enableWatermarkSwitch,
+        enableWatermarkThumb,
+        enableWatermarkContainer,
+        (isChecked) => {
+          debugLog("去水印开关状态变化:", isChecked);
         }
       )
     );
@@ -2236,9 +2176,9 @@
 
       const newConfig = {
         enableCustom: enableCustomSwitch.checked,
-        enableRemoveWatermark: enableWatermarkSwitch.checked,
         enableDragDownload: enableDragSwitch.checked,
         enableRightClickDownload: enableRightClickSwitch.checked,
+        enableRemoveWatermark: enableWatermarkSwitch.checked,
         materialColor: materialColor,
         userColor: userColor,
       };
@@ -2250,11 +2190,7 @@
 
       applyStyles();
 
-      // 根据去水印开关状态处理图片
-      debugLog("保存设置后，处理所有图片");
-      setTimeout(() => {
-        processWatermark(true); // force=true
-      }, TIMING.debounceWatermark);
+
 
       const originalText = saveBtn.textContent;
       saveBtn.textContent = "已保存！";
@@ -2293,12 +2229,7 @@
           enableCustomContainer,
           DEFAULT_CONFIG.enableCustom
         );
-        restoreSwitchState(
-          enableWatermarkSwitch,
-          enableWatermarkThumb,
-          enableWatermarkContainer,
-          DEFAULT_CONFIG.enableRemoveWatermark
-        );
+
         restoreSwitchState(
           enableDragSwitch,
           enableDragThumb,
@@ -2311,6 +2242,12 @@
           enableRightClickContainer,
           DEFAULT_CONFIG.enableRightClickDownload
         );
+        restoreSwitchState(
+          enableWatermarkSwitch,
+          enableWatermarkThumb,
+          enableWatermarkContainer,
+          DEFAULT_CONFIG.enableRemoveWatermark
+        );
 
         // 恢复颜色设置
         materialPreview.style.backgroundColor = DEFAULT_CONFIG.materialColor;
@@ -2320,10 +2257,6 @@
 
         // 应用设置
         applyStyles();
-        debugLog("恢复默认后，处理所有图片");
-        setTimeout(() => {
-          processWatermark(true); // force=true
-        }, TIMING.debounceWatermark);
 
         const originalText = resetBtn.textContent;
         resetBtn.textContent = "已恢复！";
@@ -2491,44 +2424,38 @@
       childList: true
     });
 
-    // 页面加载完成后执行水印处理
+    // 页面加载完成后执行初始化
     window.addEventListener("load", () => {
-      debugLog("页面加载完成，执行初始水印处理");
+      debugLog("页面加载完成，执行初始化");
       setTimeout(() => {
         applyStyles();
-        processWatermark(true); // 初始加载时强制处理，processWatermark函数内部会判断是否为VIP素材
       }, 500); // 延迟一点时间，确保页面完全渲染
     });
 
-    // 监听页面变化，自动处理水印
+    // 监听页面变化
     const observer = observePageChanges();
 
-    // 拦截AJAX请求
-    interceptAjaxRequests();
-
-    // 拦截fetch请求
-    interceptFetchRequests();
-
-    // 拦截图片点击事件
-    interceptImageClicks();
+    // 处理鼠标移入事件
+    handleMouseOver();
 
     // 拦截拖拽和右键下载事件
     interceptDragAndDownload();
 
-    // 处理大图查看器
-    handleImageViewer();
-
-    // 定期检查（作为最后的保障）
-    setInterval(() => {
-      processWatermark();
-    }, 2000);
-
     // 在页面左下角添加设置按钮
     addSettingsButtonToPage();
+
+    // 去水印功能初始化
+    // 监听DOM变化，处理异步加载内容
+    const watermarkObserver = new MutationObserver(handleUpdate);
+    watermarkObserver.observe(document.body, { childList: true, subtree: true });
+
+    // 定期检查更新（处理URL变化等情况）
+    setInterval(handleUpdate, 1000);
 
     // 清理函数
     window.addEventListener("beforeunload", () => {
       observer.disconnect();
+      watermarkObserver.disconnect();
     });
 
     // 在页面左下角添加设置按钮
