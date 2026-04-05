@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印
-// @version      2025-12-25
+// @name         花瓣"去"水印1.1.1
+// @version      1.1.1
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。 3.花瓣官方素材[vip素材]去水印（原理：去水印功能只是把图片链接替换花瓣官网提供的没有水印的最大尺寸图片地址，并非真正破破解去水印,仅供学习使用）更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -189,7 +189,7 @@
         ctrlCmd: true,
         shift: false,
         alt: false,
-        key: "v",
+        key: "p",
         description: "以图搜索功能",
       },
       openSettings: {
@@ -222,17 +222,15 @@
 
             /* 花瓣素材 背景色 */
             .KKIUywzb[data-content-type="素材采集"] .transparent-img-bg {
-                background-color: ${
-                  config.enableCustom ? config.materialColor : "transparent"
-                } !important;
+                background-color: ${config.enableCustom ? config.materialColor : "transparent"
+      } !important;
                 ${config.enableCustom ? "background-image:none!important;" : ""}
             }
 
             /* 用户上传背景色，非花瓣素材 */
             .KKIUywzb:not([data-content-type="素材采集"]) .transparent-img-bg,.transparent-img-black-bg,.transparent-img-bg {
-                background-color: ${
-                  config.enableCustom ? config.userColor : "transparent"
-                } !important;
+                background-color: ${config.enableCustom ? config.userColor : "transparent"
+      } !important;
                 ${config.enableCustom ? "background-image:none!important;" : ""}
             }
             
@@ -309,7 +307,7 @@
       // 检查是否有包含"官方自营"文本的元素
       Array.from(document.querySelectorAll(".fgsjNg46")).some(
         (el) => el.textContent && el.textContent.includes("官方自营")
-      ) || 
+      ) ||
       // 检查是否有title="来自官方自营"的元素
       document.querySelectorAll('[title="来自官方自营"]').length > 0 ||
       // 检查是否有VIP标识元素
@@ -333,38 +331,38 @@
     const watermarkRegex = /(https?:\/\/gd-hbimg-edge\.huaban\.com)\/([^\/?]+)/;
 
     let cleanUrl = url;
-    
+
     if (suffixRegex.test(baseUrl) || watermarkRegex.test(baseUrl)) {
       // 去除后缀参数，得到基础URL
       const baseCleanUrl = baseUrl.replace(suffixRegex, "");
-      
+
       // 如果是官方自营素材，尝试添加/small/前缀
       if (isOfficialMaterial) {
         let urlWithSmallPrefix;
-        
+
         // 检查域名是否包含/small/，如果没有在域名后添加/small/前缀
         if (baseCleanUrl.includes("/small/")) {
           // 已经包含/small/前缀，直接使用
           urlWithSmallPrefix = baseCleanUrl;
         } else {
           // 没有包含/small/前缀，添加前缀
-          urlWithSmallPrefix = watermarkRegex.test(baseCleanUrl) 
-            ? baseCleanUrl.replace(watermarkRegex, "$1/small/$2") 
+          urlWithSmallPrefix = watermarkRegex.test(baseCleanUrl)
+            ? baseCleanUrl.replace(watermarkRegex, "$1/small/$2")
             : baseCleanUrl;
         }
-        
+
         // 组合完整URL
-        cleanUrl = queryParams 
-          ? `${urlWithSmallPrefix}?${queryParams}` 
+        cleanUrl = queryParams
+          ? `${urlWithSmallPrefix}?${queryParams}`
           : urlWithSmallPrefix;
       } else {
         // 非官方自营素材，仅去除后缀参数
-        cleanUrl = queryParams 
-          ? `${baseCleanUrl}?${queryParams}` 
+        cleanUrl = queryParams
+          ? `${baseCleanUrl}?${queryParams}`
           : baseCleanUrl;
       }
     }
-    
+
     return cleanUrl;
   }
 
@@ -386,19 +384,19 @@
     // 4. 如果不是官方自营素材：
     //    a. 仅去除后缀参数
     // 5. 保留原始查询参数
-    
+
     // 使用核心同步函数处理URL
     const processedUrl = extractImageUrlCore(url, isOfficialMaterial);
-    
+
     // 如果不需要检查有效性，直接返回处理后的URL
     if (!checkValidity) {
       return processedUrl;
     }
-    
+
     // 需要检查URL有效性
     debugLog("检查处理后URL的有效性:", processedUrl);
     const isValid = await checkImageUrl(processedUrl);
-    
+
     if (isValid) {
       // URL有效，使用处理后的URL
       debugLog("URL有效，使用处理后的URL");
@@ -470,9 +468,9 @@
         // 核心判断逻辑：只处理包含"官方自营"字样的素材
         // 查找包含"官方自营"文本的元素
         const isOfficialMaterial = Array.from(document.querySelectorAll(".fgsjNg46")).some(
-            (element) =>
-              element.textContent && element.textContent.includes("官方自营")
-          ) ||
+          (element) =>
+            element.textContent && element.textContent.includes("官方自营")
+        ) ||
           // 新增条件：存在 title="来自官方自营" 的元素
           document.querySelectorAll('[title="来自官方自营"]').length > 0;
         debugLog("素材检查结果 - 是官方自营素材:", isOfficialMaterial);
@@ -592,24 +590,24 @@
     const cacheExpiry = GM_getValue(cacheExpiryKey, 0);
     const now = Date.now();
     const cacheDuration = 24 * 60 * 60 * 1000; // 24小时
-    
+
     // 2. 缓存有效直接返回
     if (cachedData && now < cacheExpiry) {
       debugLog('使用缓存的素材网站数据');
       return cachedData;
     }
-    
+
     // 3. 缓存失效，从CDN加载
     try {
       debugLog('从CDN加载素材网站数据');
       const response = await fetch('https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts/花瓣去水印/素材网.json');
       const data = await response.json();
-      
+
       // 4. 更新缓存
       GM_setValue(cacheKey, data);
       GM_setValue(cacheExpiryKey, now + cacheDuration);
       debugLog('素材网站数据已缓存');
-      
+
       return data;
     } catch (error) {
       console.error('加载素材网站列表失败:', error);
@@ -716,7 +714,7 @@
     try {
       // 从CDN或缓存加载数据
       const materialSites = await loadMaterialSites();
-      
+
       // 创建并添加所有网站项
       materialSites.forEach((site) => {
         const siteItem = createSiteItem(site);
@@ -1001,9 +999,9 @@
         if (img && img.src.includes("gd-hbimg-edge.huaban.com")) {
           // 检查是否为官方自营素材（新增 title 选择器，满足任一条件即判定）
           const isOfficialMaterial = Array.from(document.querySelectorAll(".fgsjNg46")).some(
-              (element) =>
-                element.textContent && element.textContent.includes("官方自营")
-            ) ||
+            (element) =>
+              element.textContent && element.textContent.includes("官方自营")
+          ) ||
             // 新增条件：存在 title="来自官方自营" 的元素
             document.querySelectorAll('[title="来自官方自营"]').length > 0;
 
@@ -1059,7 +1057,7 @@
       if (img.tagName !== "IMG") {
         return;
       }
-      
+
       // 只处理花瓣图片
       if (!img.src.includes("gd-hbimg-edge.huaban.com")) {
         return;
@@ -1092,20 +1090,20 @@
 
         // 设置拖拽数据 - 支持多种拖拽场景
         e.dataTransfer.effectAllowed = "copy";
-        
+
         // 设置URI列表（支持大多数文件管理器）
         e.dataTransfer.setData("text/uri-list", cleanUrl);
-        
+
         // 设置纯文本URL（备用）
         e.dataTransfer.setData("text/plain", cleanUrl);
-        
+
         // 设置DownloadURL（支持某些浏览器和工具）
         const fileName = getFileNameFromAlt(img) + ".png";
         e.dataTransfer.setData(
           "DownloadURL",
           `image/png:${fileName}:${cleanUrl}`
         );
-        
+
         debugLog("已设置拖拽数据，文件名将保存为:", fileName);
         debugLog("拖拽数据设置完成");
       } catch (error) {
@@ -1323,6 +1321,10 @@
       main.style.margin = "0";
       main.style.background = "none";
       main.style.borderRadius = "0";
+      main.style.backgroundImage = 'url(https://cdn.h5ds.com/space/files/600972551685382144/20260405/965244304316362752.png), url(https://cdn.h5ds.com/space/files/600972551685382144/20260405/965244228593389568.png)';
+      main.style.backgroundPosition = '0 100%, 100% 100%';
+      main.style.backgroundRepeat = 'no-repeat, no-repeat';
+      main.style.backgroundSize = '18%';
       main.innerHTML = "";
       // 将原来的 content 区域内容渲染到 main
       main.innerHTML = "";
@@ -1333,14 +1335,10 @@
       main.appendChild(actions);
 
       // 初始化时根据开关状态显示或隐藏颜色选择器
-      const colorSettingsContainer = document.getElementById(
-        "colorSettingsContainer"
-      );
+      const colorSettingsContainer = document.getElementById("colorSettingsContainer");
       const enableCustomSwitch = document.getElementById("enableCustomSwitch");
       if (colorSettingsContainer && enableCustomSwitch) {
-        colorSettingsContainer.style.display = enableCustomSwitch.checked
-          ? "block"
-          : "none";
+        colorSettingsContainer.style.display = enableCustomSwitch.checked ? "block" : "none";
       }
     }
 
@@ -1433,14 +1431,12 @@
           main.innerHTML = `
                 <div class="user-profile">
                     <div class="profile-header">
-                        <img src="${data.avatar.url}" alt="${
-            data.username
-          }" class="avatar">
+                        <img src="${data.avatar.url}" alt="${data.username
+            }" class="avatar">
                         <div class="profile-info">
                             <h3>${data.username}</h3>
-                            <p class="job">${
-                              data.profile.job || "未填写职业信息"
-                            }</p>
+                            <p class="job">${data.profile.job || "未填写职业信息"
+            }</p>
                             <p class="joined">注册时间: ${createdAt}</p>
                         </div>
                     </div>
@@ -1454,15 +1450,13 @@
                             <span class="stat-label">采集</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-value">${
-                              data.follower_count
-                            }</span>
+                            <span class="stat-value">${data.follower_count
+            }</span>
                             <span class="stat-label">粉丝</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-value">${
-                              data.following_count
-                            }</span>
+                            <span class="stat-value">${data.following_count
+            }</span>
                             <span class="stat-label">关注</span>
                         </div>
                     </div>
@@ -1564,7 +1558,7 @@
               el: "#tcomment",
               path: "/huaban-helper-all",
             });
-          } catch (e) {}
+          } catch (e) { }
         }
       } catch (e) {
         console.error("初始化 Twikoo 失败", e);
@@ -1704,9 +1698,8 @@
                 开启图片自定义背景色
             </span>
             <div class="relative w-10 h-5 cursor-pointer" id="enableCustomContainer">
-                <input type="checkbox" id="enableCustomSwitch" ${
-                  config.enableCustom ? "checked" : ""
-                }
+                <input type="checkbox" id="enableCustomSwitch" ${config.enableCustom ? "checked" : ""
+      }
                        class="absolute inset-0 opacity-0 cursor-pointer z-30">
                 <span class="absolute inset-0 rounded-full transition-colors duration-200 z-10" style="background: ${config.enableCustom ? '#3b82f6' : '#e2e8f0'}"></span>
                 <span class="absolute w-4 h-4 top-0.5 bg-white rounded-full transition-all duration-200 shadow-sm z-20" id="enableCustomThumb" style="left: ${config.enableCustom ? '22px' : '2px'}"></span>
@@ -1724,9 +1717,8 @@
             <span class="text-sm font-medium text-slate-700 flex items-center">花瓣 vip 素材去水印
             </span>
             <div class="relative w-10 h-5 cursor-pointer" id="enableWatermarkContainer">
-                <input type="checkbox" id="enableWatermarkSwitch" ${
-                  config.enableRemoveWatermark ? "checked" : ""
-                }
+                <input type="checkbox" id="enableWatermarkSwitch" ${config.enableRemoveWatermark ? "checked" : ""
+      }
                        class="absolute inset-0 opacity-0 cursor-pointer z-30">
                 <span class="absolute inset-0 rounded-full transition-colors duration-200 z-10" style="background: ${config.enableRemoveWatermark ? '#3b82f6' : '#e2e8f0'}"></span>
                 <span class="absolute w-4 h-4 top-0.5 bg-white rounded-full transition-all duration-200 shadow-sm z-20" id="enableWatermarkThumb" style="left: ${config.enableRemoveWatermark ? '22px' : '2px'}"></span>
@@ -1744,9 +1736,8 @@
             <span class="text-sm font-medium text-slate-700 flex items-center">拖拽下载图片<span class="text-xs text-slate-400 ml-1">（适配资源管理器/<a href="https://wwz.lanzouq.com/iyUTy1zt2b4d" target="_blank" class="text-blue-500 no-underline" title="点击下载PureRef">PureRef</a>）</span>
             </span>
             <div class="relative w-10 h-5 cursor-pointer" id="enableDragContainer">
-                <input type="checkbox" id="enableDragSwitch" ${
-                  config.enableDragDownload ? "checked" : ""
-                }
+                <input type="checkbox" id="enableDragSwitch" ${config.enableDragDownload ? "checked" : ""
+      }
                        class="absolute inset-0 opacity-0 cursor-pointer z-30">
                 <span class="absolute inset-0 rounded-full transition-colors duration-200 z-10" style="background: ${config.enableDragDownload ? '#3b82f6' : '#e2e8f0'}"></span>
                 <span class="absolute w-4 h-4 top-0.5 bg-white rounded-full transition-all duration-200 shadow-sm z-20" id="enableDragThumb" style="left: ${config.enableDragDownload ? '22px' : '2px'}"></span>
@@ -1764,9 +1755,8 @@
             <span class="text-sm font-medium text-slate-700 flex items-center">右键下载图片<span class="text-xs text-slate-400 ml-1">（修正乱码名称）</span>
             </span>
             <div class="relative w-10 h-5 cursor-pointer" id="enableRightClickContainer">
-                <input type="checkbox" id="enableRightClickSwitch" ${
-                  config.enableRightClickDownload ? "checked" : ""
-                }
+                <input type="checkbox" id="enableRightClickSwitch" ${config.enableRightClickDownload ? "checked" : ""
+      }
                        class="absolute inset-0 opacity-0 cursor-pointer z-30">
                 <span class="absolute inset-0 rounded-full transition-colors duration-200 z-10" style="background: ${config.enableRightClickDownload ? '#3b82f6' : '#e2e8f0'}"></span>
                 <span class="absolute w-4 h-4 top-0.5 bg-white rounded-full transition-all duration-200 shadow-sm z-20" id="enableRightClickThumb" style="left: ${config.enableRightClickDownload ? '22px' : '2px'}"></span>
@@ -1858,16 +1848,14 @@
                 align-items: center;
                 justify-content: space-between;
                 margin-bottom: 4px;
-            "><span style="font-size: 12px; color: #334155; font-weight: 500;">${
-              item.label
-            }</span>
+            "><span style="font-size: 12px; color: #334155; font-weight: 500;">${item.label
+        }</span>
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
                 <div style="flex: 1;">
                     <input type="text" id="hotkey-${item.id}" 
-                           value="${hotkeyConfig.ctrlCmd ? "Ctrl+" : ""}${
-        hotkeyConfig.shift ? "Shift+" : ""
-      }${hotkeyConfig.alt ? "Alt+" : ""}${hotkeyConfig.key.toUpperCase()}"
+                           value="${hotkeyConfig.ctrlCmd ? "Ctrl+" : ""}${hotkeyConfig.shift ? "Shift+" : ""
+        }${hotkeyConfig.alt ? "Alt+" : ""}${hotkeyConfig.key.toUpperCase()}"
                            style="
                                width: 100%;
                                padding: 6px 8px;
@@ -2114,9 +2102,8 @@
 
       // 格式化快捷键显示文本
       const formatHotkeyText = (config) => {
-        return `${config.ctrlCmd ? "Ctrl+" : ""}${
-          config.shift ? "Shift+" : ""
-        }${config.alt ? "Alt+" : ""}${config.key.toUpperCase()}`;
+        return `${config.ctrlCmd ? "Ctrl+" : ""}${config.shift ? "Shift+" : ""
+          }${config.alt ? "Alt+" : ""}${config.key.toUpperCase()}`;
       };
 
       // 处理输入框激活
@@ -2195,7 +2182,7 @@
 
         // 获取默认配置
         const defaultConfig = defaultHotkeys[hotkeyId];
-        
+
         // 更新输入框显示
         input.value = formatHotkeyText(defaultConfig);
 
@@ -2483,7 +2470,7 @@
       childList: true,
       subtree: true,
     });
-    
+
     // 监听URL变化，处理单页应用导航
     let lastUrl = window.location.href;
     new MutationObserver(() => {
@@ -2534,10 +2521,60 @@
       processWatermark();
     }, 2000);
 
+    // 在layout-header中添加设置链接
+    addSettingsLinkToHeader();
+
     // 清理函数
     window.addEventListener("beforeunload", () => {
       observer.disconnect();
     });
+
+    // 在layout-header中添加设置链接
+    function addSettingsLinkToHeader() {
+      try {
+        // 查找id为layout-header的元素
+        const layoutHeader = document.getElementById("layout-header");
+        if (!layoutHeader) {
+          // 如果没找到，等待页面加载完成后再尝试
+          setTimeout(addSettingsLinkToHeader, 500);
+          return;
+        }
+
+        // 查找结构：layout-header > 子元素 > 子元素的第二个子元素
+        const firstChild = layoutHeader.firstElementChild;
+        if (!firstChild) return;
+
+        const secondLevelChild = firstChild.firstElementChild;
+        if (!secondLevelChild) return;
+
+        const targetDiv = secondLevelChild.nextElementSibling;
+        if (!targetDiv) return;
+
+        // 检查是否已经添加过设置链接
+        if (targetDiv.querySelector('a') && targetDiv.querySelector('a img[src*="wx.qlogo.cn"]')) return;
+
+        // 创建设置链接
+        const settingsLink = document.createElement('a');
+        settingsLink.innerHTML = '<img src="https://cdn.h5ds.com/space/files/600972551685382144/20260405/965230570142466048.png" style="width: 36px;">';
+
+        // 添加点击事件，打开脚本设置
+        settingsLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          createConfigUI();
+        });
+
+        // 在目标div的最前端添加链接
+        if (targetDiv.firstChild) {
+          targetDiv.insertBefore(settingsLink, targetDiv.firstChild);
+        } else {
+          targetDiv.appendChild(settingsLink);
+        }
+
+        debugLog("设置链接已添加到layout-header");
+      } catch (error) {
+        console.error("添加设置链接失败:", error);
+      }
+    }
 
     // 检查快捷键是否匹配
     const isHotkeyMatch = (e, hotkeyConfig) => {

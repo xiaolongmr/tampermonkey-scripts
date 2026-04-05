@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         临时脚本
+// @name         临时脚本1.1.1
 // @namespace    http://tampermonkey.net/
-// @version      2026-1-18
+// @version      1.1.1
 // @description  临时脚本，只能替换无水印图片，如需其他功能请添加老脚本使用
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -13,7 +13,7 @@
 // @require      https://cdn.tailwindcss.com
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
     // 脚本通过id获取高清地址
     // 缓存高清URL，避免重复请求
@@ -80,20 +80,20 @@
                             const height = ssrData.preview.height;
                             const dpi = ssrData.dpi;
                             const type = ssrData.type;
-                            const newCachedData = { url: hdUrl, width: width, height: height, dpi: dpi, file_format: file_format, content_url: content_url, type: type, title: title};
+                            const newCachedData = { url: hdUrl, width: width, height: height, dpi: dpi, file_format: file_format, content_url: content_url, type: type, title: title };
                             hdUrlCache.set(id, newCachedData);
-                            
+
                             // 只有type为image时才替换高清图片
                             if (type === 'image') {
                                 executeReplacement(hdUrl);
                             }
-                            
+
                             // 尺寸信息和下载按钮不受type影响，始终显示
                             if (width && height) {
                                 showSizeInfo(width, height, dpi, hdUrl, file_format, content_url, type, title);
                             }
                         }
-                    } catch (e) {}
+                    } catch (e) { }
                 }
             }
         });
@@ -111,7 +111,7 @@
             const sizeOverlay = document.createElement('div');
             sizeOverlay.className = 'size-info-overlay';
             sizeOverlay.textContent = `${width} 像素 x ${height} 像素 (${dpi} dpi)`;
-            
+
             const sizeStyle = {
                 position: 'absolute',
                 bottom: '8px',
@@ -126,7 +126,7 @@
                 transition: 'box-shadow .2s ease',
                 userSelect: 'none'
             };
-            
+
             Object.assign(sizeOverlay.style, sizeStyle);
             parent.appendChild(sizeOverlay);
 
@@ -163,9 +163,9 @@
         const pngButton = createSingleButton('下载 ' + extension.toUpperCase(), url, imgElement, 'image', title);
         pngButton.style.top = '8px';
         parent.appendChild(pngButton);
-        
+
         let buttonIndex = 1;
-        
+
         // 根据类型和文件格式添加额外的下载按钮
         if (type === 'poster' && fileFormat === 'psd') {
             // PSD素材：额外显示下载PSD按钮
@@ -213,12 +213,12 @@
             zipButton.style.top = (8 + buttonIndex * 40) + 'px';
             parent.appendChild(zipButton);
             buttonIndex++;
-            
+
             const mp3Button = createSingleButton('下载 MP3', null, imgElement, 'mp3', title);
             mp3Button.style.top = (8 + buttonIndex * 40) + 'px';
             parent.appendChild(mp3Button);
             buttonIndex++;
-            
+
             const mp4Button = createSingleButton('下载 MP4', null, imgElement, 'mp4', title);
             mp4Button.style.top = (8 + buttonIndex * 40) + 'px';
             parent.appendChild(mp4Button);
@@ -235,10 +235,10 @@
         const downloadBtn = document.createElement('div');
         downloadBtn.className = 'download-btn-overlay';
         downloadBtn.textContent = text;
-        
+
         // 判断是否为待实现的功能
         const isImplemented = downloadType === 'image' || downloadType === 'zip' || downloadType === 'eps' || downloadType === 'ai' || downloadType === 'svg';
-        
+
         // 统一的按钮样式
         const btnStyle = {
             position: 'absolute',
@@ -254,7 +254,7 @@
             transition: 'box-shadow .2s ease',
             userSelect: 'none'
         };
-        
+
         // 待实现的功能按钮样式
         if (!isImplemented) {
             btnStyle.cursor = 'not-allowed';
@@ -264,14 +264,14 @@
         } else {
             btnStyle.cursor = 'pointer';
         }
-        
+
         Object.assign(downloadBtn.style, btnStyle);
-        
+
         // 根据下载类型绑定不同的点击事件
         downloadBtn.addEventListener('click', () => {
             console.log(`点击了 ${text} 按钮，下载类型: ${downloadType}`);
-            
-            switch(downloadType) {
+
+            switch (downloadType) {
                 case 'image':
                     if (url) {
                         downloadImage(url, imgElement, title);
@@ -311,7 +311,7 @@
                     break;
             }
         });
-        
+
         return downloadBtn;
     }
 
@@ -320,7 +320,7 @@
         const filename = title || imgElement?.alt || 'huaban_image';
         const extension = getFileExtension(url);
         const fullFilename = filename + extension;
-        
+
         fetch(url)
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
@@ -351,7 +351,7 @@
     // 下载ZIP文件功能
     function downloadZipFile(contentUrl, imgElement, title) {
         const filename = title || imgElement?.alt || 'huaban_素材';
-        
+
         fetch(contentUrl)
             .then(response => response.json())
             .then(data => {
@@ -376,26 +376,26 @@
     // 下载AI文件功能
     function downloadAiFile(contentUrl, imgElement, title) {
         const filename = title || imgElement?.alt || 'huaban_素材';
-        
+
         fetch(contentUrl)
             .then(response => response.json())
             .then(data => {
                 if (data.model && data.model.url) {
                     const svgUrl = data.model.url;
                     const colors = data.model.colors || [];
-                    
+
                     fetch(svgUrl)
                         .then(response => response.text())
                         .then(svgContent => {
                             let processedSvg = svgContent;
-                            
+
                             if (colors.length > 0) {
                                 processedSvg = svgContent.replace(/\{\{colors\[(\d+)\]\}\}/g, (match, index) => {
                                     const colorIndex = parseInt(index);
                                     return colors[colorIndex] || '#000000';
                                 });
                             }
-                            
+
                             const blob = new Blob([processedSvg], { type: 'image/svg+xml' });
                             const blobUrl = URL.createObjectURL(blob);
                             const link = document.createElement('a');
