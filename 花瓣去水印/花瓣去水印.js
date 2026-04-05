@@ -723,6 +723,9 @@
     } catch (error) {
       console.error("渲染素材网站列表失败:", error);
       sitesList.innerHTML = `<div class="col-span-3 text-center text-slate-500 py-4">无法加载素材网站列表</div>`;
+
+      // 添加样式到文档头部
+      document.head.appendChild(style);
     }
 
     // 组装并添加到页面
@@ -1219,9 +1222,6 @@
     container.className =
       "fixed inset-0 bg-black/30 flex items-center justify-center z-[999] backdrop-blur-sm";
 
-    // 禁止页面滚动
-    document.body.style.overflow = "hidden";
-
     // 创建卡片（更宽以容纳侧边栏）
     const card = document.createElement("div");
     // 固定高度布局，确保左侧导航与右侧内容高度一致
@@ -1320,11 +1320,11 @@
       main.style.padding = "16px";
       main.style.margin = "0";
       main.style.background = "none";
-      main.style.borderRadius = "0";
       main.style.backgroundImage = 'url(https://cdn.h5ds.com/space/files/600972551685382144/20260405/965244304316362752.png), url(https://cdn.h5ds.com/space/files/600972551685382144/20260405/965244228593389568.png)';
       main.style.backgroundPosition = '0 100%, 100% 100%';
       main.style.backgroundRepeat = 'no-repeat, no-repeat';
       main.style.backgroundSize = '18%';
+      main.style.position = 'relative';
       main.innerHTML = "";
       // 将原来的 content 区域内容渲染到 main
       main.innerHTML = "";
@@ -1333,6 +1333,12 @@
       main.innerHTML += colorSettings;
       main.appendChild(hotkeysSettings);
       main.appendChild(actions);
+
+      // 添加免责提示
+      const disclaimer = document.createElement('div');
+      disclaimer.className = 'text-sm text-center absolute w-full bottom-0 left-1/2 -translate-x-1/2 text-gray-500 py-4';
+      disclaimer.textContent = '免责声明：本脚本仅用于学习研究，请勿用于商业用途';
+      main.appendChild(disclaimer);
 
       // 初始化时根据开关状态显示或隐藏颜色选择器
       const colorSettingsContainer = document.getElementById("colorSettingsContainer");
@@ -1362,7 +1368,7 @@
       const fallback = document.createElement("div");
       fallback.className =
         "text-sm text-center absolute w-full bottom-0 left-1/2 -translate-x-1/2 no-underline bg-white px-4 py-2 rounded shadow-md";
-      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-500">在新标签页打开更新记录</a>（飞书文档）`;
+      fallback.innerHTML = `若内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-500">点我在新标签页打开更新记录</a>（飞书文档）`;
       main.appendChild(iframe);
       main.appendChild(fallback);
     }
@@ -1387,7 +1393,7 @@
       const fallback = document.createElement("div");
       fallback.className =
         "text-sm text-center absolute w-full bottom-0 left-1/2 -translate-x-1/2 no-underline bg-white px-4 py-2 rounded shadow-md";
-      fallback.innerHTML = `若嵌入内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-500">在新标签页打开使用说明</a>（飞书文档）`;
+      fallback.innerHTML = `若内容无法显示，请 <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-500">点我在新标签页打开使用说明</a>（飞书文档）`;
       main.appendChild(iframe);
       main.appendChild(fallback);
     }
@@ -1821,7 +1827,7 @@
     // 快捷键项目列表
     const hotkeyItems = [
       { id: "searchFocus", label: "定位到搜索框", defaultKey: "k" },
-      { id: "imageSearch", label: "以图搜索功能", defaultKey: "v" },
+      { id: "imageSearch", label: "以图搜索功能", defaultKey: "p" },
       { id: "openSettings", label: "打开设置界面", defaultKey: "," },
     ];
 
@@ -1962,10 +1968,8 @@
 
     const materialPreview = document.getElementById("materialPreview");
     const materialPicker = document.getElementById("materialPicker");
-    const materialInput = document.getElementById("materialInput");
     const userPreview = document.getElementById("userPreview");
     const userPicker = document.getElementById("userPicker");
-    const userInput = document.getElementById("userInput");
     const saveBtn = document.getElementById("saveBtn");
     const resetBtn = document.getElementById("resetBtn");
 
@@ -2088,7 +2092,7 @@
           ctrlCmd: true,
           shift: false,
           alt: false,
-          key: "v",
+          key: "p",
           description: "以图搜索功能",
         },
         openSettings: {
@@ -2309,10 +2313,8 @@
         );
 
         // 恢复颜色设置
-        materialInput.value = DEFAULT_CONFIG.materialColor;
         materialPreview.style.backgroundColor = DEFAULT_CONFIG.materialColor;
         materialPicker.value = DEFAULT_CONFIG.materialColor;
-        userInput.value = DEFAULT_CONFIG.userColor;
         userPreview.style.backgroundColor = DEFAULT_CONFIG.userColor;
         userPicker.value = DEFAULT_CONFIG.userColor;
 
@@ -2521,58 +2523,54 @@
       processWatermark();
     }, 2000);
 
-    // 在layout-header中添加设置链接
-    addSettingsLinkToHeader();
+    // 在页面左下角添加设置按钮
+    addSettingsButtonToPage();
 
     // 清理函数
     window.addEventListener("beforeunload", () => {
       observer.disconnect();
     });
 
-    // 在layout-header中添加设置链接
-    function addSettingsLinkToHeader() {
+    // 在页面左下角添加设置按钮
+    function addSettingsButtonToPage() {
       try {
-        // 查找id为layout-header的元素
-        const layoutHeader = document.getElementById("layout-header");
-        if (!layoutHeader) {
-          // 如果没找到，等待页面加载完成后再尝试
-          setTimeout(addSettingsLinkToHeader, 500);
-          return;
-        }
+        // 检查是否已经添加过
+        if (document.getElementById('hb-settings-button')) return;
 
-        // 查找结构：layout-header > 子元素 > 子元素的第二个子元素
-        const firstChild = layoutHeader.firstElementChild;
-        if (!firstChild) return;
+        // 创建设置按钮
+        const settingsButton = document.createElement('div');
+        settingsButton.id = 'hb-settings-button';
+        settingsButton.innerHTML = '<img src="https://cdn.h5ds.com/space/files/600972551685382144/20260406/965287727847845888.png" style="width: 70px; cursor: pointer;">';
 
-        const secondLevelChild = firstChild.firstElementChild;
-        if (!secondLevelChild) return;
+        // 设置固定定位，左下角，距离顶部30%
+        settingsButton.style.cssText = `
+          position: fixed;
+          left: 1px;
+          top: 50%;
+          z-index: 9999;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        `;
 
-        const targetDiv = secondLevelChild.nextElementSibling;
-        if (!targetDiv) return;
-
-        // 检查是否已经添加过设置链接
-        if (targetDiv.querySelector('a') && targetDiv.querySelector('a img[src*="wx.qlogo.cn"]')) return;
-
-        // 创建设置链接
-        const settingsLink = document.createElement('a');
-        settingsLink.innerHTML = '<img src="https://cdn.h5ds.com/space/files/600972551685382144/20260405/965230570142466048.png" style="width: 36px;">';
+        // 添加悬停效果
+        settingsButton.addEventListener('mouseenter', () => {
+          settingsButton.style.transform = 'scale(1.1)';
+        });
+        settingsButton.addEventListener('mouseleave', () => {
+          settingsButton.style.transform = 'scale(1)';
+        });
 
         // 添加点击事件，打开脚本设置
-        settingsLink.addEventListener('click', (e) => {
-          e.preventDefault();
+        settingsButton.addEventListener('click', () => {
           createConfigUI();
         });
 
-        // 在目标div的最前端添加链接
-        if (targetDiv.firstChild) {
-          targetDiv.insertBefore(settingsLink, targetDiv.firstChild);
-        } else {
-          targetDiv.appendChild(settingsLink);
-        }
+        // 添加到页面
+        document.body.appendChild(settingsButton);
 
-        debugLog("设置链接已添加到layout-header");
+        debugLog("设置按钮已添加到页面左下角");
       } catch (error) {
-        console.error("添加设置链接失败:", error);
+        console.error("添加设置按钮失败:", error);
       }
     }
 
