@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.1
-// @version      1.1.1
+// @name         花瓣"去"水印-pro 1.1.2
+// @version      1.1.2
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -18,7 +18,7 @@
 // @run-at       document-end
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
 // @require      https://cdn.tailwindcss.com
-// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@8ed09bc4be4797388576008ceadbe0f8258126e5/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
+// @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0Pro%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
 // @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts@09ee56b513ba1a42a4d0257c69a332d0a91aba77/%E7%BD%91%E7%AB%99%E6%B3%A8%E5%86%8C%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%A1%A8%E5%8D%95%E4%BF%A1%E6%81%AF/%E7%BD%91%E7%AB%99%E6%B3%A8%E5%86%8C%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%A1%A8%E5%8D%95%E4%BF%A1%E6%81%AF.js
 // ==/UserScript==
 
@@ -1237,8 +1237,20 @@
 
     // 版本信息放在侧栏底部，参考示例布局
     const versionEl = document.createElement("div");
-    versionEl.className = "text-xs text-slate-400 p-3";
-    versionEl.textContent = `Pro版 v${getScriptVersion()}`;
+    versionEl.className = "text-xs text-slate-400 p-3 flex items-center justify-between";
+    
+    const versionText = document.createElement("span");
+    versionText.textContent = `Pro版 v${getScriptVersion()}`;
+    versionEl.appendChild(versionText);
+    
+    const donateLink = document.createElement("a");
+    donateLink.href = "https://getquicker.net/DonateAuthor?serial=388875&nickname=%E7%88%B1%E5%90%83%E9%A6%8D%E7%9A%84%E5%B0%8F%E5%BC%A0";
+    donateLink.className = "text-xs text-red-400 hover:text-red-300 transition-colors";
+    donateLink.textContent = "捐助";
+    donateLink.target = "_blank";
+    donateLink.rel = "noopener noreferrer";
+    versionEl.appendChild(donateLink);
+    
     sidebar.appendChild(versionEl);
 
     const main = document.createElement("div");
