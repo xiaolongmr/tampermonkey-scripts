@@ -64,6 +64,8 @@
     // 启用右键下载功能
     enableRemoveWatermark: true,
     // 启用去水印功能
+    enableHideSettingsButton: false,
+    // 隐藏蜡笔小新设置按钮
   };
 
   // 配置字段映射（简化 getConfig/saveConfig）
@@ -74,6 +76,7 @@
     "enableDragDownload",
     "enableRightClickDownload",
     "enableRemoveWatermark",
+    "enableHideSettingsButton",
   ];
 
   // ==================== 状态变量 ====================
@@ -1238,11 +1241,11 @@
     // 版本信息放在侧栏底部，参考示例布局
     const versionEl = document.createElement("div");
     versionEl.className = "text-xs text-slate-400 p-3 flex items-center justify-between";
-    
+
     const versionText = document.createElement("span");
     versionText.textContent = `Pro版 v${getScriptVersion()}`;
     versionEl.appendChild(versionText);
-    
+
     const donateLink = document.createElement("a");
     donateLink.href = "https://getquicker.net/DonateAuthor?serial=388875&nickname=%E7%88%B1%E5%90%83%E9%A6%8D%E7%9A%84%E5%B0%8F%E5%BC%A0";
     donateLink.className = "text-xs text-red-400 hover:text-red-300 transition-colors";
@@ -1250,7 +1253,7 @@
     donateLink.target = "_blank";
     donateLink.rel = "noopener noreferrer";
     versionEl.appendChild(donateLink);
-    
+
     sidebar.appendChild(versionEl);
 
     const main = document.createElement("div");
@@ -1726,11 +1729,30 @@
 
     enableRightClickSection.innerHTML = enableRightClickHTML;
 
+    // 隐藏蜡笔小新设置按钮开关
+    const enableHideSettingsButtonSection = document.createElement("div");
+    enableHideSettingsButtonSection.className =
+      "flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200";
+
+    const enableHideSettingsButtonHTML = `
+            <span class="text-sm font-medium text-slate-700 flex items-center">隐藏蜡笔小新
+            </span>
+            <div class="relative w-10 h-5 cursor-pointer" id="enableHideSettingsButtonContainer">
+                <input type="checkbox" id="enableHideSettingsButtonSwitch" ${config.enableHideSettingsButton ? "checked" : ""}
+                       class="absolute inset-0 opacity-0 cursor-pointer z-30">
+                <span class="absolute inset-0 rounded-full transition-colors duration-200 z-10" style="background: ${config.enableHideSettingsButton ? '#3b82f6' : '#e2e8f0'}"></span>
+                <span class="absolute w-4 h-4 top-0.5 bg-white rounded-full transition-all duration-200 shadow-sm z-20" id="enableHideSettingsButtonThumb" style="left: ${config.enableHideSettingsButton ? '22px' : '2px'}"></span>
+            </div>
+        `;
+
+    enableHideSettingsButtonSection.innerHTML = enableHideSettingsButtonHTML;
+
     // 组装开关区域
     switchesSection.appendChild(enableCustomSection);
     switchesSection.appendChild(enableWatermarkSection);
     switchesSection.appendChild(enableDragSection);
     switchesSection.appendChild(enableRightClickSection);
+    switchesSection.appendChild(enableHideSettingsButtonSection);
 
     const colorSettings = `
             <!-- 素材背景颜色设置容器 -->
@@ -1919,6 +1941,12 @@
       "enableWatermarkContainer"
     );
 
+    const enableHideSettingsButtonSwitch = document.getElementById("enableHideSettingsButtonSwitch");
+    const enableHideSettingsButtonThumb = document.getElementById("enableHideSettingsButtonThumb");
+    const enableHideSettingsButtonContainer = document.getElementById(
+      "enableHideSettingsButtonContainer"
+    );
+
     const materialPreview = document.getElementById("materialPreview");
     const materialPicker = document.getElementById("materialPicker");
     const userPreview = document.getElementById("userPreview");
@@ -1999,6 +2027,24 @@
         enableWatermarkContainer,
         (isChecked) => {
           debugLog("去水印开关状态变化:", isChecked);
+        }
+      )
+    );
+
+    // 隐藏蜡笔小新设置按钮开关
+    enableHideSettingsButtonSwitch.addEventListener(
+      "change",
+      createSwitchHandler(
+        enableHideSettingsButtonSwitch,
+        enableHideSettingsButtonThumb,
+        enableHideSettingsButtonContainer,
+        (isChecked) => {
+          debugLog("隐藏蜡笔小新开关状态变化:", isChecked);
+          // 立即更新设置按钮的显示状态
+          const settingsButton = document.getElementById('hb-settings-button');
+          if (settingsButton) {
+            settingsButton.style.display = isChecked ? 'none' : 'block';
+          }
         }
       )
     );
@@ -2191,6 +2237,7 @@
         enableDragDownload: enableDragSwitch.checked,
         enableRightClickDownload: enableRightClickSwitch.checked,
         enableRemoveWatermark: enableWatermarkSwitch.checked,
+        enableHideSettingsButton: enableHideSettingsButtonSwitch.checked,
         materialColor: materialColor,
         userColor: userColor,
       };
@@ -2259,6 +2306,12 @@
           enableWatermarkThumb,
           enableWatermarkContainer,
           DEFAULT_CONFIG.enableRemoveWatermark
+        );
+        restoreSwitchState(
+          enableHideSettingsButtonSwitch,
+          enableHideSettingsButtonThumb,
+          enableHideSettingsButtonContainer,
+          DEFAULT_CONFIG.enableHideSettingsButton
         );
 
         // 恢复颜色设置
@@ -2475,6 +2528,13 @@
       try {
         // 检查是否已经添加过
         if (document.getElementById('hb-settings-button')) return;
+
+        // 获取配置，检查是否需要隐藏设置按钮
+        const config = getConfig();
+        if (config.enableHideSettingsButton) {
+          debugLog("设置按钮已隐藏");
+          return;
+        }
 
         // 创建设置按钮
         const settingsButton = document.createElement('div');
