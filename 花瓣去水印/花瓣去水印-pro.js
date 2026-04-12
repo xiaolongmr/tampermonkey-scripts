@@ -35,6 +35,12 @@
     switchTransition: 1000, // 开关状态变化反馈时长
   };
 
+  // 设置面板背景图片
+  const SETTINGS_BG_IMAGES = {
+    left: 'https://cdn.h5ds.com/space/files/600972551685382144/20260405/965244304316362752.png',
+    right: 'https://cdn.h5ds.com/space/files/600972551685382144/20260405/965244228593389568.png',
+  };
+
   // DOM 选择器
   const SELECTORS = {
     // 花瓣网中的"查看大图"按钮图片
@@ -1173,7 +1179,7 @@
     const card = document.createElement("div");
     // 固定高度布局，确保左侧导航与右侧内容高度一致
     card.className =
-      "bg-white rounded-xl shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[900px] h-[680px] max-w-[96vw] flex flex-col overflow-hidden";
+      "bg-white rounded-[20px] shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[900px] h-[680px] max-w-[96vw] flex flex-col overflow-hidden";
     card.style.fontFamily =
       '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
@@ -1184,7 +1190,7 @@
     const sidebar = document.createElement("div");
     // 侧栏采用纵向布局，底部显示版本号
     sidebar.className =
-      "w-[150px] p-3 bg-slate-50 box-border flex flex-col justify-between overflow-hidden";
+      "w-[160px] p-3 bg-slate-50 box-border flex flex-col justify-between overflow-hidden";
 
     // 左侧导航按钮
     const makeNavBtn = (id, text) => {
@@ -1279,13 +1285,12 @@
       main.style.padding = "16px";
       main.style.margin = "0";
       main.style.background = "none";
-      main.style.backgroundImage = 'url(https://cdn.h5ds.com/space/files/600972551685382144/20260405/965244304316362752.png), url(https://cdn.h5ds.com/space/files/600972551685382144/20260405/965244228593389568.png)';
+      main.style.backgroundImage = `url(${SETTINGS_BG_IMAGES.left}), url(${SETTINGS_BG_IMAGES.right})`;
       main.style.backgroundPosition = '0 100%, 100% 100%';
       main.style.backgroundRepeat = 'no-repeat, no-repeat';
       main.style.backgroundSize = '18%';
       main.style.position = 'relative';
-      main.innerHTML = "";
-      // 将原来的 content 区域内容渲染到 main
+      // 清理旧内容
       main.innerHTML = "";
       // switchesSection, colorSettings, actions 会被插入后
       main.appendChild(switchesSection);
@@ -1443,7 +1448,7 @@
       main.style.background =
         "linear-gradient(rgb(255, 198, 196), rgba(255, 198, 196, 0.95) 50%, rgb(255, 255, 255) 90%)";
       main.style.borderRadius = "6px";
-      main.innerHTML = "";
+      // 清理旧内容
       main.innerHTML = "";
       const iframe = document.createElement("iframe");
       iframe.src =
@@ -1571,7 +1576,6 @@
         iframe.className =
           "absolute inset-0 w-full h-full border-0 outline-none";
         iframe.allow = "autoplay; clipboard-write";
-        iframe.frameBorder = "0";
 
         // 创建关闭按钮
         const closeButton = document.createElement("div");
@@ -2371,7 +2375,7 @@
 
     const card = document.createElement("div");
     card.className =
-      "bg-white rounded-[24px] shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[1000px] h-[820px] max-w-[96vw] max-h-[86vh] flex flex-col overflow-hidden";
+      "bg-white rounded-[20px] shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[1000px] h-[820px] max-w-[96vw] max-h-[86vh] flex flex-col overflow-hidden";
 
     const header = document.createElement("div");
     header.className =
