@@ -1111,13 +1111,13 @@
                 onerror: function (error) {
                   console.error("图片下载失败:", error);
                   // 如果GM_download失败，尝试备用方案
-                  fallbackDownload(cleanUrl, fileName);
+                  fallbackDownload(cleanUrl, fileName, img);
                 },
               });
             } catch (error) {
               console.error("GM_download调用失败:", error);
               // 备用下载方案
-              fallbackDownload(cleanUrl, getFileNameFromAlt(img) + ".png");
+              fallbackDownload(cleanUrl, getFileNameFromAlt(img) + ".png", img);
             }
           }, 100);
         }
@@ -1125,7 +1125,7 @@
     });
 
     // 备用下载方案：创建隐藏的下载链接
-    function fallbackDownload(url, fileName) {
+    function fallbackDownload(url, fileName, img) {
       try {
         const a = document.createElement("a");
         a.href = url;
@@ -1949,7 +1949,6 @@
 
     // 开关事件处理器工厂函数 - 消除重复代码
     const createSwitchHandler = (
-      switchElement,
       thumbElement,
       containerElement,
       callback
@@ -2028,7 +2027,6 @@
     enableHideSettingsButtonSwitch.addEventListener(
       "change",
       createSwitchHandler(
-        enableHideSettingsButtonSwitch,
         enableHideSettingsButtonThumb,
         enableHideSettingsButtonContainer,
         (isChecked) => {
