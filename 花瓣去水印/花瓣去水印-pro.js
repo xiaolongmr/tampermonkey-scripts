@@ -25,6 +25,31 @@
 (function () {
   "use strict";
 
+  // ==================== 通用函数 ====================
+  function showToast(text, isHtml = false) {
+    const toast = document.createElement("div");
+    toast.innerHTML = isHtml ? text : text;
+    toast.style.cssText = `position:fixed; top:-50px; left:50%; transform:translateX(-50%) translateY(0); background:#00c853; color:#fff; padding:8px 20px; border-radius:50px; z-index:2147483647; font-size:13px; font-weight:bold; border:1px solid rgba(255,255,255,0.3); box-shadow:0 4px 15px rgba(0,200,83,0.4);`;
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes toastIn { 0%{top:-50px;transform:translateX(-50%) scale(0.8);opacity:0} 60%{top:25px;transform:translateX(-50%) scale(1.05)} 80%{top:15px;transform:translateX(-50%) scale(0.98)} 100%{top:20px;transform:translateX(-50%) scale(1);opacity:1} }
+      @keyframes toastOut { 0%{top:20px;transform:translateX(-50%) scale(1);opacity:1} 100%{top:-50px;transform:translateX(-50%) scale(0.8);opacity:0} }
+    `;
+    document.head.appendChild(style);
+    toast.style.animation = "toastIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards";
+    if (isHtml) {
+      toast.style.whiteSpace = "nowrap";
+      toast.style.pointerEvents = "auto";
+      toast.style.cursor = "pointer";
+    }
+    document.body.appendChild(toast);
+    const duration = isHtml ? 4000 : 1200;
+    setTimeout(() => {
+      toast.style.animation = "toastOut 0.3s ease-in forwards";
+      setTimeout(() => { toast.remove(); style.remove(); }, 300);
+    }, duration);
+  }
+
   // ==================== 常量定义 ====================
 
   // 时间配置（毫秒）
@@ -456,6 +481,190 @@
 
     debugLog("页面变化监听器已启动");
     return observer;
+  }
+
+  // ==================== Hover操作面板功能 ====================
+
+  const HOVER_PANEL_STYLE = `
+    .hover-img-container {
+      position: relative !important;
+      display: inline-block !important;
+    }
+    .hover-action-panel,
+    .img-size-text {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .hover-action-panel.show,
+    .img-size-text.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .hover-action-panel {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 99999;
+    }
+    .hover-action-panel button {
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    color: black;
+    align-items: center;
+    padding: 7px;
+    }
+    .hover-action-panel .ps-btn {
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
+      // border: 3px solid #30c1eb;
+    }
+    .img-size-text {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      padding: 6px 12px;
+      z-index: 9999;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          backdrop-filter: blur(5px);
+      font-size: 12px;
+      color: black;
+    }
+  `;
+
+  function createHoverPanel(imgElement) {
+    const parent = imgElement.parentElement;
+    if (!parent || parent.querySelector(".hover-action-panel")) return;
+
+    parent.classList.add("hover-img-container");
+    const panel = document.createElement("div");
+    panel.className = "hover-action-panel";
+    panel.innerHTML = `<button class="copy-btn"><svg width="1em" height="1em" fill="currentColor"><use xlink:href="#style"></use></svg></button><button class="download-btn"><svg width="1em" height="1em" fill="currentColor"><use xlink:href="#hb_download"></use></svg></button><button class="ps-btn"><img src="https://gd-hbimg-edge.huaban.com/8ea3a98066d2253e33315d747b9f5977cca2e29a4930f-5I1sE2_fw658webp?auth_key=1776024000-3cb0287b085f47fd8d86e234003a2fa2-0-ea9dfa59cc3762bff239d20b4536e5b6" alt="PS" style="width:30px"></button>`;
+    parent.after(panel);
+
+    // 获取原图尺寸
+    let sizeUpdated = false;
+    const updateSize = () => {
+      if (sizeUpdated) return;
+      sizeUpdated = true;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        if (img.naturalWidth > 0) {
+          const sizeText = document.createElement("span");
+          sizeText.className = "img-size-text";
+          sizeText.textContent = `${img.naturalWidth} x ${img.naturalHeight}px`;
+          parent.after(sizeText);
+        }
+      };
+      img.src = processImageUrl(imgElement.dataset.originalSrc || imgElement.src);
+    };
+    imgElement.complete ? updateSize() : imgElement.addEventListener("load", updateSize);
+
+    // hover事件
+    let hoverTimeout;
+    const show = () => {
+      clearTimeout(hoverTimeout);
+      panel.classList.add("show");
+      const sizeText = parent.nextElementSibling;
+      sizeText?.classList.add("show");
+    };
+    const hide = () => {
+      hoverTimeout = setTimeout(() => {
+        panel.classList.remove("show");
+        const sizeText = parent.nextElementSibling;
+        sizeText?.classList.remove("show");
+      }, 100);
+    };
+    parent.addEventListener("mouseenter", show);
+    parent.addEventListener("mouseleave", hide);
+    panel.addEventListener("mouseenter", show);
+    panel.addEventListener("mouseleave", hide);
+
+    // 获取原图URL
+    const getOriginalUrl = () => processImageUrl(imgElement.dataset.originalSrc || imgElement.src);
+
+    // 复制按钮 - Canvas方式复制图片
+    panel.querySelector(".copy-btn").addEventListener("click", async e => {
+      e.stopPropagation();
+      const url = getOriginalUrl();
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(async blob => {
+          if (blob) {
+            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+            showToast("图片已复制");
+          }
+        });
+      } catch (err) {
+        await navigator.clipboard.writeText(url);
+        showToast("图片URL已复制");
+      }
+    });
+
+    // 下载按钮
+    panel.querySelector(".download-btn").addEventListener("click", e => {
+      e.stopPropagation();
+      const url = getOriginalUrl();
+      const fileName = getFileNameFromAlt(imgElement) + ".png";
+      if (typeof GM_download === "function") {
+        GM_download({ url, name: fileName });
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.click();
+      }
+    });
+
+    // PS导入按钮 - Ctrl点击新建文件导入
+    panel.querySelector(".ps-btn").addEventListener("click", async e => {
+      e.stopPropagation();
+      const url = getOriginalUrl();
+      const name = getFileNameFromAlt(imgElement);
+      const isNewDoc = e.ctrlKey || e.metaKey;
+      const clipboardStr = `PS_IMPORTER:${url}|||${name}${isNewDoc ? "|||NEW_DOC" : ""}`;
+      try { GM_setClipboard(clipboardStr); } catch { await navigator.clipboard.writeText(clipboardStr); }
+      showToast(isNewDoc ? "已发送至PS (新建文件)" : '已发送至PS <a href="https://mp.weixin.qq.com/s/TvPs50dl-RpO8LGNkobuYg" target="_blank" style="color:#fff;text-decoration:underline;pointer-events:auto;">(需安装图片导导插件)</a>', isNewDoc ? false : true);
+    });
+  }
+
+  function initImageHover() {
+    document.head.insertAdjacentHTML("beforeend", `<style>${HOVER_PANEL_STYLE}</style>`);
+
+    const processImage = img => {
+      const parent = img.closest("[data-material-id]") || img.closest(".KKIUywzb");
+      if (parent && !parent.querySelector(".hover-action-panel")) createHoverPanel(img);
+    };
+
+    new MutationObserver(m => m.forEach(n => n.addedNodes.forEach(node => {
+      if (node.nodeType !== 1) return;
+      if (node.tagName === "IMG") processImage(node);
+      node.querySelectorAll?.("img").forEach(processImage);
+    }))).observe(document.body, { childList: true, subtree: true });
+
+    document.querySelectorAll("img").forEach(processImage);
   }
 
   // 处理图片URL，删除_fwXXXwebp部分
@@ -918,85 +1127,6 @@
       img.removeAttribute('srcset');
       img.style.boxSizing = 'border-box';
     });
-  }
-
-  // 图片转base64函数
-  function imageToBase64(url) {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = function () {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        // 直接绘制图片，保持透明背景
-        ctx.drawImage(img, 0, 0);
-        try {
-          const base64 = canvas.toDataURL('image/png');
-          resolve(base64);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      img.onerror = function () {
-        reject(new Error('图片加载失败'));
-      };
-      img.src = url;
-    });
-  }
-
-  // 处理鼠标移入事件
-  function handleMouseOver() {
-    // 监听所有图片的鼠标移入事件
-    document.addEventListener('mouseover', async function (e) {
-      const img = e.target;
-      if (img.tagName === 'IMG' && img.src.includes('http')) {
-        // 检查是否已经处理过
-        if (img.dataset.originalSrc) {
-          return;
-        }
-
-        // 处理URL，删除_fwXXXwebp部分
-        const originalSrc = img.src;
-        let cleanUrl = processImageUrl(originalSrc);
-
-        // 如果URL有变化，转换为base64
-        if (cleanUrl !== originalSrc) {
-          try {
-            // 保存原始src
-            img.dataset.originalSrc = originalSrc;
-
-            // 转换为base64
-            const base64 = await imageToBase64(cleanUrl);
-
-            // 设置为base64
-            img.src = base64;
-
-            debugLog('图片已转换为base64:', originalSrc, '→', cleanUrl, '→ base64');
-          } catch (error) {
-            console.error('转换base64失败:', error);
-            // 失败时恢复原始src
-            if (img.dataset.originalSrc) {
-              img.src = img.dataset.originalSrc;
-              delete img.dataset.originalSrc;
-            }
-          }
-        }
-      }
-    });
-
-    // 监听鼠标移出事件，恢复原始src
-    document.addEventListener('mouseout', function (e) {
-      const img = e.target;
-      if (img.tagName === 'IMG' && img.dataset.originalSrc) {
-        img.src = img.dataset.originalSrc;
-        delete img.dataset.originalSrc;
-        debugLog('已恢复原始图片URL');
-      }
-    });
-
-    debugLog('鼠标事件监听器已启动');
   }
 
   // 拦截拖拽和右键下载事件
@@ -2383,14 +2513,15 @@
     // 监听页面变化
     const observer = observePageChanges();
 
-    // 处理鼠标移入事件
-    handleMouseOver();
 
     // 拦截拖拽和右键下载事件
     interceptDragAndDownload();
 
     // 在页面左下角添加设置按钮
     addSettingsButtonToPage();
+
+    // 初始化图片hover面板
+    initImageHover();
 
     // 去水印功能初始化
     // 监听DOM变化，处理异步加载内容
