@@ -105,16 +105,6 @@
     }
   };
 
-  // 检查图片链接是否有效
-  function checkImageUrl(url) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-      img.src = url;
-    });
-  }
-
   // 颜色验证
   function isValidColor(color) {
     const hexRegex = /^#([0-9A-F]{3}|[0-9A-F]{6})$/i;
@@ -185,34 +175,36 @@
     });
   }
 
+  // 默认快捷键配置
+  const DEFAULT_HOTKEYS = {
+    searchFocus: {
+      ctrlCmd: true,
+      shift: false,
+      alt: false,
+      key: "k",
+      description: "定位到搜索框",
+    },
+    imageSearch: {
+      ctrlCmd: true,
+      shift: false,
+      alt: false,
+      key: "p",
+      description: "以图搜索功能",
+    },
+    openSettings: {
+      ctrlCmd: true,
+      shift: false,
+      alt: false,
+      key: ",",
+      description: "打开设置界面",
+    },
+  };
+
   // 获取快捷键配置
   const getHotkeysConfig = () => {
-    const defaultHotkeys = {
-      searchFocus: {
-        ctrlCmd: true,
-        shift: false,
-        alt: false,
-        key: "k",
-        description: "定位到搜索框",
-      },
-      imageSearch: {
-        ctrlCmd: true,
-        shift: false,
-        alt: false,
-        key: "p",
-        description: "以图搜索功能",
-      },
-      openSettings: {
-        ctrlCmd: true,
-        shift: false,
-        alt: false,
-        key: ",",
-        description: "打开设置界面",
-      },
-    };
     return typeof GM_getValue === "function"
-      ? GM_getValue("hotkeysConfig", defaultHotkeys)
-      : defaultHotkeys;
+      ? GM_getValue("hotkeysConfig", DEFAULT_HOTKEYS)
+      : DEFAULT_HOTKEYS;
   };
 
   // ==================== 样式应用 ====================
@@ -429,9 +421,6 @@
     } catch (error) {
       console.error("渲染素材网站列表失败:", error);
       sitesList.innerHTML = `<div class="col-span-3 text-center text-slate-500 py-4">无法加载素材网站列表</div>`;
-
-      // 添加样式到文档头部
-      document.head.appendChild(style);
     }
 
     // 组装并添加到页面
@@ -492,7 +481,7 @@
     const config = getConfig();
     if (!config.enableRemoveWatermark) return;
 
-    // 查找包含ID的元素（支持新旧版本选择器）
+    // 查找包含ID的父级div元素，支持新旧版本选择器，前面是旧版花瓣和面是新版花瓣（写给自己看的：id所在元素是span,其父级是div）
     const sourceDiv = document.querySelector('.__2p__B98x, .QzLweiwl');
     if (!sourceDiv) return;
 
@@ -1122,13 +1111,13 @@
                 onerror: function (error) {
                   console.error("图片下载失败:", error);
                   // 如果GM_download失败，尝试备用方案
-                  fallbackDownload(cleanUrl, fileName, img);
+                  fallbackDownload(cleanUrl, fileName);
                 },
               });
             } catch (error) {
               console.error("GM_download调用失败:", error);
               // 备用下载方案
-              fallbackDownload(cleanUrl, getFileNameFromAlt(img) + ".png", img);
+              fallbackDownload(cleanUrl, getFileNameFromAlt(img) + ".png");
             }
           }, 100);
         }
@@ -1136,7 +1125,7 @@
     });
 
     // 备用下载方案：创建隐藏的下载链接
-    function fallbackDownload(url, fileName, img) {
+    function fallbackDownload(url, fileName) {
       try {
         const a = document.createElement("a");
         a.href = url;
@@ -1739,7 +1728,7 @@
       "flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200";
 
     const enableHideSettingsButtonHTML = `
-            <span class="text-sm font-medium text-slate-700 flex items-center">隐藏蜡笔小新
+            <span class="text-sm font-medium text-slate-700 flex items-center">隐藏蜡笔小新<span class="text-xs text-slate-400 ml-1">（进入此页面的按钮）</span>
             </span>
             <div class="relative w-10 h-5 cursor-pointer" id="enableHideSettingsButtonContainer">
                 <input type="checkbox" id="enableHideSettingsButtonSwitch" ${config.enableHideSettingsButton ? "checked" : ""}
@@ -2082,29 +2071,7 @@
       let originalHotkeyValue = null;
 
       // 默认快捷键配置
-      const defaultHotkeys = {
-        searchFocus: {
-          ctrlCmd: true,
-          shift: false,
-          alt: false,
-          key: "k",
-          description: "定位到搜索框",
-        },
-        imageSearch: {
-          ctrlCmd: true,
-          shift: false,
-          alt: false,
-          key: "p",
-          description: "以图搜索功能",
-        },
-        openSettings: {
-          ctrlCmd: true,
-          shift: false,
-          alt: false,
-          key: ",",
-          description: "打开设置界面",
-        },
-      };
+      const defaultHotkeys = DEFAULT_HOTKEYS;
 
       // 格式化快捷键显示文本
       const formatHotkeyText = (config) => {
@@ -2357,91 +2324,8 @@
     });
   }
 
-  // 显示使用说明弹窗（改为嵌入飞书文档）
-  function showUsageGuide() {
-    const existing = document.getElementById("huabanUsageGuide");
-    if (existing) {
-      existing.remove();
-      return;
-    }
 
-    const container = document.createElement("div");
-    container.id = "huabanUsageGuide";
-    container.className =
-      "fixed inset-0 bg-black/30 flex items-center justify-center z-[999] backdrop-blur-sm";
 
-    // 禁止页面滚动
-    document.body.style.overflow = "hidden";
-
-    const card = document.createElement("div");
-    card.className =
-      "bg-white rounded-[20px] shadow-[0_8px_25px_rgba(0,0,0,0.15)] w-[1000px] h-[820px] max-w-[96vw] max-h-[86vh] flex flex-col overflow-hidden";
-
-    const header = document.createElement("div");
-    header.className =
-      "px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-[rgb(248,250,252)]";
-    header.innerHTML = `<h3 style="margin:0; font-size:16px; color:#334155; font-weight:600;">使用说明</h3><button id="closeUsageGuide" style="background:none;border:none;cursor:pointer;padding:4px;border-radius:4px;display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="#64748b"><path d="M198.1 267.7l75.4-75.4 576.3 576.3-75.4 75.4-576.3-576.3zm576.4-69.3l75.4 75.4-580.7 580.8-75.4-75.4 580.7-580.8z"/></svg></button>`;
-
-    const content = document.createElement("div");
-    content.className =
-      "flex-1 overflow-auto p-0 flex items-stretch justify-stretch";
-
-    // Feishu doc URL (嵌入为 iframe)，并提供外链作为回退
-    const feishuUrl =
-      "https://ai-chimo.feishu.cn/wiki/E9SEwhoMmiv2CkkC1VgcAbRTnW3";
-
-    const iframeWrap = document.createElement("div");
-    iframeWrap.className = "flex-1 min-h-0";
-
-    const iframe = document.createElement("iframe");
-    iframe.src = feishuUrl;
-    iframe.className = "w-full h-full border-0 min-h-[400px]";
-    iframe.allow = "fullscreen; clipboard-write";
-
-    // 说明与外链回退
-    const fallback = document.createElement("div");
-    fallback.className =
-      "p-3 text-sm text-slate-400 bg-amber-50 border-t border-amber-100 text-center";
-    fallback.innerHTML = `若嵌入内容无法显示，请点击此处在新标签页打开： <a href="${feishuUrl}" target="_blank" rel="noopener noreferrer" style="color:#3b82f6;text-decoration:none;">打开使用说明（飞书文档）</a>`;
-
-    iframeWrap.appendChild(iframe);
-    content.appendChild(iframeWrap);
-
-    card.appendChild(header);
-    card.appendChild(content);
-    card.appendChild(fallback);
-    container.appendChild(card);
-    document.body.appendChild(container);
-
-    const closeBtn = header.querySelector("#closeUsageGuide");
-    closeBtn.addEventListener("click", () => {
-      container.remove();
-      // 恢复页面滚动
-      document.body.style.overflow = "auto";
-    });
-
-    container.addEventListener("click", (e) => {
-      if (e.target === container) {
-        container.remove();
-        // 恢复页面滚动
-        document.body.style.overflow = "auto";
-      }
-    });
-
-    const escHandler = (e) => {
-      if (e.key === "Escape") {
-        container.remove();
-        // 恢复页面滚动
-        document.body.style.overflow = "auto";
-      }
-    };
-    document.addEventListener("keydown", escHandler);
-    container.addEventListener("remove", () => {
-      document.removeEventListener("keydown", escHandler);
-      // 恢复页面滚动
-      document.body.style.overflow = "auto";
-    });
-  }
 
   // ==================== 初始化 ====================
 
@@ -2576,22 +2460,6 @@
         console.error("添加设置按钮失败:", error);
       }
     }
-
-    // 检查快捷键是否匹配
-    const isHotkeyMatch = (e, hotkeyConfig) => {
-      if (!hotkeyConfig) return false;
-      const ctrlCmd = e.ctrlKey || e.metaKey;
-      const shift = e.shiftKey;
-      const alt = e.altKey;
-      const key = e.key.toLowerCase();
-
-      return (
-        ctrlCmd === hotkeyConfig.ctrlCmd &&
-        shift === hotkeyConfig.shift &&
-        alt === hotkeyConfig.alt &&
-        key === hotkeyConfig.key
-      );
-    };
 
     // 添加快捷键处理
     document.addEventListener("keydown", (e) => {
