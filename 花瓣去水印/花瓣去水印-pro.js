@@ -223,16 +223,16 @@
     style.textContent = `
 
             /* 花瓣素材 背景色 */
-            .KKIUywzb[data-content-type="素材采集"] .transparent-img-bg {
-                background-color: ${config.enableCustom ? config.materialColor : "transparent"
-      } !important;
+            [data-material-id] img.transparent-img-bg,
+            [data-material-id] img.transparent-img-black-bg {
+                background-color: ${config.enableCustom ? config.materialColor : "transparent"} !important;
                 ${config.enableCustom ? "background-image:none!important;" : ""}
             }
 
-            /* 用户上传背景色，非花瓣素材 */
-            .KKIUywzb:not([data-content-type="素材采集"]) .transparent-img-bg,.transparent-img-black-bg,.transparent-img-bg {
-                background-color: ${config.enableCustom ? config.userColor : "transparent"
-      } !important;
+            /* 用户上传背景色 */
+            .KKIUywzb:not([data-material-id]) img.transparent-img-bg,
+            .KKIUywzb:not([data-material-id]) img.transparent-img-black-bg {
+                background-color: ${config.enableCustom ? config.userColor : "transparent"} !important;
                 ${config.enableCustom ? "background-image:none!important;" : ""}
             }
             
@@ -326,6 +326,7 @@
     siteLogo.src = site.logoSrc;
     siteLogo.alt = site.alt;
     siteLogo.className = "w-6 h-6 object-contain";
+    siteLogo.referrerPolicy = "no-referrer";
 
     // 网站信息容器
     const siteInfo = document.createElement("div");
@@ -377,7 +378,7 @@
   function addInfoText(container) {
     const infoText = document.createElement("div");
     infoText.className = "mt-4 p-4 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200";
-    infoText.innerHTML = '以上网站使用 <a href="http://121.40.25.9:8080" target="_blank" class="text-blue-500 hover:underline">http://www.sucaifeng.com</a> 网站 购买积分进行下载，你也可以注册一下，邀请码：1474728874 使用邀请码注册，我们都能得到1000积分，就可以给更多朋友下载素材';
+    infoText.innerHTML = '以上网站使用 <a href="http://121.40.25.9:8080" target="_blank" class="text-blue-500 hover:underline">http://www.sucaifeng.com</a> 网站 购买积分进行下载，你也可以注册一下，邀请码：1474728874 使用邀请码注册，我们都能得到1000积分，就可以给更多朋友下载素材，<br>如果可以的话,求求给公众号的文章点点广告，每天都可以点的，这样我会有更新的动力，也可以购买一些AI作图的接口，比如nano banana gemini等绘画的功能加入这个脚本供大家免费使用';
     container.appendChild(infoText);
   }
 
@@ -1966,7 +1967,6 @@
     enableCustomSwitch.addEventListener(
       "change",
       createSwitchHandler(
-        enableCustomSwitch,
         enableCustomThumb,
         enableCustomContainer,
         (isChecked) => {
@@ -1988,7 +1988,6 @@
     enableDragSwitch.addEventListener(
       "change",
       createSwitchHandler(
-        enableDragSwitch,
         enableDragThumb,
         enableDragContainer,
         (isChecked) => {
@@ -2001,7 +2000,6 @@
     enableRightClickSwitch.addEventListener(
       "change",
       createSwitchHandler(
-        enableRightClickSwitch,
         enableRightClickThumb,
         enableRightClickContainer,
         (isChecked) => {
@@ -2014,7 +2012,6 @@
     enableWatermarkSwitch.addEventListener(
       "change",
       createSwitchHandler(
-        enableWatermarkSwitch,
         enableWatermarkThumb,
         enableWatermarkContainer,
         (isChecked) => {
