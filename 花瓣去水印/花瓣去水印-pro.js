@@ -520,12 +520,20 @@
     color: black;
     align-items: center;
     padding: 7px;
+    transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .hover-action-panel button:hover {
+      background: rgba(255, 255, 255, 1);
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    .hover-action-panel button:active {
+      transform: scale(0.95);
     }
     .hover-action-panel .ps-btn {
       background: transparent;
       padding: 0;
       box-shadow: none;
-      // border: 3px solid #30c1eb;
     }
     .img-size-text {
       position: absolute;
