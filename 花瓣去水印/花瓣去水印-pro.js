@@ -14,6 +14,7 @@
 // @grant        GM_registerMenuCommand
 // @grant        GM_xmlhttpRequest
 // @connect      *
+// @grant        GM_info  
 // @grant        GM_download
 // @run-at       document-end
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
@@ -120,15 +121,6 @@
   function debugLog() {
     /* no-op */
   }
-
-  // 获取脚本版本号
-  const getScriptVersion = () => {
-    try {
-      return GM_info?.script?.version || "未知";
-    } catch (e) {
-      return "未知";
-    }
-  };
 
   // 颜色验证
   function isValidColor(color) {
@@ -1377,7 +1369,7 @@
     versionEl.className = "text-xs text-slate-400 p-3 flex items-center justify-between";
 
     const versionText = document.createElement("span");
-    versionText.textContent = `Pro版 v${getScriptVersion()}`;
+    versionText.textContent = `Pro版 v${GM_info.script.version}`;
     versionEl.appendChild(versionText);
 
     const donateLink = document.createElement("a");
