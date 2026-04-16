@@ -8,6 +8,7 @@
 // @match        https://huaban.com/*
 // @grant        GM_info
 // @grant        GM_xmlhttpRequest
+// @connect      scriptcat.org
 // @icon         https://dh.z-l.top/assets/favicon.ico
 // @grant        none
 // ==/UserScript==
@@ -132,17 +133,54 @@
   }
 
   // 从镜像地址拉取最新版本号
+  // async function fetchLatestVersion() {
+  //   try {
+  //     const url =
+  //       "https://scriptcat.org/scripts/code/5823/%E8%8A%B1%E7%93%A3%22%E5%8E%BB%22%E6%B0%B4%E5%8D%B0.meta.js";
+  //     const txt = await (await fetch(url)).text();
+  //     const m = txt.match(/^\/\/\s*@version\s+(.+)$/im);
+  //     return m ? m[1].trim() : null;
+  //   } catch (e) {
+  //     return null;
+  //   }
+  // }
   async function fetchLatestVersion() {
-    try {
-      const url =
-        "https://scriptcat.org/scripts/code/5823/%E8%8A%B1%E7%93%A3%22%E5%8E%BB%22%E6%B0%B4%E5%8D%B0.meta.js";
-      const txt = await (await fetch(url)).text();
-      const m = txt.match(/^\/\/\s*@version\s+(.+)$/im);
-      return m ? m[1].trim() : null;
-    } catch (e) {
-      return null;
-    }
-  }
+  return new Promise((resolve) => {
+    const url = "https://scriptcat.org/scripts/code/5823/%E8%8A%B1%E7%93%A3%22%E5%8E%BB%22%E6%B0%B4%E5%8D%B0.meta.js";
+
+    GM_xmlhttpRequest({
+      method: "GET",
+      url: url,
+      timeout: 5000, // 设置超时防止卡死
+      onload: function(response) {
+        try {
+          const txt = response.responseText;
+          const m = txt.match(/^\/\/\s*@version\s+(.+)$/im);
+          resolve(m ? m[1].trim() : null);
+        } catch (e) {
+          resolve(null);
+        }
+      },
+      onerror: function() {
+        resolve(null);
+      },
+      ontimeout: function() {
+        resolve(null);
+      }
+    });
+  });
+}
+
+// 简写版 (需 @grant GM.xmlHttpRequest)
+// async function fetchLatestVersion() {
+//   try {
+//     const response = await GM.xmlHttpRequest({ method: "GET", url: "..." });
+//     const m = response.responseText.match(/^\/\/\s*@version\s+(.+)$/im);
+//     return m ? m[1].trim() : null;
+//   } catch (e) {
+//     return null;
+//   }
+// }
 
   // 主逻辑：根据版本号和广告容器内容状态执行不同操作
   (async function () {
