@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.3
-// @version      1.1.3
+// @name         花瓣"去"水印-pro 1.1.4
+// @version      1.1.4
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -17,6 +17,7 @@
 // @grant        GM_info  
 // @grant        GM_download
 // @run-at       document-end
+// @connect      scriptcat.org
 // @icon         https://st0.dancf.com/static/02/202306090204-51f4.png
 // @require      https://cdn.tailwindcss.com
 // @require      https://cdn.jsdelivr.net/gh/xiaolongmr/tampermonkey-scripts/%E8%8A%B1%E7%93%A3%E5%8E%BB%E6%B0%B4%E5%8D%B0/%E8%8A%B1%E7%93%A3%E2%80%9C%E5%8E%BB%E2%80%9D%E6%B0%B4%E5%8D%B0Pro%E6%9B%B4%E6%96%B0%E6%8F%90%E7%A4%BA%E8%84%9A%E6%9C%AC.js
@@ -26,7 +27,7 @@
 (function () {
   "use strict";
 
-  // ==================== 通用函数 ====================
+  // ==================== 弹窗通用函数 ====================
   function showToast(text, isHtml = false) {
     const toast = document.createElement("div");
     toast.innerHTML = isHtml ? text : text;
