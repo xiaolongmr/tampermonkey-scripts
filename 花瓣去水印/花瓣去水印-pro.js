@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.4
-// @version      1.1.4
+// @name         花瓣"去"水印-pro 1.1.5
+// @version      1.1.5
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -499,9 +499,9 @@
       bottom: 6px;
       right: 6px;
       display: flex;
-      flex-direction: column;
-      gap: 6px;
-      z-index: 99999;
+      flex-direction: row;
+      gap: 5px;
+      z-index: 2147483647;
     }
     .hover-action-panel button {
     border: none;
@@ -517,7 +517,7 @@
     }
     .hover-action-panel button:hover {
       background: rgba(255, 255, 255, 1);
-      transform: scale(1.1);
+      transform: scale(1.05);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     }
     .hover-action-panel button:active {
@@ -639,12 +639,13 @@
       }
     });
 
-    // PS导入按钮 - Ctrl点击新建文件导入
+
+    // PS导入按钮 - Alt点击新建文件导入
     panel.querySelector(".ps-btn").addEventListener("click", async e => {
       e.stopPropagation();
       const url = getOriginalUrl();
       const name = getFileNameFromAlt(imgElement);
-      const isNewDoc = e.ctrlKey || e.metaKey;
+      const isNewDoc = e.altKey;
       const clipboardStr = `PS_IMPORTER:${url}|||${name}${isNewDoc ? "|||NEW_DOC" : ""}`;
       try { GM_setClipboard(clipboardStr); } catch { await navigator.clipboard.writeText(clipboardStr); }
       showToast(isNewDoc ? "已发送至PS (新建文件)" : '已发送至PS <a href="https://mp.weixin.qq.com/s/TvPs50dl-RpO8LGNkobuYg" target="_blank" style="color:#fff;text-decoration:underline;pointer-events:auto;">(需安装图片导导插件)</a>', isNewDoc ? false : true);
@@ -692,13 +693,21 @@
     const config = getConfig();
     if (!config.enableRemoveWatermark) return;
 
-    // 查找包含ID的父级div元素，支持新旧版本选择器，前面是旧版花瓣和面是新版花瓣（写给自己看的：id所在元素是span,其父级是div）
+    // 查找包含ID的父级div元素，支持新旧版本选择器
     const sourceDiv = document.querySelector('.__2p__B98x, .QzLweiwl');
-    if (!sourceDiv) return;
+    if (!sourceDiv) {
+      // 没有ID信息（免费素材），直接从目标图片获取URL
+      handleFreeImage();
+      return;
+    }
 
     // 提取ID
     const match = sourceDiv.innerText.match(/ID[:：]\s*(\d+)/i);
-    if (!match) return;
+    if (!match) {
+      // 没有提取到ID，当作免费素材处理
+      handleFreeImage();
+      return;
+    }
 
     const id = match[1];
     const cachedUrl = hdUrlCache.get(id);
@@ -759,6 +768,110 @@
     });
   }
 
+
+  // 处理免费素材（没有ID）
+  function handleFreeImage() {
+    const targets = TARGET_SELECTORS.map(sel => document.querySelector(sel)).filter(img => img);
+    targets.forEach(img => {
+      const parent = img.parentElement;
+      if (!parent || img.dataset.freeProcessed) return; // 已有标记则跳过
+      img.dataset.freeProcessed = 'true'; // 标记已处理
+
+      const url = processImageUrl(img.src);
+      const imgEl = new Image();
+      imgEl.crossOrigin = 'anonymous';
+      imgEl.onload = () => {
+        if (imgEl.naturalWidth > 0) {
+          if (parent.querySelector('.size-action-panel')) return; // 再次检查
+          // 创建尺寸信息
+          const sizeOverlay = document.createElement('div');
+          sizeOverlay.className = 'size-info-overlay';
+          sizeOverlay.textContent = `${imgEl.naturalWidth} x ${imgEl.naturalHeight}px`;
+          Object.assign(sizeOverlay.style, {
+            position: 'absolute', bottom: '8px', left: '8px', padding: '6px 12px', zIndex: '9999',
+            borderRadius: '99px', background: 'rgba(255, 255, 255, 0.7)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)', fontSize: '12px', color: '#000'
+          });
+          parent.appendChild(sizeOverlay);
+
+          // 创建操作按钮组
+          const actionPanel = document.createElement('div');
+          actionPanel.className = 'size-action-panel';
+          actionPanel.style.cssText = 'position: absolute;bottom: 60px;right: 8px;display: flex;flex-direction: column;gap: 6px;z-index: 10000;';
+
+          // 复制按钮
+          const copyBtn = document.createElement('div');
+          copyBtn.className = 'size-copy-btn';
+          copyBtn.title = '复制图片';
+          copyBtn.style.cssText = 'display: flex; align-items: center; justify-content: center; width: 43.9px; height: 43.9px; border-radius: 99px; background: rgba(255, 255, 255, 0.9); cursor: pointer; transition: 0.15s; transform: scale(1); box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 8px;';
+          copyBtn.innerHTML = '<svg width="18px" height="18px" fill="currentColor"><use xlink:href="#style"></use></svg>';
+          copyBtn.addEventListener('mouseenter', () => { copyBtn.style.transform = 'scale(1.1)'; });
+          copyBtn.addEventListener('mouseleave', () => { copyBtn.style.transform = 'scale(1)'; });
+          copyBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+              const imgCopy = new Image();
+              imgCopy.crossOrigin = 'anonymous';
+              imgCopy.src = url;
+              await new Promise((resolve, reject) => { imgCopy.onload = resolve; imgCopy.onerror = reject; });
+              const canvas = document.createElement('canvas');
+              canvas.width = imgCopy.naturalWidth;
+              canvas.height = imgCopy.naturalHeight;
+              canvas.getContext('2d').drawImage(imgCopy, 0, 0);
+              canvas.toBlob(async blob => {
+                if (blob) { await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]); showToast('图片已复制'); }
+              });
+            } catch (err) { await navigator.clipboard.writeText(url); showToast('图片URL已复制'); }
+          });
+          actionPanel.appendChild(copyBtn);
+
+          // 下载按钮
+          const downloadBtn = document.createElement('div');
+          downloadBtn.className = 'size-download-btn';
+          downloadBtn.title = '下载图片';
+          downloadBtn.style.cssText = 'display: flex; align-items: center; justify-content: center; width: 43.9px; height: 43.9px; border-radius: 99px; background: rgba(255, 255, 255, 0.9); cursor: pointer; transition: 0.15s; transform: scale(1); box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 8px;';
+          downloadBtn.innerHTML = '<svg width="18px" height="18px" fill="currentColor"><use xlink:href="#hb_download"></use></svg>';
+          downloadBtn.addEventListener('mouseenter', () => { downloadBtn.style.transform = 'scale(1.1)'; });
+          downloadBtn.addEventListener('mouseleave', () => { downloadBtn.style.transform = 'scale(1)'; });
+          downloadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const fileName = (img.alt || '花瓣图片') + '.png';
+            if (typeof GM_download === "function") {
+              GM_download({ url, name: fileName });
+            } else {
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = fileName;
+              a.click();
+            }
+          });
+          actionPanel.appendChild(downloadBtn);
+
+          // PS导入按钮
+          const psBtn = document.createElement('div');
+          psBtn.className = 'size-ps-btn';
+          psBtn.title = '导入PS (Alt+点击新建文件)';
+          psBtn.style.cssText = 'display: flex; align-items: center; justify-content: center; width: 43.9px; height: 43.9px; cursor: pointer; border-radius: 99px; transition: 0.15s; transform: scale(1); background: rgba(255, 255, 255, 0.9); box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 8px;';
+          psBtn.innerHTML = '<img src="https://cdn.h5ds.com/space/files/600972551685382144/20260505/975792569343049728.svg" alt="PS" style="width: 20px; transform: scale(1.1)">';
+          psBtn.addEventListener('mouseenter', () => { psBtn.style.transform = 'scale(1.1)'; });
+          psBtn.addEventListener('mouseleave', () => { psBtn.style.transform = 'scale(1)'; });
+          psBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const isNewDoc = e.altKey;
+            const name = img.alt || '花瓣图片';
+            const clipboardStr = `PS_IMPORTER:${url}|||${name}${isNewDoc ? '|||NEW_DOC' : ''}`;
+            try { GM_setClipboard(clipboardStr); } catch { await navigator.clipboard.writeText(clipboardStr); }
+            showToast(isNewDoc ? '已发送至PS (新建文件)' : '已发送至PS <a href="https://mp.weixin.qq.com/s/TvPs50dl-RpO8LGNkobuYg" target="_blank" style="color:#fff;text-decoration:underline;pointer-events:auto;">(需安装图片导导插件)</a>', isNewDoc ? false : true);
+          });
+          actionPanel.appendChild(psBtn);
+
+          parent.appendChild(actionPanel);
+        }
+      };
+      imgEl.src = url;
+    });
+  }
+
   // 显示尺寸信息和下载按钮
   function showSizeInfo(width, height, dpi, url, fileFormat, contentUrl, type, title) {
     const targets = TARGET_SELECTORS.map(sel => document.querySelector(sel)).filter(img => img);
@@ -804,6 +917,58 @@
           wrapper.appendChild(sourceDiv);
         }
       }
+
+
+      // 创建操作按钮组容器
+      const actionPanel = document.createElement('div');
+      actionPanel.className = 'size-action-panel';
+      actionPanel.style.cssText = 'position: absolute;bottom: 60px;right: 8px;display: flex;flex-direction: column;gap: 6px;z-index: 10000;';
+
+      // 复制按钮
+      const copyBtn = document.createElement('div');
+      copyBtn.className = 'size-copy-btn rtaVfkLT';
+      copyBtn.title = '复制图片';
+      copyBtn.style.cssText = 'transition: 0.15s; transform: scale(1); box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 8px;';
+      copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+      copyBtn.addEventListener('mouseenter', () => { copyBtn.style.transform = 'scale(1.05)'; });
+      copyBtn.addEventListener('mouseleave', () => { copyBtn.style.transform = 'scale(1)'; });
+      copyBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try {
+          const imgCopy = new Image();
+          imgCopy.crossOrigin = 'anonymous';
+          imgCopy.src = url;
+          await new Promise((resolve, reject) => { imgCopy.onload = resolve; imgCopy.onerror = reject; });
+          const canvas = document.createElement('canvas');
+          canvas.width = imgCopy.naturalWidth;
+          canvas.height = imgCopy.naturalHeight;
+          canvas.getContext('2d').drawImage(imgCopy, 0, 0);
+          canvas.toBlob(async blob => {
+            if (blob) { await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]); showToast('图片已复制'); }
+          });
+        } catch (err) { await navigator.clipboard.writeText(url); showToast('图片URL已复制'); }
+      });
+      actionPanel.appendChild(copyBtn);
+
+      // PS导入按钮
+      const psBtn = document.createElement('div');
+      psBtn.className = 'size-ps-btn rtaVfkLT';
+      psBtn.title = '导入PS (Alt+点击新建文件)';
+      psBtn.style.cssText = 'transition: 0.15s; transform: scale(1); background: rgb(255, 255, 255); box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 8px;';
+      psBtn.innerHTML = '<img src="https://gaoding-market.dancf.com/market-operations/market/side/8185abc1b87e46d3abdec1b2b6911228/1769758323339.svg" alt="PS" referrerpolicy="no-referrer" style="width: 20px; transform: scale(1.1);">';
+      psBtn.addEventListener('mouseenter', () => { psBtn.style.transform = 'scale(1.05)'; });
+      psBtn.addEventListener('mouseleave', () => { psBtn.style.transform = 'scale(1)'; });
+      psBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const isNewDoc = e.altKey;
+        const name = title || img.alt || '花瓣图片';
+        const clipboardStr = `PS_IMPORTER:${url}|||${name}${isNewDoc ? '|||NEW_DOC' : ''}`;
+        try { GM_setClipboard(clipboardStr); } catch { await navigator.clipboard.writeText(clipboardStr); }
+        showToast(isNewDoc ? '已发送至PS (新建文件)' : '已发送至PS <a href="https://mp.weixin.qq.com/s/TvPs50dl-RpO8LGNkobuYg" target="_blank" style="color:#fff;text-decoration:underline;pointer-events:auto;">(需安装图片导导插件)</a>', isNewDoc ? false : true);
+      });
+      actionPanel.appendChild(psBtn);
+
+      parent.appendChild(actionPanel);
 
       // 创建下载按钮（可能返回多个按钮）
       const extension = getFileExtension(url);
@@ -907,11 +1072,11 @@
       color: '#ffffff',
       padding: '6px 12px',
       zIndex: '9999',
-      transform: 'translateZ(0)',
+      transform: 'translateZ(0) scale(1)',
       borderRadius: '99px',
       background: 'rgba(0, 153, 255, 0.94)',
       boxShadow: '0 0 1px 0 var(--boxshadow-color-medium-100, rgba(0, 0, 0, .1)), 0 8px 40px -2px var(--boxshadow-color-medium-200, rgba(0, 0, 0, .1))',
-      transition: 'box-shadow .2s ease',
+      transition: 'transform 0.15s, box-shadow 0.15s',
       userSelect: 'none'
     };
 
@@ -926,6 +1091,16 @@
     }
 
     Object.assign(downloadBtn.style, btnStyle);
+
+    // 添加hover效果
+    if (isImplemented) {
+      downloadBtn.addEventListener('mouseenter', () => {
+        downloadBtn.style.transform = 'translateZ(0) scale(1.05)';
+      });
+      downloadBtn.addEventListener('mouseleave', () => {
+        downloadBtn.style.transform = 'translateZ(0) scale(1)';
+      });
+    }
 
     // 根据下载类型绑定不同的点击事件
     downloadBtn.addEventListener('click', () => {
@@ -2568,7 +2743,7 @@
 
         // 添加悬停效果
         settingsButton.addEventListener('mouseenter', () => {
-          settingsButton.style.transform = 'scale(1.1)';
+          settingsButton.style.transform = 'scale(1.05)';
         });
         settingsButton.addEventListener('mouseleave', () => {
           settingsButton.style.transform = 'scale(1)';
