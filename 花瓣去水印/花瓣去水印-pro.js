@@ -1014,23 +1014,36 @@
             console.error('获取EPS originUrl失败:', err);
           });
       }
-    } else if (type === 'image' && fileFormat === 'ai') {
-      // AI素材：额外显示下载AI按钮
+    } else if ((type === 'image' || type === 'element') && fileFormat === 'ai') {
+      // AI素材：先检测 contentUrl 返回的 model.type，只有是 svg 才显示 AI 下载按钮
       const aiButton = createSingleButton('下载 AI', contentUrl, imgElement, 'ai', title);
       aiButton.style.top = (8 + buttonIndex * 40) + 'px';
+      aiButton.style.display = 'none'; // 先隐藏，等检测到是 svg 再显示
       parent.appendChild(aiButton);
       buttonIndex++;
+
+      if (contentUrl) {
+        fetch(contentUrl)
+          .then(response => response.json())
+          .then(data => {
+            if (data.model && data.model.type === 'svg') {
+              aiButton.style.display = '';
+            } else {
+              aiButton.remove(); // 不是 svg 就删除按钮
+            }
+          })
+          .catch(err => {
+            console.error('检测AI类型失败:', err);
+            aiButton.remove();
+          });
+      } else {
+        aiButton.remove();
+      }
     } else if (type === 'element' && fileFormat === 'svg') {
-      // SVG元素素材：额外显示下载SVG按钮（与AI共用下载逻辑）
+      // SVG元素素材：额外显示下载SVG按钮
       const svgButton = createSingleButton('下载 SVG', contentUrl, imgElement, 'svg', title);
       svgButton.style.top = (8 + buttonIndex * 40) + 'px';
       parent.appendChild(svgButton);
-      buttonIndex++;
-    } else if (type === 'element' && fileFormat === 'ai') {
-      // AI元素素材：额外显示下载AI按钮（与AI共用下载逻辑）
-      const aiButton = createSingleButton('下载 AI', contentUrl, imgElement, 'ai', title);
-      aiButton.style.top = (8 + buttonIndex * 40) + 'px';
-      parent.appendChild(aiButton);
       buttonIndex++;
     } else if (type === 'movie' && fileFormat === 'zip') {
       // 视频素材：额外显示下载ZIP、MP3、MP4按钮
@@ -1353,7 +1366,7 @@
         e.dataTransfer.setData("text/plain", cleanUrl);
 
         // 设置DownloadURL（支持某些浏览器和工具）
-        const fileName = getFileNameFromAlt(img) + ".png";
+        const fileName = getFileNameFromAlt(img);
         e.dataTransfer.setData(
           "DownloadURL",
           `image/png:${fileName}:${cleanUrl}`
@@ -1405,7 +1418,7 @@
           setTimeout(() => {
             try {
               // 使用alt属性作为文件名，如果没有alt则使用默认文件名
-              const fileName = getFileNameFromAlt(img) + ".png";
+              const fileName = getFileNameFromAlt(img);
 
               // 使用GM_download下载图片
               // 注意：GM_download会弹出下载确认对话框
@@ -1417,37 +1430,15 @@
                 },
                 onerror: function (error) {
                   console.error("图片下载失败:", error);
-                  // 如果GM_download失败，尝试备用方案
-                  fallbackDownload(cleanUrl, fileName, img);
                 },
               });
             } catch (error) {
               console.error("GM_download调用失败:", error);
-              // 备用下载方案
-              fallbackDownload(cleanUrl, getFileNameFromAlt(img) + ".png", img);
             }
           }, 100);
         }
       }
     });
-
-    // 备用下载方案：创建隐藏的下载链接
-    function fallbackDownload(url, fileName, img) {
-      try {
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        console.log("备用下载方案执行成功");
-      } catch (error) {
-        console.error("备用下载方案也失败:", error);
-        // 最后的手段：在新标签页打开图片
-        window.open(url, "_blank");
-      }
-    }
 
     debugLog("拖拽和右键下载拦截器已启动");
   }
