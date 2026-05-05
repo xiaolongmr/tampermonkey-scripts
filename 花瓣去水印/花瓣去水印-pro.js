@@ -835,7 +835,7 @@
           downloadBtn.addEventListener('mouseleave', () => { downloadBtn.style.transform = 'scale(1)'; });
           downloadBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const fileName = (img.alt || '花瓣图片') + '.png';
+            const fileName = (img.alt || '花瓣图片');
             if (typeof GM_download === "function") {
               GM_download({ url, name: fileName });
             } else {
