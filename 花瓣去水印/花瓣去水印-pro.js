@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.11
-// @version      1.1.11
+// @name         花瓣"去"水印-pro 1.1.12
+// @version      1.1.12
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -103,7 +103,11 @@
   // ==================== 弹窗通用函数 ====================
   function showToast(text, isHtml = false) {
     const toast = document.createElement("div");
-    toast.innerHTML = isHtml ? text : text;
+    if (isHtml) {
+      toast.innerHTML = text;
+    } else {
+      toast.textContent = text;
+    }
     toast.style.cssText = `position:fixed; top:-50px; left:50%; transform:translateX(-50%) translateY(0); background:#00c853; color:#fff; padding:8px 20px; border-radius:50px; z-index:2147483647; font-size:13px; font-weight:bold; border:1px solid rgba(255,255,255,0.3); box-shadow:0 4px 15px rgba(0,200,83,0.4);`;
     const style = document.createElement("style");
     style.textContent = `
@@ -123,6 +127,64 @@
       toast.style.animation = "toastOut 0.3s ease-in forwards";
       setTimeout(() => { toast.remove(); style.remove(); }, 300);
     }, duration);
+  }
+
+  function loadImageForClipboard(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("图片加载失败"));
+      img.src = url;
+    });
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error("图片转换失败"));
+        }
+      }, "image/png");
+    });
+  }
+
+  async function copyImageOrUrl(url) {
+    if (!url) {
+      showToast("图片地址为空");
+      return;
+    }
+
+    try {
+      if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+        throw new Error("当前浏览器不支持复制图片");
+      }
+
+      const img = await loadImageForClipboard(url);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      if (!canvas.width || !canvas.height) throw new Error("图片尺寸无效");
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("无法创建画布");
+
+      ctx.drawImage(img, 0, 0);
+      const blob = await canvasToBlob(canvas);
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      showToast("图片已复制");
+    } catch (error) {
+      console.warn("复制图片失败，已尝试复制图片URL:", error);
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("图片URL已复制");
+      } catch (fallbackError) {
+        console.warn("复制图片URL失败:", fallbackError);
+        showToast("复制失败，请检查浏览器剪贴板权限");
+      }
+    }
   }
 
   // ==================== 常量定义 ====================
@@ -749,29 +811,7 @@
       e.stopPropagation();
       const detail = await getHoverImageInfo();
       const url = detail.url;
-      try {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.src = url;
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-        });
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-        canvas.toBlob(async blob => {
-          if (blob) {
-            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
-            showToast("图片已复制");
-          }
-        });
-      } catch (err) {
-        await navigator.clipboard.writeText(url);
-        showToast("图片URL已复制");
-      }
+      await copyImageOrUrl(url);
     });
 
     // 下载按钮
@@ -840,12 +880,14 @@
   // 去水印相关功能
   // 缓存高清URL，避免重复请求
   const hdUrlCache = new Map();
+  const MATERIAL_DETAIL_TIMEOUT = 10000;
 
   function requestMaterialDetailById(id) {
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
         method: "GET",
         url: `https://gd.huaban.com/editor/design?id=${id}`,
+        timeout: MATERIAL_DETAIL_TIMEOUT,
         onload: (res) => {
           const scriptMatch = res.responseText.match(/window\.__SSR_TEMPLATE\s*=\s*(\{[\s\S]*?\})(?:;|\s*<\/script>)/);
           if (!scriptMatch) {
@@ -892,8 +934,9 @@
           if (current && current !== "loading") {
             clearInterval(timer);
             resolve(current);
-          } else if (!current || Date.now() - startedAt > 10000) {
+          } else if (!current || Date.now() - startedAt > MATERIAL_DETAIL_TIMEOUT) {
             clearInterval(timer);
+            if (hdUrlCache.get(id) === "loading") hdUrlCache.delete(id);
             reject(new Error("等待素材详情超时"));
           }
         }, 100);
@@ -1001,19 +1044,7 @@
           copyBtn.addEventListener('mouseleave', () => { copyBtn.style.transform = 'scale(1)'; });
           copyBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
-            try {
-              const imgCopy = new Image();
-              imgCopy.crossOrigin = 'anonymous';
-              imgCopy.src = url;
-              await new Promise((resolve, reject) => { imgCopy.onload = resolve; imgCopy.onerror = reject; });
-              const canvas = document.createElement('canvas');
-              canvas.width = imgCopy.naturalWidth;
-              canvas.height = imgCopy.naturalHeight;
-              canvas.getContext('2d').drawImage(imgCopy, 0, 0);
-              canvas.toBlob(async blob => {
-                if (blob) { await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]); showToast('图片已复制'); }
-              });
-            } catch (err) { await navigator.clipboard.writeText(url); showToast('图片URL已复制'); }
+            await copyImageOrUrl(url);
           });
           actionPanel.appendChild(copyBtn);
 
@@ -1126,19 +1157,7 @@
       copyBtn.addEventListener('mouseleave', () => { copyBtn.style.transform = 'scale(1)'; });
       copyBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        try {
-          const imgCopy = new Image();
-          imgCopy.crossOrigin = 'anonymous';
-          imgCopy.src = url;
-          await new Promise((resolve, reject) => { imgCopy.onload = resolve; imgCopy.onerror = reject; });
-          const canvas = document.createElement('canvas');
-          canvas.width = imgCopy.naturalWidth;
-          canvas.height = imgCopy.naturalHeight;
-          canvas.getContext('2d').drawImage(imgCopy, 0, 0);
-          canvas.toBlob(async blob => {
-            if (blob) { await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]); showToast('图片已复制'); }
-          });
-        } catch (err) { await navigator.clipboard.writeText(url); showToast('图片URL已复制'); }
+        await copyImageOrUrl(url);
       });
       actionPanel.appendChild(copyBtn);
 
