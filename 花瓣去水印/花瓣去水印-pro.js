@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.5
-// @version      1.1.5
+// @name         花瓣"去"水印-pro 1.1.6
+// @version      1.1.6
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -835,7 +835,7 @@
           downloadBtn.addEventListener('mouseleave', () => { downloadBtn.style.transform = 'scale(1)'; });
           downloadBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const fileName = (img.alt || '花瓣图片');
+            const fileName = (img.alt || '花瓣图片') + '.png';
             if (typeof GM_download === "function") {
               GM_download({ url, name: fileName });
             } else {
@@ -1366,7 +1366,7 @@
         e.dataTransfer.setData("text/plain", cleanUrl);
 
         // 设置DownloadURL（支持某些浏览器和工具）
-        const fileName = getFileNameFromAlt(img);
+        const fileName = getFileNameFromAlt(img) + ".png";
         e.dataTransfer.setData(
           "DownloadURL",
           `image/png:${fileName}:${cleanUrl}`
@@ -1418,7 +1418,7 @@
           setTimeout(() => {
             try {
               // 使用alt属性作为文件名，如果没有alt则使用默认文件名
-              const fileName = getFileNameFromAlt(img);
+              const fileName = getFileNameFromAlt(img) + ".png";
 
               // 使用GM_download下载图片
               // 注意：GM_download会弹出下载确认对话框
