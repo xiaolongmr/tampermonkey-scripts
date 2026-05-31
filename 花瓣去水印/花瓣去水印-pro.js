@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.10
-// @version      1.1.10
+// @name         花瓣"去"水印-pro 1.1.11
+// @version      1.1.11
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -627,8 +627,11 @@
     const parent = imgElement.parentElement;
     if (!parent || parent.querySelector(".hover-action-panel")) return;
 
-    const materialId = imgElement.closest("[data-material-id]")?.dataset.materialId;
     let hoverImageInfoPromise = null;
+    let hoverImageInfoMaterialId = "";
+    let hoverImageInfoIsFallback = false;
+
+    const getCurrentMaterialId = () => imgElement.closest("[data-material-id]")?.dataset.materialId || "";
 
     const getFallbackHoverImageInfo = () => {
       const url = processImageUrl(imgElement.dataset.originalSrc || imgElement.currentSrc || imgElement.src);
@@ -642,7 +645,11 @@
     };
 
     const getHoverImageInfo = () => {
-      if (!hoverImageInfoPromise) {
+      const materialId = getCurrentMaterialId();
+      const shouldRetryMaterialDetail = materialId && hoverImageInfoMaterialId === materialId && hoverImageInfoIsFallback;
+      if (!hoverImageInfoPromise || hoverImageInfoMaterialId !== materialId || shouldRetryMaterialDetail) {
+        hoverImageInfoMaterialId = materialId;
+        hoverImageInfoIsFallback = false;
         hoverImageInfoPromise = (async () => {
           if (materialId) {
             try {
@@ -652,7 +659,8 @@
               debugLog("获取缩略图素材高清信息失败:", materialId, error);
             }
           }
-          return getFallbackHoverImageInfo();
+          hoverImageInfoIsFallback = !!materialId;
+          return { ...getFallbackHoverImageInfo(), __fromFallback: true };
         })();
       }
       return hoverImageInfoPromise;
@@ -672,17 +680,34 @@
     parent.after(panel);
 
     // 获取原图尺寸
-    let sizeUpdated = false;
+    let sizeText = null;
+    let sizeInfoMaterialId = null;
+    let sizeInfoIsFallback = false;
     const updateSize = async () => {
-      if (sizeUpdated) return;
-      sizeUpdated = true;
-      const sizeText = document.createElement("span");
-      sizeText.className = "img-size-text";
-      parent.after(sizeText);
+      if (!sizeText) {
+        sizeText = document.createElement("span");
+        sizeText.className = "img-size-text";
+        parent.after(sizeText);
+      }
+
+      const setSizeText = (width, height) => {
+        if (!width || !height) return false;
+        sizeText.textContent = `${width} x ${height}px`;
+        return true;
+      };
+
+      const materialId = getCurrentMaterialId();
+      const shouldRetrySize = materialId && sizeInfoMaterialId === materialId && sizeInfoIsFallback;
+      if (sizeInfoMaterialId === materialId && !shouldRetrySize) return;
+      sizeInfoMaterialId = materialId;
+      sizeInfoIsFallback = false;
+
+      const fallbackInfo = getFallbackHoverImageInfo();
+      if (!sizeText.textContent) setSizeText(fallbackInfo.width, fallbackInfo.height);
 
       const detail = await getHoverImageInfo();
-      if (detail?.width && detail?.height) {
-        sizeText.textContent = `${detail.width} x ${detail.height}px`;
+      if (setSizeText(detail?.width, detail?.height)) {
+        sizeInfoIsFallback = !!detail?.__fromFallback;
         return;
       }
 
@@ -690,10 +715,11 @@
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         if (img.naturalWidth > 0) {
-          sizeText.textContent = `${img.naturalWidth} x ${img.naturalHeight}px`;
+          setSizeText(img.naturalWidth, img.naturalHeight);
+          sizeInfoIsFallback = true;
         }
       };
-      img.src = detail?.url || getFallbackHoverImageInfo().url;
+      img.src = detail?.url || fallbackInfo.url;
     };
     imgElement.complete ? updateSize() : imgElement.addEventListener("load", updateSize);
 
@@ -701,6 +727,7 @@
     let hoverTimeout;
     const show = () => {
       clearTimeout(hoverTimeout);
+      updateSize();
       panel.classList.add("show");
       const sizeText = parent.nextElementSibling;
       sizeText?.classList.add("show");
@@ -781,8 +808,12 @@
     document.head.insertAdjacentHTML("beforeend", `<style>${HOVER_PANEL_STYLE}</style>`);
 
     const processImage = img => {
+      if (img.dataset.hoverPanelBound) return;
       const parent = img.closest("[data-material-id]") || img.closest(".KKIUywzb");
-      if (parent && !parent.querySelector(".hover-action-panel")) createHoverPanel(img);
+      if (parent && !parent.querySelector(".hover-action-panel")) {
+        img.dataset.hoverPanelBound = "true";
+        createHoverPanel(img);
+      }
     };
 
     new MutationObserver(m => m.forEach(n => n.addedNodes.forEach(node => {
