@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.8
-// @version      1.1.8
+// @name         花瓣"去"水印-pro 1.1.9
+// @version      1.1.9
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -1509,11 +1509,8 @@
     const HUABAN_CONTEXT_MENU_SELECTOR = '[data-pin-context-menu="true"]';
     const RIGHT_CLICK_CONTAINER_SELECTOR =
       "#imageViewerWrapper, [data-pin-id], [data-file-id], [data-material-id], [data-content-id], [data-check-cover], [data-content-type], .KKIUywzb, .OPWXbLYw, .Wa6mMsQV, .VFtkdxbR, .PBVOckbr, .ujZSLFrU";
-    const RIGHT_CLICK_IMAGE_CONTAINER_SELECTOR = `a, ${RIGHT_CLICK_CONTAINER_SELECTOR}`;
     let blockHuabanContextMenuUntil = 0;
     let contextMenuCleanupTimer = null;
-    let lastRightClickImage = null;
-    let lastRightClickImageUntil = 0;
 
     const shouldRemoveHuabanContextMenu = () => {
       const config = getConfig();
@@ -1570,16 +1567,13 @@
       return Boolean(img && (imageUrl.includes("http") || imageUrl.includes("data:image") || imageUrl.includes("blob:")));
     };
 
-    const isSupportedRightClickImage = (img, imageContainer) => {
+    const isSupportedRightClickImage = (img) => {
       if (!isUsableImage(img)) return false;
 
       const imageUrl = getImageUrl(img);
       const anchor = img.closest("a");
       const isHuabanImage = /(?:gd-)?hbimg|huaban\.com/.test(imageUrl);
-      const isInSupportedContainer = Boolean(
-        imageContainer ||
-        img.closest(RIGHT_CLICK_CONTAINER_SELECTOR)
-      );
+      const isInSupportedContainer = Boolean(img.closest(RIGHT_CLICK_CONTAINER_SELECTOR));
 
       return Boolean(
         img.matches(SELECTORS.imageButton) ||
@@ -1592,12 +1586,8 @@
 
     const getCandidateImageFromElement = (element) => {
       if (!element) return null;
-      let img = element?.closest?.("img");
-      const imageContainer = element?.closest?.(RIGHT_CLICK_IMAGE_CONTAINER_SELECTOR);
-      if (!img) {
-        img = imageContainer?.querySelector?.("img");
-      }
-      return isSupportedRightClickImage(img, imageContainer) ? img : null;
+      const img = element?.closest?.("img");
+      return isSupportedRightClickImage(img) ? img : null;
     };
 
     const getImageFromPoint = (e) => {
@@ -1611,7 +1601,7 @@
 
       const images = document.querySelectorAll("img");
       for (const img of images) {
-        if (!isSupportedRightClickImage(img, null)) continue;
+        if (!isSupportedRightClickImage(img)) continue;
         const rect = img.getBoundingClientRect();
         const isInside =
           e.clientX >= rect.left &&
@@ -1634,25 +1624,13 @@
       );
     };
 
-    const rememberRightClickImage = (img) => {
-      if (!img) return;
-      lastRightClickImage = img;
-      lastRightClickImageUntil = Date.now() + 1200;
-    };
-
     const getRightClickDownloadImage = (e) => {
       const element = e.target?.nodeType === Node.ELEMENT_NODE ? e.target : e.target?.parentElement;
       const img =
         getCandidateImageFromElement(element) ||
-        getImageFromPoint(e) ||
-        (Date.now() < lastRightClickImageUntil ? lastRightClickImage : null);
+        getImageFromPoint(e);
 
-      if (!img) {
-        return null;
-      }
-
-      rememberRightClickImage(img);
-      return img;
+      return img || null;
     };
 
     const stopHuabanRightClickMenu = (e) => {
