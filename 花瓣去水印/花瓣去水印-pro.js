@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.7
-// @version      1.1.7
+// @name         花瓣"去"水印-pro 1.1.8
+// @version      1.1.8
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -33,7 +33,19 @@
 
   function installHuabanContextMenuGuard() {
     const styleId = "huaban-context-menu-guard-style";
-    if (!document.getElementById(styleId)) {
+    let contextMenuObserver = null;
+
+    const isGuardEnabled = () => {
+      try {
+        return typeof GM_getValue !== "function" ||
+          GM_getValue("enableRightClickDownload", true);
+      } catch {
+        return true;
+      }
+    };
+
+    const ensureStyle = () => {
+      if (document.getElementById(styleId)) return;
       const style = document.createElement("style");
       style.id = styleId;
       style.textContent = `
@@ -45,26 +57,45 @@
         }
       `;
       (document.head || document.documentElement).appendChild(style);
-    }
+    };
+
+    const removeStyle = () => {
+      document.getElementById(styleId)?.remove();
+    };
 
     const removeOfficialMenu = () => {
+      if (!isGuardEnabled()) return;
       document.querySelectorAll(HUABAN_CONTEXT_MENU_SELECTOR).forEach((menu) => {
         menu.remove();
       });
     };
 
+    const syncGuardState = () => {
+      if (isGuardEnabled()) {
+        ensureStyle();
+        removeOfficialMenu();
+      } else {
+        removeStyle();
+      }
+    };
+
     const startObserver = () => {
       if (!document.body || document.body.dataset.huabanContextMenuGuard) return;
       document.body.dataset.huabanContextMenuGuard = "true";
-      new MutationObserver(removeOfficialMenu).observe(document.body, {
+      contextMenuObserver = new MutationObserver(removeOfficialMenu);
+      contextMenuObserver.observe(document.body, {
         childList: true,
         subtree: true,
       });
-      removeOfficialMenu();
+      syncGuardState();
     };
 
+    window.__huabanSyncContextMenuGuard = syncGuardState;
     startObserver();
     document.addEventListener("DOMContentLoaded", startObserver, { once: true });
+    window.addEventListener("beforeunload", () => {
+      contextMenuObserver?.disconnect();
+    });
   }
 
   installHuabanContextMenuGuard();
@@ -778,6 +809,12 @@
     // 标记为加载中
     hdUrlCache.set(id, "loading");
 
+    const clearLoadingCache = () => {
+      if (hdUrlCache.get(id) === "loading") {
+        hdUrlCache.delete(id);
+      }
+    };
+
     // 请求高清图片数据
     GM_xmlhttpRequest({
       method: "GET",
@@ -785,35 +822,44 @@
       onload: (res) => {
         // 解析响应中的JSON数据
         const scriptMatch = res.responseText.match(/window\.__SSR_TEMPLATE\s*=\s*(\{[\s\S]*?\})(?:;|\s*<\/script>)/);
-        if (scriptMatch) {
-          try {
-            const ssrData = JSON.parse(scriptMatch[1]);
-            if (ssrData?.preview?.url) {
-              const file_format = ssrData.files[0].file_format;
-              const content_url = ssrData.content_url;
-              const hdUrl = ssrData.preview.url;
-              const video = ssrData.preview.video;
-              const title = ssrData.title;
-              const width = ssrData.preview.width;
-              const height = ssrData.preview.height;
-              const dpi = ssrData.dpi;
-              const type = ssrData.type;
-              const newCachedData = { url: hdUrl, width: width, height: height, dpi: dpi, file_format: file_format, content_url: content_url, type: type, title: title };
-              hdUrlCache.set(id, newCachedData);
-
-              // 只有type为image时才替换高清图片
-              if (type === 'image') {
-                executeReplacement(hdUrl);
-              }
-
-              // 尺寸信息和下载按钮不受type影响，始终显示
-              if (width && height) {
-                showSizeInfo(width, height, dpi, hdUrl, file_format, content_url, type, title);
-              }
-            }
-          } catch (e) { }
+        if (!scriptMatch) {
+          clearLoadingCache();
+          return;
         }
-      }
+
+        try {
+          const ssrData = JSON.parse(scriptMatch[1]);
+          if (ssrData?.preview?.url) {
+            const file_format = ssrData.files?.[0]?.file_format || "";
+            const content_url = ssrData.content_url;
+            const hdUrl = ssrData.preview.url;
+            const video = ssrData.preview.video;
+            const title = ssrData.title;
+            const width = ssrData.preview.width;
+            const height = ssrData.preview.height;
+            const dpi = ssrData.dpi;
+            const type = ssrData.type;
+            const newCachedData = { url: hdUrl, width: width, height: height, dpi: dpi, file_format: file_format, content_url: content_url, type: type, title: title };
+            hdUrlCache.set(id, newCachedData);
+
+            // 只有type为image时才替换高清图片
+            if (type === 'image') {
+              executeReplacement(hdUrl);
+            }
+
+            // 尺寸信息和下载按钮不受type影响，始终显示
+            if (width && height) {
+              showSizeInfo(width, height, dpi, hdUrl, file_format, content_url, type, title);
+            }
+          } else {
+            clearLoadingCache();
+          }
+        } catch (e) {
+          clearLoadingCache();
+        }
+      },
+      onerror: clearLoadingCache,
+      ontimeout: clearLoadingCache,
     });
   }
 
@@ -1191,7 +1237,7 @@
           break;
         case 'svg':
           if (url) {
-            downloadAiFile(url, imgElement, title);
+            downloadSvgFile(url, imgElement, title);
           }
           break;
         case 'psd':
@@ -1267,6 +1313,37 @@
       .catch(err => {
         console.error('ZIP下载失败:', err);
         alert('ZIP文件下载失败，请稍后重试');
+      });
+  }
+
+  // 下载SVG文件功能
+  function downloadSvgFile(url, imgElement, title) {
+    const filename = title || imgElement?.alt || 'huaban_素材';
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `${filename}.svg`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      })
+      .catch(() => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}.svg`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       });
   }
 
@@ -2734,6 +2811,7 @@
       };
 
       saveConfig(newConfig);
+      window.__huabanSyncContextMenuGuard?.();
 
       // 保存快捷键配置
       hotkeyManager.saveHotkeyConfig();
@@ -2756,6 +2834,7 @@
     resetBtn.addEventListener("click", () => {
       if (confirm("确定恢复默认设置吗？")) {
         saveConfig(DEFAULT_CONFIG);
+        window.__huabanSyncContextMenuGuard?.();
 
         // 恢复所有开关状态的工厂函数
         const restoreSwitchState = (
