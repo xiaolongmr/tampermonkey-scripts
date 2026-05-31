@@ -28,6 +28,47 @@
 (function () {
   "use strict";
 
+  // 先于页面初始化接管花瓣新版图片右键菜单，避免官方菜单抢占脚本右键下载。
+  const HUABAN_CONTEXT_MENU_SELECTOR = '[data-pin-context-menu="true"]';
+
+  function installHuabanContextMenuGuard() {
+    const styleId = "huaban-context-menu-guard-style";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        ${HUABAN_CONTEXT_MENU_SELECTOR} {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+        }
+      `;
+      (document.head || document.documentElement).appendChild(style);
+    }
+
+    const removeOfficialMenu = () => {
+      document.querySelectorAll(HUABAN_CONTEXT_MENU_SELECTOR).forEach((menu) => {
+        menu.remove();
+      });
+    };
+
+    const startObserver = () => {
+      if (!document.body || document.body.dataset.huabanContextMenuGuard) return;
+      document.body.dataset.huabanContextMenuGuard = "true";
+      new MutationObserver(removeOfficialMenu).observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+      removeOfficialMenu();
+    };
+
+    startObserver();
+    document.addEventListener("DOMContentLoaded", startObserver, { once: true });
+  }
+
+  installHuabanContextMenuGuard();
+
   // ==================== 弹窗通用函数 ====================
   function showToast(text, isHtml = false) {
     const toast = document.createElement("div");
