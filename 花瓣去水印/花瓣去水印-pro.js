@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.9
-// @version      1.1.9
+// @name         花瓣"去"水印-pro 1.1.10
+// @version      1.1.10
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -627,6 +627,44 @@
     const parent = imgElement.parentElement;
     if (!parent || parent.querySelector(".hover-action-panel")) return;
 
+    const materialId = imgElement.closest("[data-material-id]")?.dataset.materialId;
+    let hoverImageInfoPromise = null;
+
+    const getFallbackHoverImageInfo = () => {
+      const url = processImageUrl(imgElement.dataset.originalSrc || imgElement.currentSrc || imgElement.src);
+      return {
+        url,
+        width: imgElement.naturalWidth,
+        height: imgElement.naturalHeight,
+        title: imgElement.alt || imgElement.title || "",
+        file_format: getFileExtension(url).replace(".", ""),
+      };
+    };
+
+    const getHoverImageInfo = () => {
+      if (!hoverImageInfoPromise) {
+        hoverImageInfoPromise = (async () => {
+          if (materialId) {
+            try {
+              const detail = await fetchMaterialDetailById(materialId);
+              if (detail?.url) return detail;
+            } catch (error) {
+              debugLog("获取缩略图素材高清信息失败:", materialId, error);
+            }
+          }
+          return getFallbackHoverImageInfo();
+        })();
+      }
+      return hoverImageInfoPromise;
+    };
+
+    const getHoverFileName = (info) => {
+      const extension = info?.file_format
+        ? `.${String(info.file_format).replace(/^\./, "").toLowerCase()}`
+        : getFileExtension(info?.url || imgElement.src);
+      return `${getFileNameFromAlt(imgElement)}${extension || ".png"}`;
+    };
+
     parent.classList.add("hover-img-container");
     const panel = document.createElement("div");
     panel.className = "hover-action-panel";
@@ -635,20 +673,27 @@
 
     // 获取原图尺寸
     let sizeUpdated = false;
-    const updateSize = () => {
+    const updateSize = async () => {
       if (sizeUpdated) return;
       sizeUpdated = true;
+      const sizeText = document.createElement("span");
+      sizeText.className = "img-size-text";
+      parent.after(sizeText);
+
+      const detail = await getHoverImageInfo();
+      if (detail?.width && detail?.height) {
+        sizeText.textContent = `${detail.width} x ${detail.height}px`;
+        return;
+      }
+
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         if (img.naturalWidth > 0) {
-          const sizeText = document.createElement("span");
-          sizeText.className = "img-size-text";
           sizeText.textContent = `${img.naturalWidth} x ${img.naturalHeight}px`;
-          parent.after(sizeText);
         }
       };
-      img.src = processImageUrl(imgElement.dataset.originalSrc || imgElement.src);
+      img.src = detail?.url || getFallbackHoverImageInfo().url;
     };
     imgElement.complete ? updateSize() : imgElement.addEventListener("load", updateSize);
 
@@ -672,13 +717,11 @@
     panel.addEventListener("mouseenter", show);
     panel.addEventListener("mouseleave", hide);
 
-    // 获取原图URL
-    const getOriginalUrl = () => processImageUrl(imgElement.dataset.originalSrc || imgElement.src);
-
     // 复制按钮 - Canvas方式复制图片
     panel.querySelector(".copy-btn").addEventListener("click", async e => {
       e.stopPropagation();
-      const url = getOriginalUrl();
+      const detail = await getHoverImageInfo();
+      const url = detail.url;
       try {
         const img = new Image();
         img.crossOrigin = "anonymous";
@@ -705,10 +748,11 @@
     });
 
     // 下载按钮
-    panel.querySelector(".download-btn").addEventListener("click", e => {
+    panel.querySelector(".download-btn").addEventListener("click", async e => {
       e.stopPropagation();
-      const url = getOriginalUrl();
-      const fileName = getFileNameFromAlt(imgElement) + ".png";
+      const detail = await getHoverImageInfo();
+      const url = detail.url;
+      const fileName = getHoverFileName(detail);
       if (typeof GM_download === "function") {
         GM_download({ url, name: fileName });
       } else {
@@ -723,7 +767,8 @@
     // PS导入按钮 - Alt点击新建文件导入
     panel.querySelector(".ps-btn").addEventListener("click", async e => {
       e.stopPropagation();
-      const url = getOriginalUrl();
+      const detail = await getHoverImageInfo();
+      const url = detail.url;
       const name = getFileNameFromAlt(imgElement);
       const isNewDoc = e.altKey;
       const clipboardStr = `PS_IMPORTER:${url}|||${name}${isNewDoc ? "|||NEW_DOC" : ""}`;
@@ -765,6 +810,76 @@
   // 缓存高清URL，避免重复请求
   const hdUrlCache = new Map();
 
+  function requestMaterialDetailById(id) {
+    return new Promise((resolve, reject) => {
+      GM_xmlhttpRequest({
+        method: "GET",
+        url: `https://gd.huaban.com/editor/design?id=${id}`,
+        onload: (res) => {
+          const scriptMatch = res.responseText.match(/window\.__SSR_TEMPLATE\s*=\s*(\{[\s\S]*?\})(?:;|\s*<\/script>)/);
+          if (!scriptMatch) {
+            reject(new Error("未找到素材详情数据"));
+            return;
+          }
+
+          try {
+            const ssrData = JSON.parse(scriptMatch[1]);
+            if (!ssrData?.preview?.url) {
+              reject(new Error("素材详情缺少预览图地址"));
+              return;
+            }
+
+            resolve({
+              url: ssrData.preview.url,
+              width: ssrData.preview.width,
+              height: ssrData.preview.height,
+              dpi: ssrData.dpi,
+              file_format: ssrData.files?.[0]?.file_format || "",
+              content_url: ssrData.content_url,
+              type: ssrData.type,
+              title: ssrData.title,
+              video: ssrData.preview.video,
+            });
+          } catch (error) {
+            reject(error);
+          }
+        },
+        onerror: () => reject(new Error("素材详情请求失败")),
+        ontimeout: () => reject(new Error("素材详情请求超时")),
+      });
+    });
+  }
+
+  async function fetchMaterialDetailById(id) {
+    const cached = hdUrlCache.get(id);
+    if (cached && cached !== "loading") return cached;
+    if (cached === "loading") {
+      return new Promise((resolve, reject) => {
+        const startedAt = Date.now();
+        const timer = setInterval(() => {
+          const current = hdUrlCache.get(id);
+          if (current && current !== "loading") {
+            clearInterval(timer);
+            resolve(current);
+          } else if (!current || Date.now() - startedAt > 10000) {
+            clearInterval(timer);
+            reject(new Error("等待素材详情超时"));
+          }
+        }, 100);
+      });
+    }
+
+    hdUrlCache.set(id, "loading");
+    try {
+      const detail = await requestMaterialDetailById(id);
+      hdUrlCache.set(id, detail);
+      return detail;
+    } catch (error) {
+      if (hdUrlCache.get(id) === "loading") hdUrlCache.delete(id);
+      throw error;
+    }
+  }
+
   // 目标图片/视频选择器（主展示区和弹出层）
   const TARGET_SELECTORS = ['.OPWXbLYw img', '.Wa6mMsQV img', '.vYzIMzy2 img', '.VFtkdxbR img', '.ujZSLFrU video', '.PBVOckbr img'];
 
@@ -790,11 +905,7 @@
     }
 
     const id = match[1];
-    const cachedUrl = hdUrlCache.get(id);
-
-    // 如果正在加载或已有缓存，直接返回或替换
-    if (cachedUrl === "loading") return;
-    if (cachedUrl) {
+    const applyMaterialDetail = (cachedUrl) => {
       // 只有type为image时才替换高清图片
       if (cachedUrl.type === 'image') {
         executeReplacement(cachedUrl.url);
@@ -803,64 +914,19 @@
       if (cachedUrl.width && cachedUrl.height) {
         showSizeInfo(cachedUrl.width, cachedUrl.height, cachedUrl.dpi, cachedUrl.url, cachedUrl.file_format, cachedUrl.content_url, cachedUrl.type, cachedUrl.title);
       }
+    };
+
+    const cachedUrl = hdUrlCache.get(id);
+    if (cachedUrl && cachedUrl !== "loading") {
+      applyMaterialDetail(cachedUrl);
       return;
     }
 
-    // 标记为加载中
-    hdUrlCache.set(id, "loading");
+    if (cachedUrl === "loading") return;
 
-    const clearLoadingCache = () => {
-      if (hdUrlCache.get(id) === "loading") {
-        hdUrlCache.delete(id);
-      }
-    };
-
-    // 请求高清图片数据
-    GM_xmlhttpRequest({
-      method: "GET",
-      url: `https://gd.huaban.com/editor/design?id=${id}`,
-      onload: (res) => {
-        // 解析响应中的JSON数据
-        const scriptMatch = res.responseText.match(/window\.__SSR_TEMPLATE\s*=\s*(\{[\s\S]*?\})(?:;|\s*<\/script>)/);
-        if (!scriptMatch) {
-          clearLoadingCache();
-          return;
-        }
-
-        try {
-          const ssrData = JSON.parse(scriptMatch[1]);
-          if (ssrData?.preview?.url) {
-            const file_format = ssrData.files?.[0]?.file_format || "";
-            const content_url = ssrData.content_url;
-            const hdUrl = ssrData.preview.url;
-            const video = ssrData.preview.video;
-            const title = ssrData.title;
-            const width = ssrData.preview.width;
-            const height = ssrData.preview.height;
-            const dpi = ssrData.dpi;
-            const type = ssrData.type;
-            const newCachedData = { url: hdUrl, width: width, height: height, dpi: dpi, file_format: file_format, content_url: content_url, type: type, title: title };
-            hdUrlCache.set(id, newCachedData);
-
-            // 只有type为image时才替换高清图片
-            if (type === 'image') {
-              executeReplacement(hdUrl);
-            }
-
-            // 尺寸信息和下载按钮不受type影响，始终显示
-            if (width && height) {
-              showSizeInfo(width, height, dpi, hdUrl, file_format, content_url, type, title);
-            }
-          } else {
-            clearLoadingCache();
-          }
-        } catch (e) {
-          clearLoadingCache();
-        }
-      },
-      onerror: clearLoadingCache,
-      ontimeout: clearLoadingCache,
-    });
+    fetchMaterialDetailById(id)
+      .then(applyMaterialDetail)
+      .catch((error) => debugLog("获取详情页素材高清信息失败:", id, error));
   }
 
 
