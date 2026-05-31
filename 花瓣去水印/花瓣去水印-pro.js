@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         花瓣"去"水印-pro 1.1.6
-// @version      1.1.6
+// @name         花瓣"去"水印-pro 1.1.7
+// @version      1.1.7
 // @description  主要功能：1.显示花瓣真假PNG（原理：脚本通过给花瓣图片添加背景色，显示出透明PNG图片，透出背景色的即为透明PNG，非透明PNG就会被过滤掉） 2.通过自定义修改背景色，区分VIP素材和免费素材。更多描述可安装后查看
 // @author       小张 | 个人博客：https://blog.z-l.top | 公众号“爱吃馍” | 设计导航站 ：https://dh.z-l.top | quicker账号昵称：星河城野❤
 // @license      GPL-3.0
@@ -11,6 +11,7 @@
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_setClipboard
 // @grant        GM_registerMenuCommand
 // @grant        GM_xmlhttpRequest
 // @connect      *
@@ -258,6 +259,13 @@
             [data-button-name="搜索框"].hb-search-focused:before {
                 background: rgba(255, 40, 75, 0.3) !important;
             }
+
+            ${config.enableRightClickDownload ? `
+            /* 右键下载启用时屏蔽花瓣官方图片右键菜单 */
+            [data-pin-context-menu="true"] {
+                display: none !important;
+            }
+            ` : ""}
             
 
           /* antd弹出层样式宽度，花瓣采集框 */
@@ -1380,65 +1388,233 @@
       }
     });
 
-    // 监听右键菜单事件 - 使用GM_download API直接下载
-    document.addEventListener("contextmenu", function (e) {
-      const img = e.target;
-      if (
-        img.tagName === "IMG" &&
-        (img.src.includes("http") || img.src.includes("data:image") || img.dataset.originalSrc)
-      ) {
-        // 检查是否为需要处理的图片类型
-        if (
-          img.matches(SELECTORS.imageButton) ||
-          img.closest("#imageViewerWrapper") ||
-          img.matches(SELECTORS.imageViewerSimple) ||
-          // 新增：支持预览图片（a标签内的img标签）
-          (img.closest("a") &&
-            img.closest("a").querySelector('span[style*="display: none"]'))
-        ) {
-          // 检查右键下载功能是否启用
-          const config = getConfig();
-          if (!config.enableRightClickDownload) {
-            debugLog("右键下载功能已禁用，跳过处理");
-            return;
+    const HUABAN_CONTEXT_MENU_SELECTOR = '[data-pin-context-menu="true"]';
+    const RIGHT_CLICK_CONTAINER_SELECTOR =
+      "#imageViewerWrapper, [data-pin-id], [data-file-id], [data-material-id], [data-content-id], [data-check-cover], [data-content-type], .KKIUywzb, .OPWXbLYw, .Wa6mMsQV, .VFtkdxbR, .PBVOckbr, .ujZSLFrU";
+    const RIGHT_CLICK_IMAGE_CONTAINER_SELECTOR = `a, ${RIGHT_CLICK_CONTAINER_SELECTOR}`;
+    let blockHuabanContextMenuUntil = 0;
+    let contextMenuCleanupTimer = null;
+    let lastRightClickImage = null;
+    let lastRightClickImageUntil = 0;
+
+    const shouldRemoveHuabanContextMenu = () => {
+      const config = getConfig();
+      return config.enableRightClickDownload;
+    };
+
+    const removeHuabanContextMenu = () => {
+      document.querySelectorAll(HUABAN_CONTEXT_MENU_SELECTOR).forEach((menu) => {
+        menu.remove();
+      });
+    };
+
+    const suppressHuabanContextMenu = (duration = 2500) => {
+      blockHuabanContextMenuUntil = Date.now() + duration;
+      removeHuabanContextMenu();
+      requestAnimationFrame(removeHuabanContextMenu);
+      setTimeout(removeHuabanContextMenu, 0);
+      setTimeout(removeHuabanContextMenu, 80);
+      setTimeout(removeHuabanContextMenu, 250);
+
+      if (contextMenuCleanupTimer) clearInterval(contextMenuCleanupTimer);
+      contextMenuCleanupTimer = setInterval(() => {
+        removeHuabanContextMenu();
+        if (Date.now() > blockHuabanContextMenuUntil) {
+          clearInterval(contextMenuCleanupTimer);
+          contextMenuCleanupTimer = null;
+        }
+      }, 60);
+    };
+
+    new MutationObserver((mutations) => {
+      if (!shouldRemoveHuabanContextMenu()) return;
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType !== Node.ELEMENT_NODE) return;
+          if (
+            node.matches?.(HUABAN_CONTEXT_MENU_SELECTOR) ||
+            node.querySelector?.(HUABAN_CONTEXT_MENU_SELECTOR)
+          ) {
+            removeHuabanContextMenu();
           }
+        });
+      });
+    }).observe(document.body, { childList: true, subtree: true });
 
-          // 立即阻止默认的右键菜单行为
-          e.preventDefault();
+    const getImageUrl = (img) => {
+      if (!img) return "";
+      const srcsetUrl = img.srcset?.split(",")?.[0]?.trim()?.split(/\s+/)?.[0] || "";
+      return img.dataset?.originalSrc || img.currentSrc || img.src || srcsetUrl || "";
+    };
 
-          debugLog("检测到图片右键菜单，使用GM_download下载:", img.src);
+    const isUsableImage = (img) => {
+      const imageUrl = getImageUrl(img);
+      return Boolean(img && (imageUrl.includes("http") || imageUrl.includes("data:image") || imageUrl.includes("blob:")));
+    };
 
-          // 处理URL，删除_fwXXXwebp部分
-          // 如果是base64格式，使用原始URL
-          const originalSrc = img.dataset.originalSrc || img.src;
-          const cleanUrl = processImageUrl(originalSrc);
+    const isSupportedRightClickImage = (img, imageContainer) => {
+      if (!isUsableImage(img)) return false;
 
-          // 使用GM_download API直接下载图片
-          // 注意：GM_download需要用户确认，所以这里使用异步方式
-          setTimeout(() => {
-            try {
-              // 使用alt属性作为文件名，如果没有alt则使用默认文件名
-              const fileName = getFileNameFromAlt(img) + ".png";
+      const imageUrl = getImageUrl(img);
+      const anchor = img.closest("a");
+      const isHuabanImage = /(?:gd-)?hbimg|huaban\.com/.test(imageUrl);
+      const isInSupportedContainer = Boolean(
+        imageContainer ||
+        img.closest(RIGHT_CLICK_CONTAINER_SELECTOR)
+      );
 
-              // 使用GM_download下载图片
-              // 注意：GM_download会弹出下载确认对话框
-              GM_download({
-                url: cleanUrl,
-                name: fileName,
-                onload: function () {
-                  console.log("图片下载成功:", fileName, "URL:", cleanUrl);
-                },
-                onerror: function (error) {
-                  console.error("图片下载失败:", error);
-                },
-              });
-            } catch (error) {
-              console.error("GM_download调用失败:", error);
-            }
-          }, 100);
+      return Boolean(
+        img.matches(SELECTORS.imageButton) ||
+        img.closest("#imageViewerWrapper") ||
+        img.matches(SELECTORS.imageViewerSimple) ||
+        (anchor && anchor.querySelector('span[style*="display: none"]')) ||
+        (isHuabanImage && isInSupportedContainer)
+      );
+    };
+
+    const getCandidateImageFromElement = (element) => {
+      if (!element) return null;
+      let img = element?.closest?.("img");
+      const imageContainer = element?.closest?.(RIGHT_CLICK_IMAGE_CONTAINER_SELECTOR);
+      if (!img) {
+        img = imageContainer?.querySelector?.("img");
+      }
+      return isSupportedRightClickImage(img, imageContainer) ? img : null;
+    };
+
+    const getImageFromPoint = (e) => {
+      if (typeof document.elementsFromPoint === "function") {
+        const elements = document.elementsFromPoint(e.clientX, e.clientY);
+        for (const element of elements) {
+          const img = getCandidateImageFromElement(element);
+          if (img) return img;
         }
       }
-    });
+
+      const images = document.querySelectorAll("img");
+      for (const img of images) {
+        if (!isSupportedRightClickImage(img, null)) continue;
+        const rect = img.getBoundingClientRect();
+        const isInside =
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom;
+        if (isInside) return img;
+      }
+
+      return null;
+    };
+
+    const isLikelyHuabanImageContext = (e) => {
+      const element = e.target?.nodeType === Node.ELEMENT_NODE ? e.target : e.target?.parentElement;
+      if (element?.closest?.(RIGHT_CLICK_CONTAINER_SELECTOR)) return true;
+
+      if (typeof document.elementsFromPoint !== "function") return false;
+      return document.elementsFromPoint(e.clientX, e.clientY).some((pointElement) =>
+        pointElement.closest?.(RIGHT_CLICK_CONTAINER_SELECTOR)
+      );
+    };
+
+    const rememberRightClickImage = (img) => {
+      if (!img) return;
+      lastRightClickImage = img;
+      lastRightClickImageUntil = Date.now() + 1200;
+    };
+
+    const getRightClickDownloadImage = (e) => {
+      const element = e.target?.nodeType === Node.ELEMENT_NODE ? e.target : e.target?.parentElement;
+      const img =
+        getCandidateImageFromElement(element) ||
+        getImageFromPoint(e) ||
+        (Date.now() < lastRightClickImageUntil ? lastRightClickImage : null);
+
+      if (!img) {
+        return null;
+      }
+
+      rememberRightClickImage(img);
+      return img;
+    };
+
+    const stopHuabanRightClickMenu = (e) => {
+      if (e.button !== 2) return;
+
+      const config = getConfig();
+      if (!config.enableRightClickDownload) return;
+
+      const img = getRightClickDownloadImage(e);
+      if (!img && !isLikelyHuabanImageContext(e)) return;
+
+      // 花瓣官方菜单会抢右键事件，捕获阶段先截断它的初始化事件。
+      suppressHuabanContextMenu();
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    };
+
+    const handleRightClickDownload = (e) => {
+      const img = getRightClickDownloadImage(e);
+
+      const config = getConfig();
+      if (!config.enableRightClickDownload) {
+        debugLog("右键下载功能已禁用，跳过处理");
+        return;
+      }
+
+      if (!img) {
+        if (!isLikelyHuabanImageContext(e)) return;
+        suppressHuabanContextMenu();
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return;
+      }
+
+      // 捕获阶段阻止花瓣官方菜单和浏览器默认菜单。
+      e.preventDefault();
+      suppressHuabanContextMenu();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      debugLog("检测到图片右键菜单，使用GM_download下载:", img.src);
+
+      // 处理URL，删除_fwXXXwebp部分
+      // 如果是base64格式，使用原始URL
+      const originalSrc = getImageUrl(img);
+      const cleanUrl = processImageUrl(originalSrc);
+
+      // 使用GM_download API直接下载图片
+      // 注意：GM_download需要用户确认，所以这里使用异步方式
+      setTimeout(() => {
+        try {
+          // 使用alt属性作为文件名，如果没有alt则使用默认文件名
+          const fileName = getFileNameFromAlt(img) + ".png";
+
+          // 使用GM_download下载图片
+          // 注意：GM_download会弹出下载确认对话框
+          GM_download({
+            url: cleanUrl,
+            name: fileName,
+            onload: function () {
+              console.log("图片下载成功:", fileName, "URL:", cleanUrl);
+            },
+            onerror: function (error) {
+              console.error("图片下载失败:", error);
+            },
+          });
+        } catch (error) {
+          console.error("GM_download调用失败:", error);
+        }
+      }, 100);
+    };
+
+    // 使用捕获阶段抢在花瓣官方右键菜单前处理。
+    window.addEventListener("pointerdown", stopHuabanRightClickMenu, true);
+    window.addEventListener("mousedown", stopHuabanRightClickMenu, true);
+    window.addEventListener("pointerup", stopHuabanRightClickMenu, true);
+    window.addEventListener("mouseup", stopHuabanRightClickMenu, true);
+    window.addEventListener("contextmenu", handleRightClickDownload, true);
 
     debugLog("拖拽和右键下载拦截器已启动");
   }
@@ -1452,7 +1628,9 @@
     // 检查是否已存在配置面板
     const existingPanel = document.getElementById("huabanConfig");
     if (existingPanel) {
+      existingPanel.__huabanCleanup?.();
       existingPanel.remove();
+      document.body.style.overflow = "auto";
       return;
     }
 
@@ -1581,7 +1759,7 @@
       main.innerHTML = "";
       // switchesSection, colorSettings, actions 会被插入后
       main.appendChild(switchesSection);
-      main.innerHTML += colorSettings;
+      main.appendChild(colorSettingsSection);
       main.appendChild(hotkeysSettings);
       main.appendChild(actions);
 
@@ -2074,6 +2252,10 @@
             </div>
         `;
 
+    const colorSettingsWrapper = document.createElement("div");
+    colorSettingsWrapper.innerHTML = colorSettings.trim();
+    const colorSettingsSection = colorSettingsWrapper.firstElementChild;
+
     // 快捷键设置区域
     const hotkeysSettings = document.createElement("div");
     hotkeysSettings.className = "mb-4";
@@ -2197,7 +2379,7 @@
 
     // 组装内容
     content.appendChild(switchesSection);
-    content.innerHTML += colorSettings;
+    content.appendChild(colorSettingsSection);
     content.appendChild(hotkeysSettings);
     content.appendChild(actions);
 
@@ -2477,8 +2659,13 @@
         btn.addEventListener("click", () => handleResetClick(btn));
       });
 
-      // 返回保存配置的方法
-      return { saveHotkeyConfig };
+      // 返回保存配置和清理监听的方法
+      return {
+        saveHotkeyConfig,
+        cleanup() {
+          document.removeEventListener("keydown", handleKeydown);
+        },
+      };
     }
 
     // 初始化快捷键设置
@@ -2595,8 +2782,21 @@
       }
     });
 
+    let isConfigClosing = false;
+    const handleConfigEsc = (e) => {
+      if (e.key === "Escape") closeConfig();
+    };
+    const cleanupConfigListeners = () => {
+      document.removeEventListener("keydown", handleConfigEsc);
+      hotkeyManager.cleanup?.();
+    };
+    container.__huabanCleanup = cleanupConfigListeners;
+
     // 关闭配置
     function closeConfig() {
+      if (isConfigClosing) return;
+      isConfigClosing = true;
+      cleanupConfigListeners();
       container.style.opacity = "0";
       setTimeout(() => {
         container.remove();
@@ -2611,9 +2811,7 @@
     });
 
     // ESC键关闭
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeConfig();
-    });
+    document.addEventListener("keydown", handleConfigEsc);
   }
 
 
