@@ -20,13 +20,89 @@
   const AD_IMAGE_URL =
     "https://img1.pixhost.to/images/11714/686297487_huabanlinshi.gif";
 
+  // 版本提示直接叠在顶部横幅上，避免只看到 gif 却不知道新版本号。
+  function renderVersionBadge(adLink, currentVersion, latestVersion) {
+    if (!adLink) return;
+    const badgeText = latestVersion
+      ? `发现新版本 v${latestVersion} · 当前 v${currentVersion || "未知"}`
+      : `更新提醒 · 当前 v${currentVersion || "未知"}`;
+    const renderKey = `${Update_Link_Url}|${AD_IMAGE_URL}|${badgeText}`;
+
+    // 已经渲染过且内容没变时直接返回，避免 MutationObserver 触发后重复写 DOM。
+    if (adLink.dataset.huabanUpdateRenderKey === renderKey) return;
+
+    adLink.style.position = "relative";
+    adLink.style.overflow = "hidden";
+    adLink.style.display = "block";
+
+    const img = adLink.querySelector("img");
+    if (img) {
+      img.alt = latestVersion
+        ? `花瓣去水印临时脚本发现新版本 ${latestVersion}`
+        : "花瓣去水印临时脚本更新提醒";
+      img.style.width = "100%";
+      img.style.height = "60px";
+      img.style.objectFit = "cover";
+      img.style.display = "block";
+    }
+
+    let badge = adLink.querySelector(".huaban-update-version-badge");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.className = "huaban-update-version-badge";
+      adLink.appendChild(badge);
+    }
+
+    badge.textContent = badgeText;
+    badge.style.cssText = [
+      "position:absolute",
+      "right:10px",
+      "bottom:8px",
+      "max-width:calc(100% - 20px)",
+      "padding:4px 10px",
+      "border-radius:999px",
+      "background:rgba(15,23,42,.78)",
+      "color:#fff",
+      "font-size:12px",
+      "line-height:1.2",
+      "font-weight:600",
+      "letter-spacing:0",
+      "white-space:nowrap",
+      "overflow:hidden",
+      "text-overflow:ellipsis",
+      "box-shadow:0 4px 14px rgba(0,0,0,.18)",
+      "pointer-events:none",
+      "z-index:2"
+    ].join(";");
+    adLink.dataset.huabanUpdateRenderKey = renderKey;
+  }
+
+  // 只在远程版本确实更高时提醒，避免本地测试版高于远程时误报更新。
+  function isLatestVersionNewer(latestVersion, currentVersion) {
+    if (!latestVersion) return false;
+    if (!currentVersion) return true;
+
+    const latestParts = String(latestVersion).match(/\d+/g)?.map(Number) || [];
+    const currentParts = String(currentVersion).match(/\d+/g)?.map(Number) || [];
+    const length = Math.max(latestParts.length, currentParts.length);
+
+    for (let i = 0; i < length; i++) {
+      const latestPart = latestParts[i] || 0;
+      const currentPart = currentParts[i] || 0;
+      if (latestPart > currentPart) return true;
+      if (latestPart < currentPart) return false;
+    }
+
+    return false;
+  }
+
   //替换广告链接和广告图片
-  function replaceAdLink() {
+  function replaceAdLink(currentVersion, latestVersion) {
     const sideCollapsed = document.querySelector(".side-collapsed");
-    if (!sideCollapsed) return;
+    if (!sideCollapsed) return false;
 
     const firstChild = sideCollapsed.children[0];
-    if (!firstChild || !firstChild.classList.contains("MYLD0f_u")) return;
+    if (!firstChild || !firstChild.classList.contains("MYLD0f_u")) return false;
 
     const adContainer = firstChild;
     // 检查广告容器是否为空（没有内容）
@@ -55,9 +131,11 @@
 
       // 设置广告链接
       adLink.href = Update_Link_Url;
+      renderVersionBadge(adLink, currentVersion, latestVersion);
 
       // 调整高度以显示广告
       showBanner();
+      return true;
     } else {
       // 情况2：容器有内容，替换链接、图片并确保背景色为蓝色
       const adLink = adContainer.querySelector('a[data-click-type="点击广告"]');
@@ -74,8 +152,12 @@
         // 确保背景色为蓝色并添加!important以保证优先级
         adLink.style.setProperty("background-color", "rgb(75, 121, 255)", "important");
         adLink.style.height = "60px";
+        renderVersionBadge(adLink, currentVersion, latestVersion);
+        return true;
       }
     }
+
+    return false;
   }
 
   // 显示广告，调整高度以显示广告
@@ -111,14 +193,14 @@
   // 模拟点击关闭广告
   function closeAd() {
     const sideCollapsed = document.querySelector(".side-collapsed");
-    if (!sideCollapsed) return;
+    if (!sideCollapsed) return false;
 
     const firstChild = sideCollapsed.children[0];
-    if (!firstChild || !firstChild.classList.contains("MYLD0f_u")) return;
+    if (!firstChild || !firstChild.classList.contains("MYLD0f_u")) return false;
 
     const adContainer = firstChild;
     // 检查容器是否有内容
-    if (adContainer.innerHTML.trim() === "") return;
+    if (adContainer.innerHTML.trim() === "") return false;
 
     // 查找关闭广告的按钮
     const closeBtn = adContainer.querySelector(
@@ -127,7 +209,10 @@
     if (closeBtn) {
       // 模拟点击事件
       closeBtn.click();
+      return true;
     }
+
+    return false;
   }
 
   // 从镜像地址拉取最新版本号
@@ -145,8 +230,13 @@
 
   // 主逻辑：根据版本号和广告容器内容状态执行不同操作
   (async function () {
-    const current = GM_info.script.version;
+    const current = GM_info?.script?.version || "";
     const latest = await fetchLatestVersion();
+    const hasUpdate = isLatestVersionNewer(latest, current);
+    let adObserver = null;
+    let retryTimer = null;
+    let retryCount = 0;
+    const MAX_RETRY_COUNT = 20;
 
     // 检查广告容器状态的函数
     function checkAdContainer() {
@@ -167,32 +257,65 @@
     function executeAction() {
       const adStatus = checkAdContainer();
 
-      if (latest && latest !== current) {
+      if (hasUpdate) {
         // 版本不同
         if (adStatus && adStatus.hasContent) {
           // 有内容：只替换链接和图片
-          replaceAdLink();
+          return replaceAdLink(current, latest);
         } else if (adStatus) {
           // 空容器：创建新广告并显示
-          replaceAdLink();
+          return replaceAdLink(current, latest);
         }
       } else {
         // 版本相同
         if (adStatus && adStatus.hasContent) {
           // 有内容：模拟点击关闭广告
-          closeAd();
+          return closeAd();
         }
       }
-      
-      // 开始观察广告元素的背景色变化
-      watchBackgroundColor();
+
+      return !!adStatus;
+    }
+
+    // 只观察顶部广告位本身，不能监听 document.body/subtree，否则瀑布流持续变更会造成卡顿。
+    function watchAdContainer() {
+      if (adObserver || !hasUpdate) return;
+      const adStatus = checkAdContainer();
+      if (!adStatus?.container) return;
+
+      let pending = false;
+      adObserver = new MutationObserver(() => {
+        if (pending) return;
+        pending = true;
+        setTimeout(() => {
+          pending = false;
+          replaceAdLink(current, latest);
+        }, 200);
+      });
+      adObserver.observe(adStatus.container, {
+        childList: true,
+      });
+    }
+
+    // 顶部广告位有时比脚本晚出现，用有限次数重试代替全页面 MutationObserver。
+    function retryUntilHandled() {
+      if (executeAction()) {
+        watchAdContainer();
+        return;
+      }
+      if (retryCount >= MAX_RETRY_COUNT || retryTimer) return;
+      retryCount++;
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        retryUntilHandled();
+      }, 500);
     }
 
     // 根据DOM加载状态执行
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", executeAction);
+      document.addEventListener("DOMContentLoaded", retryUntilHandled);
     } else {
-      executeAction();
+      retryUntilHandled();
     }
   })();
 })();
